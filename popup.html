@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { width: 300px; margin: 0; padding: 13px 15px;
+      font: 13.5px/1.4 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; }
+    h1 { font-size: 15px; margin: 0 0 2px; }
+    .legend { font-size: 11px; color: #8a94a3; margin: 0 0 9px; }
+    .legend b { color: #6a7686; }
+    .frow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+    .fname { flex: 1; }
+    .ms { width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
+      background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; cursor: pointer; }
+    .ms:hover { background: #f3f4f6; }
+    .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
+    .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
+    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
+    .group-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+      color: #8a94a3; margin: 12px 0 3px; }
+    label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
+    label.row input { margin-top: 2px; }
+    .muted { color: #8a94a3; }
+    .hint { margin: 11px 0 0; font-size: 11.5px; color: #6a7686; }
+  </style>
+</head>
+<body>
+  <h1>FeedHacker</h1>
+  <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo &nbsp;·&nbsp; <b>A</b> aggressive slop</div>
+  <div id="filters"></div>
+
+  <div class="group-label">Display</div>
+  <label class="row"><input type="checkbox" id="nameNames"> Name names <span class="muted">(who + category)</span></label>
+  <label class="row"><input type="checkbox" id="hideCompletely"> Hide Hidden Content <span class="muted">(no placeholder)</span></label>
+
+  <div class="group-label">Comments</div>
+  <label class="row"><input type="checkbox" id="hideSlopComments"> Hide AI-slop comments</label>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,1081 @@
+{
+  "version": "2026-06-30",
+  "source": "https://www.boobridge.com/claudisms/",
+  "description": "Banlist of words, phrases, and structural tics that signal AI-generated writing. Used by the Claudisms Chrome extension to flag/hide/rewrite LinkedIn content.",
+  "matchTypes": {
+    "literal": "case-insensitive substring match against 'match' strings",
+    "regex": "case-insensitive regex in 'pattern' (may use unicode escapes)",
+    "manual": "judgment-based tic with no reliable automatic match; for guidance only"
+  },
+  "fields": {
+    "aggressive": "true = high false-positive risk (matches common words); recommend off by default / user opt-in",
+    "replacement": "suggested plain-English swap where a clean one exists",
+    "minCount": "for regex entries: require at least this many matches before flagging (e.g. emoji spam)"
+  },
+  "entries": [
+    {
+      "id": "sit-with",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "sit with",
+        "sitting with",
+        "worth sitting with",
+        "sit with that"
+      ],
+      "replacement": "hard to shake",
+      "note": "reflective-pose filler; sounds thoughtful, says nothing"
+    },
+    {
+      "id": "worth-talking-about",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "worth talking about"
+      ],
+      "note": "value-claim filler"
+    },
+    {
+      "id": "arriving-at",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "arriving at",
+        "keep arriving at"
+      ],
+      "replacement": "the question that won't leave",
+      "note": "pseudo-reflective verb reaching for false depth"
+    },
+    {
+      "id": "question-cleft",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the question that kept coming up",
+        "the question that keeps coming up",
+        "the question i keep coming back to"
+      ],
+      "note": "pseudo-reflective cleft; state the question directly"
+    },
+    {
+      "id": "coming-back-to",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "coming back to",
+        "keep coming back to",
+        "keeps coming back to",
+        "i keep coming back to"
+      ],
+      "note": "pseudo-reflective return verb"
+    },
+    {
+      "id": "discovery-arc",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the thread i didn't plan but can't unsee",
+        "the thing i didn't plan but keep noticing",
+        "i didn't set out to",
+        "i didn't plan it, but",
+        "what i didn't expect to find"
+      ],
+      "note": "discovery-arc framing; cut the setup, state the thing"
+    },
+    {
+      "id": "false-singularity",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the one that surprised me most",
+        "what struck me hardest",
+        "the part that stuck with me most",
+        "because it surprised me most",
+        "if i had to pick one"
+      ],
+      "note": "false-singularity ranking framing"
+    },
+    {
+      "id": "physics",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "physics",
+        "different physics",
+        "rules of physics",
+        "the physics of"
+      ],
+      "replacement": "how something works",
+      "aggressive": true,
+      "note": "pseudo-scientific metaphor for how something works"
+    },
+    {
+      "id": "names-verb",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "names the move",
+        "names the question",
+        "names what's at stake"
+      ],
+      "replacement": "says directly",
+      "note": "pseudo-elevated diction for 'says directly'"
+    },
+    {
+      "id": "naming",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "naming that",
+        "naming it",
+        "naming the"
+      ],
+      "note": "gerund of names; means 'calling it what it is'"
+    },
+    {
+      "id": "quieter-louder",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "quieter",
+        "louder"
+      ],
+      "aggressive": true,
+      "note": "opaque writerly metaphor for less/more explicit"
+    },
+    {
+      "id": "bumped-into",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "bumped into"
+      ],
+      "replacement": "ran into",
+      "note": "writerly tic; 'ran into' is sharper"
+    },
+    {
+      "id": "shape",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "shape"
+      ],
+      "replacement": "the way it feels",
+      "aggressive": true,
+      "note": "overused; means how it feels / its structure / direction"
+    },
+    {
+      "id": "lives",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "lives"
+      ],
+      "replacement": "is / happens / shows up",
+      "aggressive": true,
+      "note": "pseudo-anthropomorphic placement metaphor"
+    },
+    {
+      "id": "the-engine",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the engine"
+      ],
+      "note": "mechanical metaphor for what works/drives value"
+    },
+    {
+      "id": "hits-hardest",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "hits hardest",
+        "hits the hardest",
+        "lands hardest",
+        "lands the hardest",
+        "strikes hardest",
+        "strikes the hardest"
+      ],
+      "note": "superlative intensification"
+    },
+    {
+      "id": "surface-verb",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "surface the",
+        "surface a"
+      ],
+      "note": "corporate-vague verb"
+    },
+    {
+      "id": "the-tell",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the tell",
+        "that's the tell",
+        "the tell is"
+      ],
+      "note": "poker/diagnosis diction reaching for insider weight"
+    },
+    {
+      "id": "load-bearing",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "load-bearing"
+      ],
+      "note": "engineering metaphor become a tic"
+    },
+    {
+      "id": "the-point-is",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the point is"
+      ],
+      "note": "throat-clearing"
+    },
+    {
+      "id": "gets-interesting",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "here's where it gets interesting"
+      ],
+      "note": "lecture-hall framing"
+    },
+    {
+      "id": "heres-the-moment",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "here's the analogy that clicked for me",
+        "here's the moment that hit me",
+        "here's the thing that landed",
+        "here's the part that stuck"
+      ],
+      "note": "section-announcer + performative-epiphany"
+    },
+    {
+      "id": "this-matters",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "because it matters",
+        "this matters",
+        "and that matters"
+      ],
+      "note": "presumptuous value-claim filler"
+    },
+    {
+      "id": "the-right-x",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the right time",
+        "the right question",
+        "the right way",
+        "the right answer",
+        "the right tool"
+      ],
+      "note": "assertion-of-rightness filler"
+    },
+    {
+      "id": "cant-stop-thinking",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "i can't stop thinking about"
+      ],
+      "note": "false-intimacy cliche"
+    },
+    {
+      "id": "end-of-the-day",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "at the end of the day"
+      ],
+      "note": "corporate filler"
+    },
+    {
+      "id": "double-click",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "double-click on",
+        "double click on"
+      ],
+      "note": "corporate-speak"
+    },
+    {
+      "id": "unpack",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "unpack"
+      ],
+      "note": "overused reflective verb"
+    },
+    {
+      "id": "leverage",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "leverage"
+      ],
+      "note": "corporate-speak verb"
+    },
+    {
+      "id": "lean-into",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "lean into",
+        "lean out"
+      ],
+      "note": "overused"
+    },
+    {
+      "id": "come-along",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "come along"
+      ],
+      "note": "too soft for definitive moments"
+    },
+    {
+      "id": "throughline",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "throughline"
+      ],
+      "note": "buzzy and off-key"
+    },
+    {
+      "id": "dispatches",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "dispatches from",
+        "field notes from the frontier"
+      ],
+      "note": "frontier-dispatch trope, performative"
+    },
+    {
+      "id": "best-operators",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "best operators",
+        "top practitioners"
+      ],
+      "note": "hierarchy language to avoid"
+    },
+    {
+      "id": "first-wave",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "first wave of a multi-year transition"
+      ],
+      "note": "grandiose overclaim"
+    },
+    {
+      "id": "lessons-learned",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "lessons learned"
+      ],
+      "note": "too corporate"
+    },
+    {
+      "id": "seat-metaphor",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "stakes of their seat",
+        "seat"
+      ],
+      "aggressive": true,
+      "note": "spent metaphor"
+    },
+    {
+      "id": "paradigm-shift",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "paradigm shift"
+      ],
+      "note": "tired"
+    },
+    {
+      "id": "em-dash",
+      "category": "confirmed",
+      "matchType": "regex",
+      "pattern": "—",
+      "replacement": " - ",
+      "note": "em dashes banned outright; use ' - ' (spaced hyphen)"
+    },
+    {
+      "id": "emoji",
+      "category": "confirmed",
+      "matchType": "regex",
+      "pattern": "[\\u2190-\\u21FF\\u2300-\\u27BF\\u2B00-\\u2BFF\\u{1F000}-\\u{1FAFF}]",
+      "note": "emojis as a social-media tic; flagged only when a post piles on (>=5), so a single decorative emoji is ignored",
+      "minCount": 5
+    },
+    {
+      "id": "whole-game",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the whole game",
+        "that's the whole game",
+        "the whole ballgame",
+        "the only thing that matters",
+        "that's the entire point"
+      ],
+      "note": "totalizing-superlative filler"
+    },
+    {
+      "id": "whole-construction",
+      "category": "confirmed",
+      "matchType": "regex",
+      "pattern": "\\bthe (whole|entire) [a-z]+\\b",
+      "aggressive": true,
+      "note": "the whole/entire [X] construction (run by hand)"
+    },
+    {
+      "id": "only-thing-changed",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the only thing that changed",
+        "the only thing that mattered",
+        "the only thing that happened"
+      ],
+      "note": "binary-dramatization construction"
+    },
+    {
+      "id": "hold-thought",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "hold that thought",
+        "holding them at the same time",
+        "the line it holds"
+      ],
+      "aggressive": true,
+      "note": "pseudo-weighty placement verb on abstractions"
+    },
+    {
+      "id": "carry",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "carry this with you",
+        "what i'd ask you to carry",
+        "the thing to carry forward",
+        "carry this"
+      ],
+      "replacement": "remember",
+      "note": "placement-metaphor reader instruction; means 'remember'"
+    },
+    {
+      "id": "essays",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "essays"
+      ],
+      "replacement": "articles",
+      "note": "always 'articles', not 'essays'"
+    },
+    {
+      "id": "stays-yours",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "stays yours",
+        "stay yours",
+        "what stays yours",
+        "that part stays yours",
+        "the rest is yours",
+        "yours to keep",
+        "yours to own",
+        "yours to decide"
+      ],
+      "note": "ownership-retention filler"
+    },
+    {
+      "id": "worth-family",
+      "category": "confirmed",
+      "matchType": "regex",
+      "pattern": "\\bworth\\s+(a |the )?\\w+",
+      "aggressive": true,
+      "note": "entire 'worth [X]' family banned; let the thing show its value"
+    },
+    {
+      "id": "mature",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "mature",
+        "more mature",
+        "mature setup",
+        "mature version"
+      ],
+      "aggressive": true,
+      "note": "subjective grading that implies current state is deficient"
+    },
+    {
+      "id": "brings-me-back",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "which brings me back to",
+        "brings me back to",
+        "that brings us back to"
+      ],
+      "note": "pseudo-reflective return-framing"
+    },
+    {
+      "id": "leave-you-with",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "what i'd leave you with",
+        "i'll leave you with",
+        "leaving you with",
+        "what i want to leave you with"
+      ],
+      "note": "section-closer framing; just say it"
+    },
+    {
+      "id": "in-the-chest",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "in the same chest",
+        "in my chest",
+        "in the chest"
+      ],
+      "note": "pseudo-physical placement of emotion"
+    },
+    {
+      "id": "where-i-landed",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "here is where i landed",
+        "where i landed",
+        "here's where i come down"
+      ],
+      "note": "pseudo-reflective journey framing"
+    },
+    {
+      "id": "seen-this-movie",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "we've seen this movie before",
+        "we have seen this movie before",
+        "seen this one before",
+        "we have stood here before",
+        "we've been here before",
+        "we keep meeting it"
+      ],
+      "note": "tired cliche / historical-precedent framing"
+    },
+    {
+      "id": "compounds",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "compounds",
+        "compound",
+        "compounding"
+      ],
+      "replacement": "builds",
+      "aggressive": true,
+      "note": "finance/growth metaphor; means builds/adds up/grows"
+    },
+    {
+      "id": "honest",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "honest",
+        "honestly"
+      ],
+      "aggressive": true,
+      "note": "qualifier-on-own-statements; implies the rest aren't honest"
+    },
+    {
+      "id": "turns-on",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "turns on",
+        "it all turns on",
+        "turns on the"
+      ],
+      "replacement": "depends on",
+      "note": "pseudo-elevated pivot verb; means depends on/comes down to"
+    },
+    {
+      "id": "useful",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the useful thing",
+        "what's useful",
+        "the useful part"
+      ],
+      "note": "announces usefulness instead of showing it"
+    },
+    {
+      "id": "stayed-mine",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "the part that stayed mine",
+        "the part that stayed"
+      ],
+      "note": "false-ownership / false-intimacy framing"
+    },
+    {
+      "id": "want-you-to-see",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "what i keep wanting people to see",
+        "what i want you to see",
+        "what i want people to take away"
+      ],
+      "note": "author-desire framing"
+    },
+    {
+      "id": "hit-a-nerve",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "hit a nerve",
+        "struck a nerve",
+        "stuck with me",
+        "stayed with me",
+        "struck a chord",
+        "it really landed for me"
+      ],
+      "note": "false emotional-resonance cliche; name the actual reaction"
+    },
+    {
+      "id": "catastrophize",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "wreck",
+        "wrecked",
+        "destroy",
+        "shatter",
+        "obliterate",
+        "blow up"
+      ],
+      "aggressive": true,
+      "note": "over-dramatization verbs for measured effects"
+    },
+    {
+      "id": "real",
+      "category": "confirmed",
+      "matchType": "literal",
+      "match": [
+        "a real",
+        "the real thing",
+        "the real problem",
+        "real data"
+      ],
+      "replacement": "actual",
+      "aggressive": true,
+      "note": "binary adjective; say measured/actual or drop it"
+    },
+    {
+      "id": "announce-structure",
+      "category": "structural",
+      "matchType": "manual",
+      "note": "announcing structure before delivering it"
+    },
+    {
+      "id": "judge-interesting",
+      "category": "structural",
+      "matchType": "literal",
+      "match": [
+        "the most interesting part",
+        "the least interesting thing",
+        "the most interesting"
+      ],
+      "note": "judging what's interesting; let the reader decide"
+    },
+    {
+      "id": "hyping",
+      "category": "structural",
+      "matchType": "manual",
+      "note": "hyping / over-dramatizing; plain is stronger"
+    },
+    {
+      "id": "false-modest",
+      "category": "structural",
+      "matchType": "literal",
+      "match": [
+        "i want to be careful here",
+        "with appropriate caveats"
+      ],
+      "note": "false-modest asides"
+    },
+    {
+      "id": "stacked-dashes",
+      "category": "structural",
+      "matchType": "manual",
+      "note": "more than one ' - ' aside in a single sentence"
+    },
+    {
+      "id": "staccato",
+      "category": "structural",
+      "matchType": "manual",
+      "note": "four or more short declaratives in a row without variation"
+    },
+    {
+      "id": "one-liner-close",
+      "category": "structural",
+      "matchType": "manual",
+      "note": "ending with a one-liner that restates the thesis"
+    },
+    {
+      "id": "vague-stakes",
+      "category": "structural",
+      "matchType": "literal",
+      "match": [
+        "the question is coming",
+        "the conversation is going to happen",
+        "the reckoning will come"
+      ],
+      "note": "deferred-reference without naming the question/event"
+    },
+    {
+      "id": "visibility-framing",
+      "category": "structural",
+      "matchType": "literal",
+      "match": [
+        "the line will be harder to ignore",
+        "the gap will become more visible",
+        "the difference will be clearer"
+      ],
+      "note": "visibility language where outcome/stakes language is stronger"
+    },
+    {
+      "id": "finance-bro",
+      "category": "register",
+      "matchType": "literal",
+      "match": [
+        "the forward case",
+        "price-to-value ratio"
+      ],
+      "note": "finance-bro shorthand; say it in English"
+    },
+    {
+      "id": "consultant",
+      "category": "register",
+      "matchType": "literal",
+      "match": [
+        "pressure-test",
+        "right-size",
+        "north star",
+        "true north",
+        "strategic imperative"
+      ],
+      "note": "consultant phrasing"
+    },
+    {
+      "id": "mckinsey",
+      "category": "register",
+      "matchType": "literal",
+      "match": [
+        "three things to know",
+        "key takeaways"
+      ],
+      "note": "mckinsey-adjacent structure"
+    },
+    {
+      "id": "underscore",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "underscore",
+        "underscoring the importance of"
+      ],
+      "note": "pseudo-emphasis"
+    },
+    {
+      "id": "foster",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "foster"
+      ],
+      "replacement": "support",
+      "aggressive": true,
+      "note": "corporate-warm verb for support/help"
+    },
+    {
+      "id": "shed-light",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "shed light on"
+      ],
+      "note": "pseudo-illuminative cliche"
+    },
+    {
+      "id": "pave-the-way",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "pave the way"
+      ],
+      "note": "cliche"
+    },
+    {
+      "id": "pivotal",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "pivotal",
+        "plays a pivotal role"
+      ],
+      "note": "empty intensifier"
+    },
+    {
+      "id": "hype-adjectives",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "transformative",
+        "game-changing",
+        "groundbreaking",
+        "cutting-edge"
+      ],
+      "note": "empty hype adjectives"
+    },
+    {
+      "id": "corporate-adjectives",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "robust",
+        "seamless",
+        "intricate",
+        "comprehensive",
+        "holistic"
+      ],
+      "note": "look substantive, say nothing"
+    },
+    {
+      "id": "navigate",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "navigate"
+      ],
+      "aggressive": true,
+      "note": "figurative navigate tic"
+    },
+    {
+      "id": "realm",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "realm"
+      ],
+      "replacement": "area",
+      "note": "fancy filler for area/field"
+    },
+    {
+      "id": "landscape",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "landscape"
+      ],
+      "aggressive": true,
+      "note": "cosmic-framing emptiness"
+    },
+    {
+      "id": "testament",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "testament",
+        "is a testament to"
+      ],
+      "note": "overused"
+    },
+    {
+      "id": "delve",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "delve",
+        "dive into"
+      ],
+      "note": "canonical AI tic"
+    },
+    {
+      "id": "harness",
+      "category": "imported-vocab",
+      "matchType": "literal",
+      "match": [
+        "harness"
+      ],
+      "note": "pseudo-active corporate verb"
+    },
+    {
+      "id": "worth-noting",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "it's worth noting that",
+        "it's important to note that"
+      ],
+      "note": "throat-clearing"
+    },
+    {
+      "id": "when-it-comes-to",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "when it comes to"
+      ],
+      "note": "soft opener that delays the point"
+    },
+    {
+      "id": "at-its-core",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "at its core"
+      ],
+      "note": "pseudo-fundamental framing"
+    },
+    {
+      "id": "this-is-where",
+      "category": "imported-phrases",
+      "matchType": "regex",
+      "pattern": "this is where .+ comes in",
+      "note": "lecture-hall framing"
+    },
+    {
+      "id": "break-it-down",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "let's break it down"
+      ],
+      "note": "lecture-hall framing"
+    },
+    {
+      "id": "cannot-be-overstated",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "it cannot be overstated"
+      ],
+      "note": "overclaim"
+    },
+    {
+      "id": "summary-speak",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "reflecting a broader trend toward",
+        "marking a significant shift in"
+      ],
+      "note": "Claude summary-speak"
+    },
+    {
+      "id": "preamble-flattery",
+      "category": "imported-phrases",
+      "matchType": "literal",
+      "match": [
+        "great question",
+        "i love that you asked"
+      ],
+      "note": "preamble flattery"
+    },
+    {
+      "id": "horizontal-rule",
+      "category": "imported-structural",
+      "matchType": "regex",
+      "pattern": "^\\s*---\\s*$",
+      "note": "--- divider as section break; use H2 headers"
+    },
+    {
+      "id": "negative-parallelism",
+      "category": "imported-structural",
+      "matchType": "regex",
+      "pattern": "\\bnot just\\b.+\\b(it'?s|but)\\b",
+      "note": "the most-cited AI tell: 'not just X, it's Y'"
+    },
+    {
+      "id": "not-only-but",
+      "category": "imported-structural",
+      "matchType": "literal",
+      "match": [
+        "not only",
+        "but also"
+      ],
+      "note": "negative parallelism variant"
+    },
+    {
+      "id": "staccato-negation",
+      "category": "imported-structural",
+      "matchType": "regex",
+      "pattern": "\\bno .+\\. no .+\\. just\\b",
+      "note": "'No X. No Y. Just Z.' staccato negation"
+    },
+    {
+      "id": "bold-term-list",
+      "category": "imported-structural",
+      "matchType": "manual",
+      "note": "'Bold term: explanation' list pattern"
+    },
+    {
+      "id": "signposting",
+      "category": "imported-structural",
+      "matchType": "literal",
+      "match": [
+        "let's explore",
+        "now let's turn to",
+        "moving on to"
+      ],
+      "note": "signposting transitions"
+    },
+    {
+      "id": "restate-question",
+      "category": "imported-structural",
+      "matchType": "manual",
+      "note": "restating the question before answering it"
+    },
+    {
+      "id": "sweeping-opener",
+      "category": "imported-structural",
+      "matchType": "regex",
+      "pattern": "in today'?s .+(world|landscape|era)",
+      "note": "sweeping contextual opener"
+    }
+  ]
+}

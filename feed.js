@@ -1,0 +1,449 @@
+// FeedHacker — DOM layer. No chrome.* APIs, so it is unit-testable under jsdom.
+// Posts are found via LinkedIn's hidden <h2>Feed post</h2> heading (feed CSS is hashed).
+// Each enabled filter flags a post; a global mode decides whether matches are HIDDEN
+// (default) or are the ONLY things shown (isolate mode).
+(function (root) {
+  "use strict";
+
+  function getText(el) {
+    if (!el) return "";
+    var t = el.innerText;
+    if (t != null && t !== "") return t;
+    return el.textContent || "";
+  }
+
+  function isMarker(h) { return /^(feed post|promoted)/i.test((h.textContent || "").trim()); }
+
+  function leafWithText(el, re) {
+    var nodes = el.querySelectorAll("button, a, span, div");
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.children.length === 0 && re.test(getText(n).trim())) return true;
+    }
+    return false;
+  }
+
+  function isPromoted(el) { return leafWithText(el, /^promoted\b(?!\s+(?:to|as)\b)/i); } // "Promoted", "Promoted by X", "Promoted \u2022 X" (not "Promoted to/as ...")
+  function isNewsletterSignup(el) {
+    if (leafWithText(el, /^\+?\s*subscribe$/i)) return true;                       // Subscribe CTA
+    var labeled = el.querySelectorAll("[aria-label]");
+    for (var j = 0; j < labeled.length; j++) {
+      if (/^subscribe\b/i.test((labeled[j].getAttribute("aria-label") || "").trim())) return true;
+    }
+    return false;
+  }
+  function isHiring(el, t) {
+    t = t || getText(el);
+    if (/#hiring\b|\bis hiring\b|we['’]?re hiring|\bwe are hiring\b|\bnow hiring\b|\bhiring for\b|\bjoin (our|the|my) team\b|\bwe['’]?re looking to hire\b|\bopen role(s)?\b|\bopen position(s)?\b/i.test(t)) return true;
+    return leafWithText(el, /^view job$/i);                                        // job-card CTA
+  }
+  // "Surfaced by a reaction" header — not just likes: celebrates / loves / supports /
+  // reposted / follows / commented on, plus "finds this insightful/funny".
+  function isReactionReshare(el) {
+    var t = getText(el).replace(/\s+/g, " ").replace(/^(Feed post|Promoted)\s*/i, "").slice(0, 100);
+    return /\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b/i.test(t) ||
+           /\bfinds this \w+/i.test(t);
+  }
+
+  function markerCountWithin(el) {
+    var hs = el.querySelectorAll("h2"), n = 0;
+    for (var i = 0; i < hs.length; i++) if (isMarker(hs[i])) n++;
+    return n;
+  }
+  // Cache each marker's container: the walk is O(depth * h2) and a marker's container is
+  // stable, so we pay it once per marker (invalidate if the marker is detached). Cap 25 is
+  // headroom over LinkedIn's ~15-20-deep post nesting.
+  var boxCache = (typeof WeakMap !== "undefined") ? new WeakMap() : null;
+  function postContainerFor(marker) {
+    if (boxCache) { var hit = boxCache.get(marker); if (hit && hit.isConnected) return hit; }
+    var cur = marker, best = marker;
+    for (var i = 0; i < 25 && cur.parentElement; i++) {
+      var parent = cur.parentElement;
+      if (markerCountWithin(parent) > 1) { best = cur; break; }
+      cur = parent; best = cur;
+    }
+    if (boxCache) boxCache.set(marker, best);
+    return best;
+  }
+  function findPostContainers(doc) {
+    var hs = doc.querySelectorAll("h2"), out = [];
+    for (var i = 0; i < hs.length; i++) {
+      if (!isMarker(hs[i])) continue;
+      var c = postContainerFor(hs[i]);
+      if (out.indexOf(c) === -1) out.push(c);
+    }
+    return out;
+  }
+
+  // Actor name (best-effort): strip a leading "{X} celebrates/likes/… this" header,
+  // then take the name before the first separator. Falls back to a profile/company link.
+  // First actor link (document order) that actually has a name — skips the empty
+  // avatar link, and reads the clean company/person name instead of the header blob.
+  function actorLinkName(el) {
+    var links = el.querySelectorAll('a[href*="/in/"], a[href*="/company/"]');
+    for (var i = 0; i < links.length; i++) {
+      var txt = getText(links[i]).replace(/\s+/g, " ").trim();
+      txt = txt.replace(/\s+(Verified|Premium)\s+Profile\b.*$/i, "")   // "Ben Davis Premium Profile 3rd+ Ben Davis" -> "Ben Davis"
+               .replace(/\s*[•·].*$/, "")
+               .replace(/\s+(1st|2nd|3rd\+?)\b.*$/i, "")
+               .replace(/\s*\d[\d,]*\s*followers?.*/i, "").trim();
+      if (txt.length >= 2 && !/^(Promoted|Follow|Page)$/i.test(txt)) return txt.slice(0, 40);
+    }
+    return "";
+  }
+  // For reshares the author follows the "X <reaction> this" header (reactor's link
+  // comes first, so link-order would pick the reactor). NOTE: call while the post is
+  // still visible — innerText must carry the spaces this parse relies on.
+  function getActor(el) {
+    var raw = getText(el).replace(/\s+/g, " ").trim();
+    var head = raw.replace(/^(Feed post|Promoted)\s*/i, "").slice(0, 110);
+    var isReshare = /\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b|\bfinds this \w+/i.test(head);
+    if (isReshare) {
+      var t = raw.replace(/^(Feed post|Promoted)\s*/i, "");
+      t = t.replace(/^.{0,90}?\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b\s*/i, "");
+      t = t.replace(/^.{0,90}?\bfinds this \w+\s*/i, "");
+      t = t.replace(/^(Feed post|Promoted)\s*/i, "");
+      var nm = (t.split(/[•·]/)[0] || "").trim().replace(/\s+\d+\s*(?:s|m|h|d|w|mo|y)$/i, "").trim();
+      if (nm.length >= 2) return nm.slice(0, 40);
+    }
+    var byLink = actorLinkName(el);
+    if (byLink) return byLink;
+    var t2 = raw.replace(/^(Feed post|Promoted)\s*/i, "");
+    return (t2.split(/[•·]/)[0] || "").replace(/\s+(Verified|Premium)\s+Profile\b.*$/i, "").trim().slice(0, 40);
+  }
+
+  // Text-based post-type filters.
+  var CATEGORIES = [
+    { id: "anniversary", label: "Work Anniversary",
+      re: /(work anniversary|happy .{0,15}anniversary|celebrating .{0,6}\d+ years?|\b\d+\s+years?\s+(at|with|of service)\b|years of service|my .{0,10}anniversary)/i },
+    { id: "job", label: "New-Job Announcement",
+      re: /(starting a new (position|role|chapter|job)|is starting a new position|excited to (share|announce|join)[\s\S]{0,60}(joined|joining|new (role|position|job|chapter|adventure)|started)|happy to (share|announce)[\s\S]{0,60}(joined|new (role|position|job)|started)|thrilled to[\s\S]{0,40}(join|new (role|position))|i'?m (excited|happy|thrilled|pleased) to[\s\S]{0,50}(new (role|position|chapter)|joined|joining)|new beginnings|first day at my new|i('?ve| have) joined|delighted to join|new role at|joining .{0,30}as (a|an|the|their))/i },
+    { id: "cert", label: "Training & Certification",
+      re: /(certif(y|ied|icate|ication)|credential|professional certificate|milestone reached|officially completed|completed[\s\S]{0,30}(course|training|program|bootcamp|certificate|certification)|earned[\s\S]{0,25}(certificate|certification|badge|credential)|passed[\s\S]{0,15}(the )?(exam|certification)|added a new certification|just completed[\s\S]{0,20}(course|training|certif))/i }
+  ];
+
+  // Filter ids in display order. job/anniversary/cert are the text-regex CATEGORIES.
+  var FILTER_IDS = ["sloppy", "promoted", "newsletter", "hiring", "likes", "job", "anniversary", "cert"];
+  function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
+  function listActive(s, kind) {
+    var out = [];
+    for (var i = 0; i < FILTER_IDS.length; i++) if (s[kind + cap(FILTER_IDS[i])]) out.push(FILTER_IDS[i]);
+    return out;
+  }
+  function anyActive(s) { return listActive(s, "mute").length > 0 || listActive(s, "solo").length > 0; }
+
+  // Flags [{id,label,detail}] for the ACTIVE filter ids this post matches.
+  // Text of a post EXCLUDING its comments, so a claudism in a comment doesn't flag the
+  // post itself. Only clones when the post actually contains comments.
+  function findComposer(root) {   // the "Add a comment" box — present at load, unlike lazy comments
+    var labeled = root.querySelectorAll("[aria-label]");
+    for (var i = 0; i < labeled.length; i++) {
+      if (/creating comment|add a comment/i.test(labeled[i].getAttribute("aria-label") || "")) return labeled[i];
+    }
+    return null;
+  }
+  // The comment SECTION = the child of the post container that holds the composer (and,
+  // below it, all comments). Walk up from the composer until the parent is the post
+  // container (has the "Feed post" h2); the body is an EARLIER sibling, so it's safe.
+  function commentSectionFor(composer) {
+    var cur = composer, best = composer;
+    for (var i = 0; i < 14 && cur.parentElement; i++) {
+      var p = cur.parentElement, h = p.querySelectorAll("h2"), atPost = false;
+      for (var k = 0; k < h.length; k++) if (isMarker(h[k])) { atPost = true; break; }
+      if (atPost) { best = cur; break; }
+      cur = p; best = cur;
+    }
+    return best;
+  }
+  function getPostText(el) {
+    var comp0 = findComposer(el), hasComment = false;
+    if (!comp0) {
+      var lab = el.querySelectorAll("[aria-label]");
+      for (var i = 0; i < lab.length; i++) if (isCommentAnchor(lab[i])) { hasComment = true; break; }
+    }
+    if (!comp0 && !hasComment) return getText(el);   // no comment area at all
+    var clone = el.cloneNode(true);
+    var comp = findComposer(clone);
+    if (comp) {
+      var sec = commentSectionFor(comp);
+      if (sec && sec !== clone && sec.parentNode) {
+        while (sec.nextSibling) sec.parentNode.removeChild(sec.nextSibling); // remove section + anything after it
+        sec.parentNode.removeChild(sec);
+      }
+    }
+    var ck = clone.querySelectorAll('[componentkey^="comment-commentary"]');   // strip comments (preview + expanded)
+    for (var k = 0; k < ck.length; k++) {
+      var b = commentBlockFor(ck[k]);
+      if (b && b !== clone && b.parentNode) b.parentNode.removeChild(b);
+    }
+    var a2 = clone.querySelectorAll("[aria-label]");   // belt-and-suspenders: stray anchor-based comments
+    for (var j = 0; j < a2.length; j++) {
+      if (!isCommentAnchor(a2[j])) continue;
+      var cc = commentContainerFor(a2[j]);
+      if (cc && cc !== clone && cc.parentNode) cc.parentNode.removeChild(cc);
+    }
+    return getText(clone);
+  }
+
+  function matchedFlags(el, matchers, activeIds, text, aggressive) {
+    if (text == null) text = getPostText(el);   // exclude comment text from post scoring
+    if (!text.trim()) return [];
+    function on(id) { return activeIds.indexOf(id) !== -1; }
+    var flags = [];
+    if (on("sloppy") && matchers && matchers.length) {
+      var det = root.FeedHackerMatcher.findHitDetails(matchers, text, !!aggressive);
+      if (det.length) {
+        var phrases = [], seen = {};
+        for (var i = 0; i < det.length; i++) {
+          var d = det[i];
+          var lbl = d.id === "emoji" ? (d.text + " emojis") : (d.id === "em-dash" || d.text === "—") ? "em dash" : '"' + d.text + '"';
+          if (!seen[lbl]) { seen[lbl] = 1; phrases.push(lbl); }
+        }
+        flags.push({ id: "sloppy", label: "AI Slop", detail: phrases.slice(0, 5).join(", ") });
+      }
+    }
+    if (on("promoted") && isPromoted(el)) flags.push({ id: "promoted", label: "Promoted Post", detail: "" });
+    if (on("newsletter") && isNewsletterSignup(el)) flags.push({ id: "newsletter", label: "Newsletter Signup", detail: "" });
+    if (on("hiring") && isHiring(el, text)) flags.push({ id: "hiring", label: "Hiring", detail: "" });
+    if (on("likes") && isReactionReshare(el)) flags.push({ id: "likes", label: "Reaction Reshare", detail: "" });
+    for (var c = 0; c < CATEGORIES.length; c++) {
+      var catf = CATEGORIES[c];
+      if (on(catf.id) && catf.re.test(text)) flags.push({ id: catf.id, label: catf.label, detail: "" });
+    }
+    return flags;
+  }
+
+  function labelsText(flags) { return flags.map(function (f) { return f.label; }).join(", "); }
+  function collapsedText(el, flags, settings) {
+    if (!settings.nameNames) return labelsText(flags);
+    var name = el.dataset.feedhackerActor || getActor(el) || "Someone";
+    return name + " (" + labelsText(flags) + ")";   // name + category only
+  }
+  function explainerText(flags) {
+    return "Flagged: " + flags.map(function (f) {
+      return f.detail ? f.label + " (" + f.detail + ")" : f.label;
+    }).join(" • ");
+  }
+
+  function directChildStub(el) {
+    for (var i = 0; i < el.children.length; i++) {
+      var c = el.children[i];
+      if (c.classList && c.classList.contains("feedhacker-stub")) return c;
+    }
+    return null;
+  }
+  function clearEl(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  function renderCollapsed(doc, el, stub, flags, settings) {
+    clearEl(stub);
+    stub.className = "feedhacker-stub";
+    var label = doc.createElement("span");
+    label.className = "feedhacker-stub-label";
+    label.textContent = collapsedText(el, flags, settings);
+    var btn = doc.createElement("button");
+    btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Show anyway";
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      revealWithExplainer(doc, el, stub, flags, settings);
+    });
+    stub.appendChild(label); stub.appendChild(btn);
+  }
+  function revealWithExplainer(doc, el, stub, flags, settings) {
+    el.dataset.feedhackerReveal = "1";
+    delete el.dataset.feedhackerHidden;
+    el.classList.remove("feedhacker-hidden");
+    clearEl(stub);
+    stub.className = "feedhacker-stub feedhacker-explainer";
+    var why = doc.createElement("span");
+    why.className = "feedhacker-why";
+    why.textContent = explainerText(flags);
+    var btn = doc.createElement("button");
+    btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Hide again";
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      reHide(doc, el, stub, flags, settings);
+    });
+    stub.appendChild(why); stub.appendChild(btn);
+  }
+  function reHide(doc, el, stub, flags, settings) {
+    delete el.dataset.feedhackerReveal;
+    el.dataset.feedhackerHidden = "1";
+    el.classList.add("feedhacker-hidden");
+    renderCollapsed(doc, el, stub, flags, settings);
+  }
+
+  function collapse(doc, el, flags, settings) {
+    if (el.dataset.feedhackerReveal === "1") return;
+    el.dataset.feedhackerHidden = "1";
+    try { el.dataset.feedhackerReasons = JSON.stringify(flags); } catch (e) {}
+    if (settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
+    el.classList.add("feedhacker-hidden");
+    if (directChildStub(el)) return;
+    var stub = doc.createElement("div");
+    renderCollapsed(doc, el, stub, flags, settings);
+    el.insertBefore(stub, el.firstChild);
+  }
+
+  function consider(doc, el, matchers, settings) {
+    if (el.dataset.feedhackerReveal === "1") return null;
+    if (el.dataset.feedhackerHidden === "1") return null;
+    if (el.dataset.feedhackerScanned === "1") return null;   // judge each post ONCE — later comment/see-more mutations must not re-flag it
+    var text = getPostText(el);
+    if (!text.trim()) return null;                           // body not rendered yet — retried on a later scan
+    el.dataset.feedhackerScanned = "1";
+
+    var solos = listActive(settings, "solo");
+    var muted = listActive(settings, "mute");
+    if (!solos.length && !muted.length) return null;
+    // Solo wins: if anything is soloed, show ONLY soloed kinds and hide the rest.
+    var active = solos.length ? solos : muted;
+    var flags = matchedFlags(el, matchers, active, text, settings.aggressive);
+    if (settings.nameNames) el.dataset.feedhackerActor = getActor(el); // capture while visible
+    if (solos.length) {
+      if (flags.length) return null;                                  // soloed kind -> keep visible
+      collapse(doc, el, [{ label: "Filtered out", detail: "" }], settings);
+      return ["filtered"];
+    }
+    if (flags.length) { collapse(doc, el, flags, settings); return flags; } // muted kind -> hide
+    return null;
+  }
+
+  // --- Comments: AI-slop comment filtering ---
+  // Each comment carries a "..." menu with aria-label "View more options for {name}'s
+  // comment" — a stable per-comment anchor (hashed classes give nothing else).
+  function isCommentAnchor(el) {
+    return /^view more options for .+ comment/i.test((el.getAttribute("aria-label") || "").trim());
+  }
+  function commentContainerFor(anchor) {
+    function anchorCount(p) {
+      var e = p.querySelectorAll("[aria-label]"), n = 0;
+      for (var j = 0; j < e.length; j++) if (isCommentAnchor(e[j])) n++;
+      return n;
+    }
+    function hasPostMarker(p) {
+      var h = p.querySelectorAll("h2");
+      for (var j = 0; j < h.length; j++) if (isMarker(h[j])) return true;
+      return false;
+    }
+    function hasComposer(p) {   // the comment composer sits in the comment SECTION, not a single comment
+      var e = p.querySelectorAll("[aria-label]");
+      for (var j = 0; j < e.length; j++) if (/creating comment|add a comment/i.test(e[j].getAttribute("aria-label") || "")) return true;
+      return false;
+    }
+    var cur = anchor, best = anchor;
+    for (var i = 0; i < 10 && cur.parentElement; i++) {
+      var p = cur.parentElement;
+      // stop before the parent widens past a SINGLE comment (another comment, the post, the composer, or a big block)
+      if (anchorCount(p) > 1 || hasPostMarker(p) || hasComposer(p) || getText(p).length > 700) { best = cur; break; }
+      cur = p; best = cur;
+    }
+    return best;
+  }
+  // Each comment's text carries a stable componentkey="comment-commentary_<id>" —
+  // present on PREVIEW comments (shown before you expand) AND expanded ones, unlike the
+  // "..." menu anchor which only appears once a thread is opened. This is the primary
+  // per-comment signal; walk up from it to the comment block.
+  function commentBlockFor(el) {
+    function commentaryCount(p) { return p.querySelectorAll('[componentkey^="comment-commentary"]').length; }
+    function hasComposer(p) {
+      var e = p.querySelectorAll("[aria-label]");
+      for (var j = 0; j < e.length; j++) if (/creating comment|add a comment/i.test(e[j].getAttribute("aria-label") || "")) return true;
+      return false;
+    }
+    function hasPostMarker(p) {
+      var h = p.querySelectorAll("h2");
+      for (var j = 0; j < h.length; j++) if (isMarker(h[j])) return true;
+      return false;
+    }
+    var cur = el, best = el;
+    for (var i = 0; i < 12 && cur.parentElement; i++) {
+      var p = cur.parentElement;
+      if (commentaryCount(p) > 1 || hasComposer(p) || hasPostMarker(p)) break; // don't merge with other comments / composer / post
+      cur = p; best = cur;
+      // stop at the FULL comment (its avatar image + author link), not just the text column,
+      // so hiding removes the avatar too and doesn't leave it orphaned.
+      if (cur.querySelector("img") && cur.querySelector('a[href*="/in/"]')) break;
+    }
+    return best;
+  }
+  function findCommentContainers(doc) {
+    var out = [];
+    var coms = doc.querySelectorAll('[componentkey^="comment-commentary"]');   // primary
+    for (var i = 0; i < coms.length; i++) {
+      var b = commentBlockFor(coms[i]);
+      if (b && out.indexOf(b) === -1) out.push(b);
+    }
+    var labeled = doc.querySelectorAll("[aria-label]");                        // fallback: "..." anchor
+    for (var j = 0; j < labeled.length; j++) {
+      if (!isCommentAnchor(labeled[j])) continue;
+      var c = commentContainerFor(labeled[j]);
+      if (c && out.indexOf(c) === -1) out.push(c);
+    }
+    return out;
+  }
+  function scanComments(doc, matchers, settings) {
+    if (!settings.hideSlopComments || !matchers || !matchers.length) return 0;
+    var comments = findCommentContainers(doc), hidden = 0;
+    for (var i = 0; i < comments.length; i++) {
+      var el = comments[i];
+      if (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerHidden === "1") continue;
+      var raw = getText(el);
+      if (!raw.trim()) continue;
+      var len = raw.length;
+      if (el.dataset.feedhackerScanned === "1" && Number(el.dataset.feedhackerLen || 0) >= len) continue;
+      el.dataset.feedhackerScanned = "1"; el.dataset.feedhackerLen = String(len);
+      var det = root.FeedHackerMatcher.findHitDetails(matchers, raw, !!settings.aggressive);
+      if (!det.length) continue;
+      var phrases = [], seen = {};
+      for (var k = 0; k < det.length; k++) {
+        var d = det[k];
+        var lbl = d.id === "emoji" ? (d.text + " emojis") : (d.id === "em-dash" || d.text === "—") ? "em dash" : '"' + d.text + '"';
+        if (!seen[lbl]) { seen[lbl] = 1; phrases.push(lbl); }
+      }
+      if (settings.nameNames) el.dataset.feedhackerActor = getActor(el);
+      collapse(doc, el, [{ label: "AI Slop comment", detail: phrases.slice(0, 5).join(", ") }], settings);
+      hidden++;
+    }
+    return hidden;
+  }
+
+  function scan(doc, matchers, settings) {
+    var hidden = 0;
+    if (anyActive(settings)) {
+      var posts = findPostContainers(doc);
+      for (var i = 0; i < posts.length; i++) {
+        if (consider(doc, posts[i], matchers, settings)) hidden++;
+      }
+    }
+    hidden += scanComments(doc, matchers, settings);   // comment filter runs on its own
+    return hidden;
+  }
+
+  function reset(doc) {
+    var stubs = doc.querySelectorAll(".feedhacker-stub");
+    for (var i = 0; i < stubs.length; i++) stubs[i].remove();
+    var hid = doc.querySelectorAll(".feedhacker-hidden, .feedhacker-gone");
+    for (var j = 0; j < hid.length; j++) {
+      hid[j].classList.remove("feedhacker-hidden");
+      hid[j].classList.remove("feedhacker-gone");
+    }
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-len],[data-feedhacker-reasons]");
+    for (var k = 0; k < marked.length; k++) {
+      var el = marked[k];
+      delete el.dataset.feedhackerScanned; delete el.dataset.feedhackerLen;
+      delete el.dataset.feedhackerHidden; delete el.dataset.feedhackerReveal;
+      delete el.dataset.feedhackerReasons;
+      delete el.dataset.feedhackerActor;
+    }
+  }
+
+  var api = {
+    getText: getText, isMarker: isMarker, isPromoted: isPromoted,
+    isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare,
+    getActor: getActor, findPostContainers: findPostContainers,
+    CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
+    anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText
+  };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  root.FeedHackerFeed = api;
+})(typeof self !== "undefined" ? self : this);
