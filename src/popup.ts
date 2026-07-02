@@ -3,6 +3,7 @@
 // user clear errors or reset the learned AI-slop weights.
 (function () {
 "use strict";
+var byId = function (id) { return document.getElementById(id) as any; };
 var Filters = self.FeedHackerFilters;
 var Log = self.FeedHackerLog;
 var FILTERS = Filters.FILTERS;                 // [{id, key, label}]
@@ -10,7 +11,7 @@ var DISPLAY = Filters.DISPLAY_KEYS;
 var DEFAULTS = Filters.DEFAULTS;
 var WEIGHTS_KEY = "feedhacker:slopWeights";
 
-var box = document.getElementById("filters");
+var box = byId("filters");
 FILTERS.forEach(function (f) {
   var row = document.createElement("div"); row.className = "frow";
   var name = document.createElement("span"); name.className = "fname"; name.textContent = f.label;
@@ -31,9 +32,9 @@ function paint(b, on) {
 }
 
 // Master enable/disable — pauses all filtering without uninstalling.
-var enabledBox = document.getElementById("enabled");
-var masterEl = document.getElementById("master");
-var pausedNote = document.getElementById("paused-note");
+var enabledBox = byId("enabled");
+var masterEl = byId("master");
+var pausedNote = byId("paused-note");
 function paintMaster(on) {
   enabledBox.checked = !!on;
   masterEl.classList.toggle("off", !on);
@@ -47,17 +48,17 @@ enabledBox.addEventListener("change", function () {
 chrome.storage.sync.get(DEFAULTS, function (st) {
   paintMaster(st.enabled);
   document.querySelectorAll(".ms").forEach(function (b) { paint(b, st[b.dataset.key]); });
-  DISPLAY.forEach(function (id) { document.getElementById(id).checked = !!st[id]; });
+  DISPLAY.forEach(function (id) { byId(id).checked = !!st[id]; });
 });
 
-document.getElementById("open-options").addEventListener("click", function () {
+byId("open-options").addEventListener("click", function () {
   if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
 });
 
 // AI-slop sensitivity slider. Lower threshold = more aggressive hiding. Label the
 // extremes so the number means something.
-var slop = document.getElementById("slopThreshold");
-var slopVal = document.getElementById("slopThresholdVal");
+var slop = byId("slopThreshold");
+var slopVal = byId("slopThresholdVal");
 function slopLabel(v) {
   v = Number(v);
   var word = v <= 0.35 ? "aggressive" : v >= 0.65 ? "strict" : "balanced";
@@ -81,14 +82,14 @@ document.querySelectorAll(".ms").forEach(function (b) {
   });
 });
 DISPLAY.forEach(function (id) {
-  document.getElementById(id).addEventListener("change", function (e) {
+  byId(id).addEventListener("change", function (e) {
     var p = {}; p[id] = e.target.checked; chrome.storage.sync.set(p);
   });
 });
 
 // --- error log ------------------------------------------------------------
-var errBox = document.getElementById("errors");
-var errList = document.getElementById("err-list");
+var errBox = byId("errors");
+var errList = byId("err-list");
 function renderErrors(list) {
   list = list || [];
   errList.innerHTML = "";
@@ -105,7 +106,7 @@ function renderErrors(list) {
 chrome.storage.local.get([Log.STORAGE_KEY], function (o) {
   renderErrors(o && o[Log.STORAGE_KEY]);
 });
-document.getElementById("clear-errors").addEventListener("click", function () {
+byId("clear-errors").addEventListener("click", function () {
   var patch = {}; patch[Log.STORAGE_KEY] = [];
   chrome.storage.local.set(patch, function () {
     renderErrors([]);
@@ -114,9 +115,9 @@ document.getElementById("clear-errors").addEventListener("click", function () {
 });
 
 // --- reset learning -------------------------------------------------------
-document.getElementById("reset-learning").addEventListener("click", function () {
+byId("reset-learning").addEventListener("click", function () {
   chrome.storage.local.remove(WEIGHTS_KEY, function () {
-    var btn = document.getElementById("reset-learning");
+    var btn = byId("reset-learning");
     btn.textContent = "Learning reset ✓";
     setTimeout(function () { btn.textContent = "Reset AI-slop learning"; }, 1600);
   });

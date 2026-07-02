@@ -112,7 +112,7 @@
     if (!matchers || !matchers.length || !root.FeedHackerMatcher) return { value: 0, hits: [] };
     var det = root.FeedHackerMatcher.findHitDetails(matchers, text, !!aggressive);
     if (!det.length) return { value: 0, hits: [] };
-    var weight = 0, seen = {}, hits = [];
+    var weight = 0, seen: any = {}, hits: any[] = [];
     for (var i = 0; i < det.length; i++) {
       var d = det[i];
       if (seen[d.id]) continue;
@@ -168,7 +168,7 @@
   function score(features, weights) {
     weights = weights || defaultWeights();
     var z = (typeof weights.bias === "number" ? weights.bias : -1.6);
-    var contributions = [];
+    var contributions: any[] = [];
     for (var i = 0; i < FEATURE_IDS.length; i++) {
       var id = FEATURE_IDS[i];
       var v = features[id] || 0;

@@ -109,6 +109,10 @@ of the standard filters.
 
 ## Install
 
+See **[INSTALL.md](INSTALL.md)** for the full, step-by-step Chrome Extensions
+manager walkthrough (with managing/uninstalling and troubleshooting). Quick
+version below.
+
 ### Option A — Load unpacked (dev build, ~1 minute)
 
 1. Build the extension: `npm install && npm run build` (compiles the TypeScript
@@ -204,7 +208,9 @@ code instead of a synthetic scroll.
 
 TypeScript sources in `src/`, compiled with `tsc` to `build/` (no bundler — the
 UMD/IIFE modules load as plain scripts). Shared types live in
-`types/feedhacker.d.ts`.
+`types/feedhacker.d.ts`. Type-checking runs in `strict` mode (including
+`strictNullChecks`); `noImplicitAny` is left off because the code intentionally
+uses dynamic property access in a few places.
 
 ```bash
 npm install     # dev-only: typescript + jsdom

@@ -20,7 +20,7 @@
   var authorStore = {};
 
   var settings = Object.assign({}, DEFAULTS);
-  var matchers = [];
+  var matchers: any[] = [];
   var ready = false;
   var F = self.FeedHackerFeed;
 
@@ -58,7 +58,7 @@
   } catch (e) {}
 
   // --- learned slop weights ------------------------------------------------
-  var weightsDirty = false, weightsSaveTimer = null;
+  var weightsDirty = false, weightsSaveTimer: any = null;
   function saveWeightsSoon() {
     if (weightsSaveTimer) return;
     weightsSaveTimer = setTimeout(function () {
@@ -85,7 +85,7 @@
   settings.onFeedback = onFeedback;
 
   // --- per-author memory -------------------------------------------------
-  var authorsDirty = false, authorsTimer = null;
+  var authorsDirty = false, authorsTimer: any = null;
   function saveAuthorsSoon() {
     if (authorsTimer) return;
     authorsTimer = setTimeout(function () {
@@ -122,7 +122,7 @@
   settings.onAuthorOutcome = onAuthorOutcome;
 
   // --- history (daily hidden counts) -------------------------------------
-  var histPending = null, histTimer = null;
+  var histPending: any = null, histTimer: any = null;
   function todayKey() { try { return new Date().toISOString().slice(0, 10); } catch (e) { return "?"; } }
   function onHidden(flags) {
     try {
@@ -149,7 +149,7 @@
         }
         h[day] = d;
         var days = Object.keys(h).sort();
-        while (days.length > 30) { delete h[days.shift()]; }   // keep ~30 days
+        while (days.length > 30) { var old = days.shift(); if (old) delete h[old]; }   // keep ~30 days
         var patch = {}; patch[HISTORY_KEY] = h; chrome.storage.local.set(patch);
       } catch (e) { logError(e, "history"); }
     });
@@ -173,7 +173,7 @@
   // Activity stats for the options page: how many posts are hidden right now, broken
   // down by filter. Snapshot of the current page (one storage key), throttled so a
   // chatty feed doesn't hammer storage.
-  var statsTimer = null;
+  var statsTimer: any = null;
   function recordActivitySoon() {
     if (statsTimer) return;
     statsTimer = setTimeout(function () {

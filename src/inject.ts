@@ -10,10 +10,10 @@
   var Native = window.IntersectionObserver;
   if (!Native) return;
 
-  var records = [];
+  var records: any[] = [];
   function Patched(cb, opts) {
     var inst = new Native(cb, opts);
-    var rec = { cb: cb, inst: inst, targets: [] };
+    var rec: any = { cb: cb, inst: inst, targets: [] };
     records.push(rec);
     var obs = inst.observe.bind(inst);
     inst.observe = function (el) { if (rec.targets.indexOf(el) === -1) rec.targets.push(el); return obs(el); };

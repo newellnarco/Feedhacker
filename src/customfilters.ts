@@ -17,7 +17,7 @@
       ? safeRe(words.map(function (w) { return "(?<![a-z0-9])" + esc(w) + "(?![a-z0-9])"; }).join("|"))
       : null;
 
-    var regexList = [];
+    var regexList: any[] = [];
     clean(custom.regexes).forEach(function (src) {
       var re = safeRe(src);
       if (re) regexList.push({ src: src, re: re });
@@ -38,7 +38,7 @@
   // Returns flags [{type, value}] for each custom rule that matched. info is the
   // author {name, url} so company/author rules can match the poster, not just text.
   function match(text, info, compiled) {
-    var flags = [];
+    var flags: any[] = [];
     text = text || "";
     if (!compiled) return flags;
     if (compiled.wordRe) { compiled.wordRe.lastIndex = 0; var m = compiled.wordRe.exec(text); if (m) flags.push({ type: "word", value: m[0] }); }

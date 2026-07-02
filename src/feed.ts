@@ -69,7 +69,7 @@
     return best;
   }
   function findPostContainers(doc) {
-    var hs = doc.querySelectorAll("h2"), out = [];
+    var hs = doc.querySelectorAll("h2"), out: any[] = [];
     for (var i = 0; i < hs.length; i++) {
       if (!isMarker(hs[i])) continue;
       var c = postContainerFor(hs[i]);
@@ -157,7 +157,7 @@
   var FILTER_IDS = Filters ? Filters.FILTER_IDS : ["sloppy", "promoted", "newsletter", "hiring", "likes", "job", "anniversary", "cert"];
   var cap = Filters ? Filters.cap : function (x) { return x.charAt(0).toUpperCase() + x.slice(1); };
   function listActive(s, kind) {
-    var out = [];
+    var out: any[] = [];
     for (var i = 0; i < FILTER_IDS.length; i++) if (s[kind + cap(FILTER_IDS[i])]) out.push(FILTER_IDS[i]);
     return out;
   }
@@ -245,7 +245,7 @@
     if (text == null) text = getPostText(el);   // exclude comment text from post scoring
     if (!text.trim()) return [];
     function on(id) { return activeIds.indexOf(id) !== -1; }
-    var flags = [];
+    var flags: any[] = [];
     if (on("sloppy")) {
       var sf = scoreSloppy(text, matchers, settings);
       if (sf) flags.push(sf);
@@ -282,7 +282,7 @@
     var isSloppy = false;
     for (var i = 0; i < flags.length; i++) if (flags[i].id === "sloppy") { isSloppy = true; break; }
     if (!isSloppy) return;
-    var feats = null;
+    var feats: any = null;
     try { if (el.dataset.feedhackerFeatures) feats = JSON.parse(el.dataset.feedhackerFeatures); } catch (e) {}
     if (feats) settings.onFeedback(feats, label);
   }
@@ -420,7 +420,7 @@
 
     // Author memory: an allowlisted author is always shown; a muted author is always
     // hidden — both independent of the per-kind toggles.
-    var A = root.FeedHackerAuthors, info = null;
+    var A = root.FeedHackerAuthors, info: any = null;
     function author() { if (info === null) info = authorInfo(el); return info; }
     if (A && settings.authors) {
       var key = A.keyFor(author());
@@ -439,7 +439,7 @@
     var muted = listActive(settings, "mute");
     // Custom user filters act as always-on hides (only in mute mode; solo is already
     // restrictive). Computed here so they count toward "should we hide this".
-    var custom = [];
+    var custom: any[] = [];
     if (!solos.length && root.FeedHackerCustom && settings.customCompiled) {
       custom = root.FeedHackerCustom.match(text, author(), settings.customCompiled);
     }
@@ -522,7 +522,7 @@
     return best;
   }
   function findCommentContainers(doc) {
-    var out = [];
+    var out: any[] = [];
     var coms = doc.querySelectorAll('[componentkey^="comment-commentary"]');   // primary
     for (var i = 0; i < coms.length; i++) {
       var b = commentBlockFor(coms[i]);

@@ -5,12 +5,12 @@
   function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
   function buildMatchers(data) {
-    var out = [];
+    var out: any[] = [];
     var entries = (data && data.entries) || [];
     for (var i = 0; i < entries.length; i++) {
       var e = entries[i];
       if (!e || e.matchType === "manual") continue;
-      var re = null;
+      var re: any = null;
       if (e.matchType === "regex" && e.pattern) {
         try { re = new RegExp(e.pattern, "iu"); }
         catch (a) { try { re = new RegExp(e.pattern, "i"); } catch (b) { re = null; } }
@@ -34,7 +34,7 @@
   }
 
   function findHits(matchers, text, aggressive) {
-    var hits = [];
+    var hits: any[] = [];
     if (!text) return hits;
     for (var i = 0; i < matchers.length; i++) {
       var m = matchers[i];
@@ -52,7 +52,7 @@
   // Like findHits, but returns [{id, text}] with the actual matched substring,
   // used to explain to the user WHY a post was flagged.
   function findHitDetails(matchers, text, aggressive) {
-    var out = [];
+    var out: any[] = [];
     if (!text) return out;
     for (var i = 0; i < matchers.length; i++) {
       var m = matchers[i];

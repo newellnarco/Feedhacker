@@ -73,7 +73,7 @@
 
   // Sorted list for the options "top sources" view.
   function topSources(store, n) {
-    var s = ensure(store), out = [];
+    var s = ensure(store), out: any[] = [];
     for (var k in s.scores) if (Object.prototype.hasOwnProperty.call(s.scores, k)) {
       var sc = s.scores[k];
       out.push({ key: k, name: sc.name || k, hidden: sc.hidden || 0, shown: sc.shown || 0 });
