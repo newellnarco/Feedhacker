@@ -1,0 +1,162 @@
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert");
+const { feed, filters, scorer, makeDoc } = require("./helper");
+
+function baseSettings(over) {
+  return Object.assign({}, filters.DEFAULTS, { slopWeights: scorer.defaultWeights() }, over || {});
+}
+
+const SLOP_BODY =
+  "Let’s be honest: this isn’t just a job — it’s a calling. The result? Growth, clarity, and momentum. " +
+  "Here’s what nobody tells you: it’s not about titles. It’s about impact. 🚀 Dream big. 💡 Work hard. 🔥 Stay humble.";
+
+function feedHtml(bodyHtml) {
+  return `<!doctype html><html><body><main><div id="feed">${bodyHtml}</div></main></body></html>`;
+}
+function post(inner) { return `<div class="post"><h2>Feed post</h2>${inner}</div>`; }
+
+test("findPostContainers finds each post via its 'Feed post' marker", () => {
+  const doc = makeDoc(feedHtml(post("<div>one</div>") + post("<div>two</div>")));
+  const posts = feed.findPostContainers(doc);
+  assert.strictEqual(posts.length, 2);
+  assert.ok(posts[0].classList.contains("post"));
+});
+
+test("isPromoted detects a 'Promoted' leaf label", () => {
+  const doc = makeDoc(feedHtml(post("<span>Promoted</span><div>buy things</div>")));
+  const el = feed.findPostContainers(doc)[0];
+  assert.strictEqual(feed.isPromoted(el), true);
+});
+
+test("isPromoted ignores 'Promoted to VP' text", () => {
+  const doc = makeDoc(feedHtml(post("<span>Promoted to VP of Sales</span>")));
+  const el = feed.findPostContainers(doc)[0];
+  assert.strictEqual(feed.isPromoted(el), false);
+});
+
+test("isHiring detects hiring language", () => {
+  const doc = makeDoc(feedHtml(post("<div>We are hiring for a backend role. #hiring</div>")));
+  const el = feed.findPostContainers(doc)[0];
+  assert.strictEqual(feed.isHiring(el), true);
+});
+
+test("isReactionReshare detects a reaction header", () => {
+  // Trailing punctuation stands in for the whitespace real browsers' innerText adds
+  // between block elements (jsdom's textContent glues them together).
+  const doc = makeDoc(feedHtml(post("<div>Jane Doe likes this.</div><div>original content</div>")));
+  const el = feed.findPostContainers(doc)[0];
+  assert.strictEqual(feed.isReactionReshare(el), true);
+});
+
+test("consider() collapses an AI-slop post and leaves a stub + features", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const flags = feed.consider(doc, el, [], baseSettings());
+  assert.ok(flags && flags.length, "should return flags");
+  assert.strictEqual(flags[0].id, "sloppy");
+  assert.ok(el.classList.contains("feedhacker-hidden"));
+  assert.ok(el.querySelector(".feedhacker-stub"), "stub inserted");
+  assert.ok(el.dataset.feedhackerFeatures, "features stashed for learning");
+});
+
+test("consider() leaves a normal human post visible", () => {
+  const doc = makeDoc(feedHtml(post("<div>Fixed a bug this morning, tests pass, shipping later.</div>")));
+  const el = feed.findPostContainers(doc)[0];
+  assert.strictEqual(feed.consider(doc, el, [], baseSettings()), null);
+  assert.ok(!el.classList.contains("feedhacker-hidden"));
+});
+
+test("solo mode hides everything except the soloed kind", () => {
+  const doc = makeDoc(feedHtml(
+    post("<span>Promoted</span><div>an ad</div>") +
+    post("<div>just a normal human update about my weekend</div>")
+  ));
+  const [ad, normal] = feed.findPostContainers(doc);
+  const settings = baseSettings({ muteSloppy: false, soloPromoted: true });
+  assert.strictEqual(feed.consider(doc, ad, [], settings), null, "promoted kept visible");
+  const r = feed.consider(doc, normal, [], settings);
+  assert.deepStrictEqual(r, ["filtered"]);
+  assert.ok(normal.classList.contains("feedhacker-hidden"));
+});
+
+test("hideCompletely removes the post with no stub", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ hideCompletely: true }));
+  assert.ok(el.classList.contains("feedhacker-gone"));
+  assert.strictEqual(el.querySelector(".feedhacker-stub"), null);
+});
+
+test("Show anyway teaches a false positive; Hide again confirms", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const seen = [];
+  const settings = baseSettings({ onFeedback: (feats, label) => seen.push(label) });
+  feed.consider(doc, el, [], settings);
+
+  const showBtn = el.querySelector(".feedhacker-stub button.feedhacker-show");
+  assert.ok(showBtn);
+  showBtn.click();                     // "Show anyway" -> false positive (0)
+  assert.deepStrictEqual(seen, [0]);
+  assert.ok(el.dataset.feedhackerReveal === "1");
+
+  const hideBtn = el.querySelector(".feedhacker-stub button.feedhacker-show");
+  assert.ok(hideBtn);
+  hideBtn.click();                     // "Hide again" -> confirmed (1)
+  assert.deepStrictEqual(seen, [0, 1]);
+});
+
+test("reset() reveals everything and clears FeedHacker state", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());
+  assert.ok(el.classList.contains("feedhacker-hidden"));
+  feed.reset(doc);
+  assert.ok(!el.classList.contains("feedhacker-hidden"));
+  assert.strictEqual(el.dataset.feedhackerHidden, undefined);
+  assert.strictEqual(el.dataset.feedhackerFeatures, undefined);
+  assert.strictEqual(doc.querySelector(".feedhacker-stub"), null);
+});
+
+test("scanComments collapses an AI-slop comment", () => {
+  const comment =
+    `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
+    `<div componentkey="comment-commentary_1">${SLOP_BODY}</div></div>`;
+  const doc = makeDoc(feedHtml(post(`<div>normal body</div>${comment}`)));
+  const hidden = feed.scanComments(doc, [], baseSettings({ hideSlopComments: true }));
+  assert.strictEqual(hidden, 1);
+  assert.ok(doc.querySelector(".comment").classList.contains("feedhacker-hidden"));
+});
+
+test("scanComments is a no-op when the toggle is off", () => {
+  const comment =
+    `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
+    `<div componentkey="comment-commentary_1">${SLOP_BODY}</div></div>`;
+  const doc = makeDoc(feedHtml(post(`<div>body</div>${comment}`)));
+  assert.strictEqual(feed.scanComments(doc, [], baseSettings({ hideSlopComments: false })), 0);
+});
+
+test("isOwnNode recognizes FeedHacker's own DOM", () => {
+  const doc = makeDoc("<!doctype html><body></body>");
+  const stub = doc.createElement("div"); stub.className = "feedhacker-stub";
+  const other = doc.createElement("div"); other.className = "post";
+  assert.strictEqual(feed.isOwnNode(stub), true);
+  assert.strictEqual(feed.isOwnNode(other), false);
+});
+
+test("mutationsRelevant only fires for real added elements", () => {
+  const doc = makeDoc("<!doctype html><body></body>");
+  const real = doc.createElement("div");
+  const own = doc.createElement("div"); own.className = "feedhacker-stub";
+  assert.strictEqual(feed.mutationsRelevant([{ type: "childList", addedNodes: [real] }]), true);
+  assert.strictEqual(feed.mutationsRelevant([{ type: "childList", addedNodes: [own] }]), false);
+  assert.strictEqual(feed.mutationsRelevant([{ type: "attributes", addedNodes: [] }]), false);
+  assert.strictEqual(feed.mutationsRelevant([]), false);
+});
+
+test("anyActive reflects mute/solo toggles", () => {
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false })), false);
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: true })), true);
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, soloHiring: true })), true);
+});

@@ -21,7 +21,7 @@
         try { re = new RegExp(alts.join("|"), "i"); } catch (c) { re = null; }
       }
       if (re) {
-        var m = { id: e.id, aggressive: !!e.aggressive, re: re };
+        var m = { id: e.id, aggressive: !!e.aggressive, category: e.category || "", re: re };
         if (e.minCount && e.matchType === "regex" && e.pattern) {
           m.minCount = e.minCount;
           try { m.reCount = new RegExp(e.pattern, "giu"); }
@@ -59,12 +59,12 @@
       if (m.aggressive && !aggressive) continue;
       if (m.minCount) {
         var cnt = m.reCount ? (text.match(m.reCount) || []).length : 0;
-        if (cnt >= m.minCount) out.push({ id: m.id, text: String(cnt) });
+        if (cnt >= m.minCount) out.push({ id: m.id, text: String(cnt), category: m.category, aggressive: m.aggressive });
         continue;
       }
       m.re.lastIndex = 0;
       var mm = m.re.exec(text);
-      if (mm) out.push({ id: m.id, text: mm[0] });
+      if (mm) out.push({ id: m.id, text: mm[0], category: m.category, aggressive: m.aggressive });
     }
     return out;
   }

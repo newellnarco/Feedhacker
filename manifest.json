@@ -22,7 +22,10 @@
         "https://www.linkedin.com/*"
       ],
       "js": [
+        "filters.js",
+        "logger.js",
         "matcher.js",
+        "scorer.js",
         "feed.js",
         "content.js"
       ],

@@ -1,21 +1,22 @@
 "use strict";
-var FILTERS = [
-  ["Sloppy", "AI slop"], ["Promoted", "Promoted posts"], ["Newsletter", "Newsletter signups"],
-  ["Hiring", "Hiring posts"], ["Likes", "Reaction reshares"], ["Job", "New-job announcements"],
-  ["Anniversary", "Work anniversaries"], ["Cert", "Training & certification"]
-];
-var DISPLAY = ["nameNames", "hideCompletely", "hideSlopComments"];
-var DEFAULTS = { nameNames: false, hideCompletely: false, hideSlopComments: false, aggressive: false };
-FILTERS.forEach(function (f) { DEFAULTS["mute" + f[0]] = (f[0] === "Sloppy"); DEFAULTS["solo" + f[0]] = false; });
+// Popup UI — the Mute/Solo mixer. Filter list + defaults come from the shared
+// filters.js (single source of truth). Also surfaces the error log and lets the
+// user clear errors or reset the learned AI-slop weights.
+var Filters = self.FeedHackerFilters;
+var Log = self.FeedHackerLog;
+var FILTERS = Filters.FILTERS;                 // [{id, key, label}]
+var DISPLAY = Filters.DISPLAY_KEYS;
+var DEFAULTS = Filters.DEFAULTS;
+var WEIGHTS_KEY = "feedhacker:slopWeights";
 
 var box = document.getElementById("filters");
 FILTERS.forEach(function (f) {
   var row = document.createElement("div"); row.className = "frow";
-  var name = document.createElement("span"); name.className = "fname"; name.textContent = f[1];
-  var m = document.createElement("button"); m.className = "ms"; m.textContent = "M"; m.dataset.key = "mute" + f[0]; m.dataset.kind = "m";
-  var s = document.createElement("button"); s.className = "ms"; s.textContent = "S"; s.dataset.key = "solo" + f[0]; s.dataset.kind = "s";
+  var name = document.createElement("span"); name.className = "fname"; name.textContent = f.label;
+  var m = document.createElement("button"); m.className = "ms"; m.textContent = "M"; m.dataset.key = "mute" + f.key; m.dataset.kind = "m";
+  var s = document.createElement("button"); s.className = "ms"; s.textContent = "S"; s.dataset.key = "solo" + f.key; s.dataset.kind = "s";
   row.appendChild(name); row.appendChild(m); row.appendChild(s);
-  if (f[0] === "Sloppy") {   // Aggressive toggle sits next to AI slop
+  if (f.id === "sloppy") {   // Aggressive toggle sits next to AI slop
     var a = document.createElement("button"); a.className = "ms"; a.textContent = "A"; a.dataset.key = "aggressive"; a.dataset.kind = "a";
     a.title = "Aggressive: also apply broader, higher-false-positive AI-slop rules";
     row.appendChild(a);
@@ -46,5 +47,41 @@ document.querySelectorAll(".ms").forEach(function (b) {
 DISPLAY.forEach(function (id) {
   document.getElementById(id).addEventListener("change", function (e) {
     var p = {}; p[id] = e.target.checked; chrome.storage.sync.set(p);
+  });
+});
+
+// --- error log ------------------------------------------------------------
+var errBox = document.getElementById("errors");
+var errList = document.getElementById("err-list");
+function renderErrors(list) {
+  list = list || [];
+  errList.innerHTML = "";
+  if (!list.length) { errBox.classList.remove("show"); return; }
+  errBox.classList.add("show");
+  // newest first
+  for (var i = list.length - 1; i >= 0; i--) {
+    var li = document.createElement("li");
+    li.className = "err-item";
+    li.textContent = Log.format(list[i]);
+    errList.appendChild(li);
+  }
+}
+chrome.storage.local.get([Log.STORAGE_KEY], function (o) {
+  renderErrors(o && o[Log.STORAGE_KEY]);
+});
+document.getElementById("clear-errors").addEventListener("click", function () {
+  var patch = {}; patch[Log.STORAGE_KEY] = [];
+  chrome.storage.local.set(patch, function () {
+    renderErrors([]);
+    try { chrome.runtime.sendMessage({ type: "feedhacker:clearError" }); } catch (e) {}
+  });
+});
+
+// --- reset learning -------------------------------------------------------
+document.getElementById("reset-learning").addEventListener("click", function () {
+  chrome.storage.local.remove(WEIGHTS_KEY, function () {
+    var btn = document.getElementById("reset-learning");
+    btn.textContent = "Learning reset ✓";
+    setTimeout(function () { btn.textContent = "Reset AI-slop learning"; }, 1600);
   });
 });

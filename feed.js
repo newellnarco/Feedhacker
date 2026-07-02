@@ -122,9 +122,12 @@
       re: /(certif(y|ied|icate|ication)|credential|professional certificate|milestone reached|officially completed|completed[\s\S]{0,30}(course|training|program|bootcamp|certificate|certification)|earned[\s\S]{0,25}(certificate|certification|badge|credential)|passed[\s\S]{0,15}(the )?(exam|certification)|added a new certification|just completed[\s\S]{0,20}(course|training|certif))/i }
   ];
 
-  // Filter ids in display order. job/anniversary/cert are the text-regex CATEGORIES.
-  var FILTER_IDS = ["sloppy", "promoted", "newsletter", "hiring", "likes", "job", "anniversary", "cert"];
-  function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
+  // Filter ids in display order come from the shared source of truth (filters.js).
+  // Fallback list keeps feed.js usable if loaded standalone (defensive; tests load
+  // filters.js first). job/anniversary/cert are the text-regex CATEGORIES above.
+  var Filters = root.FeedHackerFilters;
+  var FILTER_IDS = Filters ? Filters.FILTER_IDS : ["sloppy", "promoted", "newsletter", "hiring", "likes", "job", "anniversary", "cert"];
+  var cap = Filters ? Filters.cap : function (x) { return x.charAt(0).toUpperCase() + x.slice(1); };
   function listActive(s, kind) {
     var out = [];
     for (var i = 0; i < FILTER_IDS.length; i++) if (s[kind + cap(FILTER_IDS[i])]) out.push(FILTER_IDS[i]);
@@ -185,22 +188,29 @@
     return getText(clone);
   }
 
-  function matchedFlags(el, matchers, activeIds, text, aggressive) {
+  // Score post text for AI slop via the structural-tell scorer (scorer.js), which
+  // combines the phrase banlist with layout/rhetoric tells through learned weights.
+  // Returns a flag with .features attached so the glue layer can learn from feedback.
+  function scoreSloppy(text, matchers, settings) {
+    if (!root.FeedHackerScorer) return null;
+    var res = root.FeedHackerScorer.classify(
+      text,
+      settings && settings.slopWeights,
+      { matchers: matchers, aggressive: settings && settings.aggressive }
+    );
+    if (!res.isSlop) return null;
+    return { id: "sloppy", label: "AI Slop", detail: res.detail, features: res.features };
+  }
+
+  function matchedFlags(el, matchers, activeIds, text, settings) {
+    settings = settings || {};
     if (text == null) text = getPostText(el);   // exclude comment text from post scoring
     if (!text.trim()) return [];
     function on(id) { return activeIds.indexOf(id) !== -1; }
     var flags = [];
-    if (on("sloppy") && matchers && matchers.length) {
-      var det = root.FeedHackerMatcher.findHitDetails(matchers, text, !!aggressive);
-      if (det.length) {
-        var phrases = [], seen = {};
-        for (var i = 0; i < det.length; i++) {
-          var d = det[i];
-          var lbl = d.id === "emoji" ? (d.text + " emojis") : (d.id === "em-dash" || d.text === "—") ? "em dash" : '"' + d.text + '"';
-          if (!seen[lbl]) { seen[lbl] = 1; phrases.push(lbl); }
-        }
-        flags.push({ id: "sloppy", label: "AI Slop", detail: phrases.slice(0, 5).join(", ") });
-      }
+    if (on("sloppy")) {
+      var sf = scoreSloppy(text, matchers, settings);
+      if (sf) flags.push(sf);
     }
     if (on("promoted") && isPromoted(el)) flags.push({ id: "promoted", label: "Promoted Post", detail: "" });
     if (on("newsletter") && isNewsletterSignup(el)) flags.push({ id: "newsletter", label: "Newsletter Signup", detail: "" });
@@ -223,6 +233,20 @@
     return "Flagged: " + flags.map(function (f) {
       return f.detail ? f.label + " (" + f.detail + ")" : f.label;
     }).join(" • ");
+  }
+
+  // Report a correction to the learner. "Show anyway" on a slop-flagged post is a
+  // false positive (label 0); "Hide again" after revealing confirms it (label 1).
+  // Only fires for the sloppy filter (the only learned one) and when features were
+  // stashed. settings.onFeedback is supplied by the glue layer (chrome-aware).
+  function emitFeedback(el, flags, settings, label) {
+    if (!settings || typeof settings.onFeedback !== "function") return;
+    var isSloppy = false;
+    for (var i = 0; i < flags.length; i++) if (flags[i].id === "sloppy") { isSloppy = true; break; }
+    if (!isSloppy) return;
+    var feats = null;
+    try { if (el.dataset.feedhackerFeatures) feats = JSON.parse(el.dataset.feedhackerFeatures); } catch (e) {}
+    if (feats) settings.onFeedback(feats, label);
   }
 
   function directChildStub(el) {
@@ -249,6 +273,7 @@
     stub.appendChild(label); stub.appendChild(btn);
   }
   function revealWithExplainer(doc, el, stub, flags, settings) {
+    emitFeedback(el, flags, settings, 0);   // user disagreed: false positive
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;
     el.classList.remove("feedhacker-hidden");
@@ -266,6 +291,7 @@
     stub.appendChild(why); stub.appendChild(btn);
   }
   function reHide(doc, el, stub, flags, settings) {
+    emitFeedback(el, flags, settings, 1);   // user re-hid: confirmed slop
     delete el.dataset.feedhackerReveal;
     el.dataset.feedhackerHidden = "1";
     el.classList.add("feedhacker-hidden");
@@ -275,7 +301,15 @@
   function collapse(doc, el, flags, settings) {
     if (el.dataset.feedhackerReveal === "1") return;
     el.dataset.feedhackerHidden = "1";
-    try { el.dataset.feedhackerReasons = JSON.stringify(flags); } catch (e) {}
+    try {
+      // Persist a slim reason list; stash scorer features separately (they drive
+      // the learning update when the user later corrects this post).
+      var slim = flags.map(function (f) { return { id: f.id, label: f.label, detail: f.detail }; });
+      el.dataset.feedhackerReasons = JSON.stringify(slim);
+      for (var fi = 0; fi < flags.length; fi++) {
+        if (flags[fi].features) { el.dataset.feedhackerFeatures = JSON.stringify(flags[fi].features); break; }
+      }
+    } catch (e) {}
     if (settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
     el.classList.add("feedhacker-hidden");
     if (directChildStub(el)) return;
@@ -297,7 +331,7 @@
     if (!solos.length && !muted.length) return null;
     // Solo wins: if anything is soloed, show ONLY soloed kinds and hide the rest.
     var active = solos.length ? solos : muted;
-    var flags = matchedFlags(el, matchers, active, text, settings.aggressive);
+    var flags = matchedFlags(el, matchers, active, text, settings);
     if (settings.nameNames) el.dataset.feedhackerActor = getActor(el); // capture while visible
     if (solos.length) {
       if (flags.length) return null;                                  // soloed kind -> keep visible
@@ -382,7 +416,9 @@
     return out;
   }
   function scanComments(doc, matchers, settings) {
-    if (!settings.hideSlopComments || !matchers || !matchers.length) return 0;
+    // The scorer works from structural tells even with no banlist, so we only need
+    // the toggle + a scorer (matchers are an optional extra signal).
+    if (!settings.hideSlopComments || !root.FeedHackerScorer) return 0;
     var comments = findCommentContainers(doc), hidden = 0;
     for (var i = 0; i < comments.length; i++) {
       var el = comments[i];
@@ -392,16 +428,11 @@
       var len = raw.length;
       if (el.dataset.feedhackerScanned === "1" && Number(el.dataset.feedhackerLen || 0) >= len) continue;
       el.dataset.feedhackerScanned = "1"; el.dataset.feedhackerLen = String(len);
-      var det = root.FeedHackerMatcher.findHitDetails(matchers, raw, !!settings.aggressive);
-      if (!det.length) continue;
-      var phrases = [], seen = {};
-      for (var k = 0; k < det.length; k++) {
-        var d = det[k];
-        var lbl = d.id === "emoji" ? (d.text + " emojis") : (d.id === "em-dash" || d.text === "—") ? "em dash" : '"' + d.text + '"';
-        if (!seen[lbl]) { seen[lbl] = 1; phrases.push(lbl); }
-      }
+      if (!root.FeedHackerScorer) continue;
+      var res = root.FeedHackerScorer.classify(raw, settings.slopWeights, { matchers: matchers, aggressive: !!settings.aggressive });
+      if (!res.isSlop) continue;
       if (settings.nameNames) el.dataset.feedhackerActor = getActor(el);
-      collapse(doc, el, [{ label: "AI Slop comment", detail: phrases.slice(0, 5).join(", ") }], settings);
+      collapse(doc, el, [{ id: "sloppy", label: "AI Slop comment", detail: res.detail, features: res.features }], settings);
       hidden++;
     }
     return hidden;
@@ -419,6 +450,32 @@
     return hidden;
   }
 
+  // --- performance: mutation triage ---
+  // Our own DOM (stubs, the load-more bar) mutates the feed too; the observer must
+  // not treat that as new content to rescan. Pure so it can be unit-tested.
+  function isOwnNode(n) {
+    if (!n || n.nodeType !== 1) return false;
+    if (n.id === "feedhacker-loadmore") return true;
+    return !!(n.classList && (n.classList.contains("feedhacker-stub") ||
+      n.classList.contains("feedhacker-explainer") ||
+      n.classList.contains("feedhacker-loadmore")));
+  }
+  // True only if a mutation batch added at least one real (non-ours) element. Lets
+  // the glue skip a full-document rescan on the common no-op / self-inflicted batch.
+  function mutationsRelevant(records) {
+    if (!records) return false;
+    for (var i = 0; i < records.length; i++) {
+      var r = records[i];
+      if (!r || r.type !== "childList") continue;
+      var added = r.addedNodes || [];
+      for (var j = 0; j < added.length; j++) {
+        var n = added[j];
+        if (n && n.nodeType === 1 && !isOwnNode(n)) return true;
+      }
+    }
+    return false;
+  }
+
   function reset(doc) {
     var stubs = doc.querySelectorAll(".feedhacker-stub");
     for (var i = 0; i < stubs.length; i++) stubs[i].remove();
@@ -427,13 +484,14 @@
       hid[j].classList.remove("feedhacker-hidden");
       hid[j].classList.remove("feedhacker-gone");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-len],[data-feedhacker-reasons]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       delete el.dataset.feedhackerScanned; delete el.dataset.feedhackerLen;
       delete el.dataset.feedhackerHidden; delete el.dataset.feedhackerReveal;
       delete el.dataset.feedhackerReasons;
       delete el.dataset.feedhackerActor;
+      delete el.dataset.feedhackerFeatures;
     }
   }
 
@@ -442,7 +500,8 @@
     isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare,
     getActor: getActor, findPostContainers: findPostContainers,
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
-    anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText
+    anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
+    isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerFeed = api;

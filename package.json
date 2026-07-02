@@ -1,0 +1,12 @@
+{
+  "name": "feedhacker",
+  "version": "0.1.0",
+  "description": "Mute the noise in your LinkedIn feed — AI slop, promoted posts, and more.",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}
