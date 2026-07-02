@@ -21,7 +21,7 @@
         try { re = new RegExp(alts.join("|"), "i"); } catch (c) { re = null; }
       }
       if (re) {
-        var m = { id: e.id, aggressive: !!e.aggressive, category: e.category || "", re: re };
+        var m: any = { id: e.id, aggressive: !!e.aggressive, category: e.category || "", re: re };
         if (e.minCount && e.matchType === "regex" && e.pattern) {
           m.minCount = e.minCount;
           try { m.reCount = new RegExp(e.pattern, "giu"); }

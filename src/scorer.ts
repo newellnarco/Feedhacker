@@ -147,7 +147,7 @@
   // Extract every feature value from text. opts: {matchers, aggressive}.
   function extractFeatures(text, opts) {
     opts = opts || {};
-    var out = {};
+    var out: any = {};
     if (!text || !text.trim()) {
       for (var f = 0; f < FEATURE_IDS.length; f++) out[FEATURE_IDS[f]] = 0;
       out._hits = [];
@@ -208,7 +208,7 @@
     lr = typeof lr === "number" ? lr : 0.3;
     var s = score(features, weights);
     var err = (label ? 1 : 0) - s.prob;
-    var next = {};
+    var next: any = {};
     for (var k in weights) if (Object.prototype.hasOwnProperty.call(weights, k)) next[k] = weights[k];
     next.bias = clampW((typeof next.bias === "number" ? next.bias : -1.6) + lr * err);
     for (var i = 0; i < FEATURE_IDS.length; i++) {

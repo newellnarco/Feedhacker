@@ -1,7 +1,8 @@
-"use strict";
 // Popup UI — the Mute/Solo mixer. Filter list + defaults come from the shared
 // filters.js (single source of truth). Also surfaces the error log and lets the
 // user clear errors or reset the learned AI-slop weights.
+(function () {
+"use strict";
 var Filters = self.FeedHackerFilters;
 var Log = self.FeedHackerLog;
 var FILTERS = Filters.FILTERS;                 // [{id, key, label}]
@@ -120,3 +121,4 @@ document.getElementById("reset-learning").addEventListener("click", function () 
     setTimeout(function () { btn.textContent = "Reset AI-slop learning"; }, 1600);
   });
 });
+})();

@@ -1,6 +1,7 @@
-"use strict";
 // FeedHacker options page — properties, activity, and diagnostics. Read-only views
 // over chrome.storage plus a master enable toggle and log/learning controls.
+(function () {
+"use strict";
 var Filters = self.FeedHackerFilters;
 var Log = self.FeedHackerLog;
 var Authors = self.FeedHackerAuthors;
@@ -287,7 +288,7 @@ document.getElementById("import-file").addEventListener("change", function (e) {
   var reader = new FileReader();
   reader.onload = function () {
     try {
-      var w = JSON.parse(reader.result);
+      var w = JSON.parse(String(reader.result));
       if (!w || typeof w !== "object" || typeof w.bias !== "number") throw new Error("not a FeedHacker model");
       var patch = {}; patch[WEIGHTS_KEY] = w;
       chrome.storage.local.set(patch, function () { status.textContent = "Imported ✓"; });
@@ -310,3 +311,4 @@ chrome.storage.onChanged.addListener(function (changes, area) {
 
 renderProps();
 loadAll();
+})();

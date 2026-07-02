@@ -29,7 +29,7 @@
   }
   Patched.prototype = Native.prototype;
   try { Object.defineProperty(window, "IntersectionObserver", { value: Patched, writable: true, configurable: true }); }
-  catch (e) { try { window.IntersectionObserver = Patched; } catch (e2) { return; } }
+  catch (e) { try { (window as any).IntersectionObserver = Patched; } catch (e2) { return; } }
 
   function entry(t) {
     var r;

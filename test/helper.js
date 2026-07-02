@@ -5,14 +5,15 @@
 // they'd share `window` in the browser.
 global.self = global;
 
-const filters = require("../filters.js");
-const logger = require("../logger.js");
-const selectors = require("../selectors.js");
-const matcher = require("../matcher.js");
-const scorer = require("../scorer.js");
-const authors = require("../authors.js");
-const customfilters = require("../customfilters.js");
-const feed = require("../feed.js");
+// Tests run against the compiled output in build/ (see `pretest` -> tsc).
+const filters = require("../build/filters.js");
+const logger = require("../build/logger.js");
+const selectors = require("../build/selectors.js");
+const matcher = require("../build/matcher.js");
+const scorer = require("../build/scorer.js");
+const authors = require("../build/authors.js");
+const customfilters = require("../build/customfilters.js");
+const feed = require("../build/feed.js");
 
 const { JSDOM } = require("jsdom");
 

@@ -29,7 +29,7 @@
 
   // Build the full DEFAULTS object used by chrome.storage.get everywhere.
   function buildDefaults() {
-    var d = {};
+    var d: any = {};
     for (var i = 0; i < FILTERS.length; i++) {
       var f = FILTERS[i];
       d["mute" + f.key] = !!f.defaultMute;

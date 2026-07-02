@@ -320,7 +320,7 @@
 
   // Debounced + idle scan. Coalesces mutation bursts into one scan and runs it when
   // the browser is idle, so a chatty feed doesn't cause layout thrash.
-  var ric = self.requestIdleCallback || function (cb) { return setTimeout(function () { cb({ didTimeout: true }); }, 0); };
+  var ric: any = self.requestIdleCallback || function (cb: any) { return setTimeout(function () { cb({ didTimeout: true }); }, 0); };
   var pending = false;
   function schedule() {
     if (pending) return;

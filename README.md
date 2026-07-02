@@ -111,12 +111,13 @@ of the standard filters.
 
 ### Option A — Load unpacked (dev build, ~1 minute)
 
-1. Get the folder: unzip `feedhacker-0.1.0.zip`, or clone this repo and run
-   `npm run build` (produces `dist/feedhacker/` and `dist/feedhacker-0.1.0.zip`).
+1. Build the extension: `npm install && npm run build` (compiles the TypeScript
+   and produces `dist/feedhacker/` plus `dist/feedhacker-0.1.0.zip`). Or unzip a
+   prebuilt `feedhacker-0.1.0.zip`.
 2. Open `chrome://extensions` (paste it into the address bar).
 3. Turn on **Developer mode** (top‑right toggle).
-4. Click **Load unpacked** and select the extension folder (the one containing
-   `manifest.json`) — either the repo root or `dist/feedhacker/`.
+4. Click **Load unpacked** and select **`dist/feedhacker/`** (the folder
+   containing `manifest.json`).
 5. Click the toolbar puzzle icon 🧩 and **pin** FeedHacker.
 6. Open your LinkedIn feed, click the FeedHacker icon, and mute the noise.
 
@@ -141,7 +142,9 @@ Manifest V3 (Chrome, Edge, Brave, Arc, …).
 ## How it works
 
 FeedHacker separates *pure logic* (unit‑testable, no browser APIs) from the
-*glue* that touches Chrome and the live DOM.
+*glue* that touches Chrome and the live DOM. Sources are **TypeScript** in
+`src/*.ts`, compiled to `build/` and packaged into `dist/feedhacker/`. The list
+below uses the compiled `.js` names (each has a matching `src/*.ts`).
 
 ```
 manifest.json     MV3 config: content scripts, permissions, popup, options, worker
@@ -199,17 +202,22 @@ code instead of a synthetic scroll.
 
 ## Development
 
-No bundler, no framework — plain files loaded unpacked.
+TypeScript sources in `src/`, compiled with `tsc` to `build/` (no bundler — the
+UMD/IIFE modules load as plain scripts). Shared types live in
+`types/feedhacker.d.ts`.
 
 ```bash
-npm install     # dev-only: jsdom, for the DOM tests
-npm test        # node:test + jsdom, 71 tests over the pure modules
-npm run build   # package dist/feedhacker/ and a versioned zip
+npm install     # dev-only: typescript + jsdom
+npm run typecheck   # tsc --noEmit
+npm test        # compiles (pretest), then node:test + jsdom, 71 tests
+npm run build   # tsc + package dist/feedhacker/ and a versioned zip
 ```
 
-- Pure logic (`filters.js`, `selectors.js`, `matcher.js`, `scorer.js`,
-  `authors.js`, `customfilters.js`, `feed.js`, `logger.js`) exports a CommonJS
-  API so it runs under jsdom without a browser.
-- CI (`.github/workflows/ci.yml`) runs the test suite on every push and PR.
+- Pure logic (`filters`, `selectors`, `matcher`, `scorer`, `authors`,
+  `customfilters`, `feed`, `logger`) attaches a typed API to the shared global
+  and to `module.exports`, so it runs under jsdom (the tests require the compiled
+  `build/*.js`).
+- CI (`.github/workflows/ci.yml`) runs typecheck, the test suite, and the build
+  on every push and PR.
 - To update the slop banlist, edit `claudisms.json` (see the `matchTypes` and
   `fields` docs inside the file).

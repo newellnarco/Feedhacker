@@ -2,6 +2,7 @@
 // posts currently hidden, or a red "!" when the content script has logged an
 // error (so a silent failure is visible). Open the popup to see the timestamped
 // cause. Error state persists per tab until cleared from the popup.
+(function () {
 "use strict";
 
 var errored = {};   // tabId -> true while an unacknowledged error exists
@@ -55,3 +56,4 @@ chrome.runtime.onMessage.addListener(function (msg, sender) {
 chrome.tabs && chrome.tabs.onRemoved && chrome.tabs.onRemoved.addListener(function (tabId) {
   delete errored[tabId];
 });
+})();
