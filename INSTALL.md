@@ -4,6 +4,11 @@ FeedHacker is an unsigned developer build, so it installs through Chrome's
 **Extensions** manager rather than the Web Store. Takes about a minute. The same
 steps work in any Chromium browser (Chrome, Edge, Brave, Arc, Opera).
 
+> **Windows shortcut:** double-click `installer\install.bat` to automate the
+> build and set up daily auto-updates from GitHub — you only do the one-time
+> "Load unpacked" click. See [installer/README.md](installer/README.md). The rest
+> of this page is the manual walkthrough.
+
 ## 1. Get the extension folder
 
 You need the built `feedhacker` folder (the one containing `manifest.json`).

@@ -41,6 +41,31 @@ cp -r icons "$STAGE/icons"
 
 ( cd "$STAGE" && zip -qr "../feedhacker-$VERSION.zip" . )
 
+# --- Windows one-click bundle: extension + installer scripts + docs ---
+WIN_STAGE="$OUT/feedhacker-win"
+WIN_ZIP="$OUT/feedhacker-$VERSION-win.zip"
+rm -rf "$WIN_STAGE" "$WIN_ZIP"
+mkdir -p "$WIN_STAGE"
+cp -r "$STAGE" "$WIN_STAGE/feedhacker"        # prebuilt unpacked extension (for immediate manual load)
+cp -r installer/windows "$WIN_STAGE/installer"
+cp INSTALL.md "$WIN_STAGE/" 2>/dev/null || true
+cat > "$WIN_STAGE/START-HERE.txt" <<'TXT'
+FeedHacker for Windows
+======================
+Double-click  installer\install.bat  to install and set up auto-updates.
+(No admin needed. It builds from GitHub, then guides a one-time "Load unpacked".)
+
+Other scripts:
+  installer\update.bat     - pull latest from GitHub and rebuild now
+  installer\uninstall.bat  - remove the auto-update task (add nothing to keep files)
+
+Prefer manual install? Open chrome://extensions, enable Developer mode,
+click "Load unpacked", and pick the  feedhacker  folder in this archive.
+See INSTALL.md for details.
+TXT
+( cd "$WIN_STAGE" && zip -qr "../feedhacker-$VERSION-win.zip" . )
+
 echo "Built:"
-echo "  unpacked: $STAGE/   (Load unpacked)"
-echo "  zip:      $ZIP"
+echo "  unpacked:  $STAGE/   (Load unpacked)"
+echo "  zip:       $ZIP"
+echo "  windows:   $WIN_ZIP   (extension + installer)"
