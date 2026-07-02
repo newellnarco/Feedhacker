@@ -136,68 +136,6 @@
     url = url.split("?")[0];
     return { name: getActor(el), url: url };
   }
-  // LinkedIn's per-post overflow ("...") menu trigger — the thing that opens the
-  // menu carrying "Unfollow {name}". aria-label is the only stable hook (classes hashed).
-  function findUnfollowControl(el) {
-    var b = el.querySelectorAll("button[aria-label]");
-    for (var i = 0; i < b.length; i++) {
-      if (/control menu|more actions|open menu|open control/i.test(b[i].getAttribute("aria-label") || "")) return b[i];
-    }
-    return null;
-  }
-  // The "Unfollow" item inside the opened menu. Skips FeedHacker's own stub button
-  // (also labeled "Unfollow") so we don't click ourselves.
-  function findUnfollowItem(doc) {
-    var nodes = doc.querySelectorAll('[role="menuitem"], button, a, div, span, li');
-    for (var i = 0; i < nodes.length; i++) {
-      var n = nodes[i];
-      if (n.closest && n.closest(".feedhacker-stub")) continue;   // not our own control
-      if (n.children.length > 2) continue;                        // prefer leafy menu items
-      if (/^unfollow\b/i.test(getText(n).replace(/\s+/g, " ").trim())) return n;
-    }
-    return null;
-  }
-  // Dispatch a realistic pointer/mouse sequence rather than a bare .click(), so the
-  // interaction matches what a human cursor produces. (Synthetic events can't set
-  // isTrusted, but firing the full sequence with bubbling is closer to real input
-  // than a lone programmatic click.)
-  function humanClick(node) {
-    if (!node) return;
-    var view = (node.ownerDocument && node.ownerDocument.defaultView) || (typeof window !== "undefined" ? window : null);
-    var seq = ["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"];
-    for (var i = 0; i < seq.length; i++) {
-      var type = seq[i], ev = null;
-      try {
-        if (view && (type.indexOf("pointer") === 0) && view.PointerEvent) ev = new view.PointerEvent(type, { bubbles: true, cancelable: true, view: view });
-        else if (view && view.MouseEvent) ev = new view.MouseEvent(type, { bubbles: true, cancelable: true, view: view });
-      } catch (e) { ev = null; }
-      if (ev) { try { node.dispatchEvent(ev); } catch (e2) {} }
-      else { try { node.click(); } catch (e3) {} break; }   // last-resort fallback
-    }
-  }
-  // Anti-automation posture: this ONLY runs from a real user click (never in bulk, on
-  // a timer, or during scans), fires at most one action at a time, uses realistic
-  // events, and jitters its timing so it doesn't look like a scripted burst. It drives
-  // LinkedIn's OWN menu — the same action the user would take by hand.
-  var unfollowBusy = false;
-  function rand(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
-  function attemptUnfollow(doc, el, cb) {
-    if (unfollowBusy) { if (cb) cb(false); return false; }
-    var ctrl = findUnfollowControl(el);
-    if (!ctrl) { if (cb) cb(false); return false; }
-    unfollowBusy = true;
-    function done(ok) { unfollowBusy = false; if (cb) cb(ok); }
-    humanClick(ctrl);                         // open the menu (in-gesture)
-    var tries = 0;
-    (function look() {
-      var item = findUnfollowItem(doc);
-      if (item) { humanClick(item); done(true); return; }   // click Unfollow (sync path stays in-gesture)
-      if (tries++ < 8) { setTimeout(look, rand(120, 320)); return; }   // jittered, human-like
-      try { humanClick(ctrl); } catch (e) {}   // give up: close the menu we opened
-      done(false);
-    })();
-    return true;
-  }
 
   // Text-based post-type filters.
   var CATEGORIES = [
@@ -345,31 +283,20 @@
   }
   function clearEl(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 
-  // Author controls on the stub: an "Unfollow" button (drives LinkedIn's own menu)
-  // and a "Profile ↗" quick-link (open the profile to block/report manually — kept
-  // manual on purpose, so FeedHacker never automates a block). Posts only, not comments.
+  // Author control on the stub: a "Profile ↗" quick-link that opens the author's
+  // profile in a new tab, where the user can unfollow/block/report in LinkedIn's own
+  // UI. FeedHacker never automates those actions. Posts only, not comments.
   function appendAuthorActions(doc, el, stub) {
     if (markerCountWithin(el) < 1) return;          // comments have no post marker; skip
     var info = authorInfo(el);
     if (!info.url) return;
-    var unf = doc.createElement("button");
-    unf.type = "button"; unf.className = "feedhacker-unfollow"; unf.textContent = "Unfollow";
-    unf.title = info.name ? "Unfollow " + info.name : "Unfollow author";
-    unf.addEventListener("click", function (ev) {
-      ev.preventDefault(); ev.stopPropagation();
-      unf.disabled = true; unf.textContent = "Unfollowing…";
-      attemptUnfollow(doc, el, function (ok) {
-        unf.textContent = ok ? "Unfollowed ✓" : "Use Profile ↗";
-        if (!ok) unf.disabled = false;
-      });
-    });
     var prof = doc.createElement("a");
     prof.className = "feedhacker-profile"; prof.href = info.url;
     prof.target = "_blank"; prof.rel = "noopener noreferrer";
     prof.textContent = "Profile ↗";
-    prof.title = "Open profile (to block, report, etc.)";
+    prof.title = info.name ? "Open " + info.name + "'s profile (unfollow/block there)" : "Open profile (unfollow/block there)";
     prof.addEventListener("click", function (ev) { ev.stopPropagation(); });
-    stub.appendChild(unf); stub.appendChild(prof);
+    stub.appendChild(prof);
   }
 
   function renderCollapsed(doc, el, stub, flags, settings) {
@@ -618,8 +545,7 @@
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
-    authorInfo: authorInfo, actorAnchor: actorAnchor, findUnfollowControl: findUnfollowControl,
-    findUnfollowItem: findUnfollowItem, attemptUnfollow: attemptUnfollow, humanClick: humanClick
+    authorInfo: authorInfo, actorAnchor: actorAnchor
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerFeed = api;

@@ -163,19 +163,19 @@ test("authorInfo extracts name and normalized profile URL", () => {
   assert.ok(/jane doe/i.test(info.name));
 });
 
-test("slop stub shows Unfollow + Profile link for a post author", () => {
+test("slop stub shows a Profile link for a post author (no unfollow automation)", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
   feed.consider(doc, el, [], baseSettings());
   const stub = el.querySelector(".feedhacker-stub");
-  assert.ok(stub.querySelector(".feedhacker-unfollow"), "unfollow button present");
   const prof = stub.querySelector("a.feedhacker-profile");
   assert.ok(prof, "profile link present");
   assert.strictEqual(prof.getAttribute("target"), "_blank");
   assert.ok(/\/in\/jane$/.test(prof.getAttribute("href")));
+  assert.strictEqual(stub.querySelector(".feedhacker-unfollow"), null, "no unfollow button");
 });
 
-test("comment stubs get no Unfollow/Profile controls", () => {
+test("comment stubs get no author controls", () => {
   const comment =
     `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
     `<div componentkey="comment-commentary_1">${SLOP_BODY}</div></div>`;
@@ -183,46 +183,13 @@ test("comment stubs get no Unfollow/Profile controls", () => {
   feed.scanComments(doc, [], baseSettings({ hideSlopComments: true }));
   const stub = doc.querySelector(".comment .feedhacker-stub");
   assert.ok(stub, "comment stub exists");
-  assert.strictEqual(stub.querySelector(".feedhacker-unfollow"), null);
+  assert.strictEqual(stub.querySelector("a.feedhacker-profile"), null);
 });
 
-test("findUnfollowControl locates the post menu by aria-label", () => {
-  const doc = makeDoc(feedHtml(post(`<button aria-label="Open control menu">...</button>`)));
-  const el = feed.findPostContainers(doc)[0];
-  assert.ok(feed.findUnfollowControl(el));
-});
-
-test("findUnfollowItem finds the menu item and skips our own stub button", () => {
-  const doc = makeDoc(
-    `<!doctype html><body>` +
-    `<div class="feedhacker-stub"><button class="feedhacker-unfollow">Unfollow</button></div>` +
-    `<div role="menuitem">Unfollow Jane Doe</div></body>`
-  );
-  const item = feed.findUnfollowItem(doc);
-  assert.ok(item);
-  assert.strictEqual(item.getAttribute("role"), "menuitem");
-});
-
-test("attemptUnfollow opens the menu and clicks Unfollow (user-gesture path)", () => {
-  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane</a><button aria-label="Open control menu">...</button>`)));
-  const mi = doc.createElement("div");
-  mi.setAttribute("role", "menuitem"); mi.textContent = "Unfollow Jane";
-  let clicked = false;
-  mi.addEventListener("click", () => { clicked = true; });
-  doc.body.appendChild(mi);
-  const el = feed.findPostContainers(doc)[0];
-  let result = null;
-  feed.attemptUnfollow(doc, el, (ok) => { result = ok; });
-  assert.strictEqual(result, true);
-  assert.strictEqual(clicked, true);
-});
-
-test("attemptUnfollow reports failure when there is no menu control", () => {
-  const doc = makeDoc(feedHtml(post(`<div>no menu here</div>`)));
-  const el = feed.findPostContainers(doc)[0];
-  let result = null;
-  feed.attemptUnfollow(doc, el, (ok) => { result = ok; });
-  assert.strictEqual(result, false);
+test("no unfollow automation is exposed by the API", () => {
+  assert.strictEqual(feed.attemptUnfollow, undefined);
+  assert.strictEqual(feed.findUnfollowItem, undefined);
+  assert.strictEqual(feed.humanClick, undefined);
 });
 
 test("anyActive reflects mute/solo toggles", () => {

@@ -58,15 +58,11 @@ options page.
 
 ### Author actions
 
-Each hidden **post** stub carries two author controls:
-
-- **Unfollow** — drives LinkedIn's *own* post menu to unfollow the author. It
-  only ever runs from your click (never in bulk, on a timer, or during scans),
-  acts one at a time, and uses realistic, jittered pointer/mouse input so it reads
-  as a normal human action rather than automation.
-- **Profile ↗** — opens the author's profile in a new tab, where you can block
-  or report manually. Blocking is left manual on purpose — FeedHacker never
-  automates it — which keeps you clear of automation‑detection risk.
+Each hidden **post** stub carries a **Profile ↗** link that opens the author's
+profile in a new tab. From there you can **unfollow, block, or report** in
+LinkedIn's own UI. FeedHacker deliberately does *not* automate unfollow/block —
+those actions stay entirely manual, which keeps you clear of any
+automation‑detection risk.
 
 ### Extra options
 
