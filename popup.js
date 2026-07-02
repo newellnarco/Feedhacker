@@ -29,9 +29,28 @@ function paint(b, on) {
   b.classList.toggle(cls, !!on);
 }
 
+// Master enable/disable — pauses all filtering without uninstalling.
+var enabledBox = document.getElementById("enabled");
+var masterEl = document.getElementById("master");
+var pausedNote = document.getElementById("paused-note");
+function paintMaster(on) {
+  enabledBox.checked = !!on;
+  masterEl.classList.toggle("off", !on);
+  pausedNote.classList.toggle("show", !on);
+}
+enabledBox.addEventListener("change", function () {
+  chrome.storage.sync.set({ enabled: enabledBox.checked });
+  paintMaster(enabledBox.checked);
+});
+
 chrome.storage.sync.get(DEFAULTS, function (st) {
+  paintMaster(st.enabled);
   document.querySelectorAll(".ms").forEach(function (b) { paint(b, st[b.dataset.key]); });
   DISPLAY.forEach(function (id) { document.getElementById(id).checked = !!st[id]; });
+});
+
+document.getElementById("open-options").addEventListener("click", function () {
+  if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
 });
 
 document.querySelectorAll(".ms").forEach(function (b) {

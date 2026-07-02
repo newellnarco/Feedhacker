@@ -4,7 +4,8 @@
   "description": "Mute the noise in your LinkedIn feed — AI slop, promoted posts, and more.",
   "private": true,
   "scripts": {
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "build": "bash scripts/build.sh"
   },
   "devDependencies": {
     "jsdom": "^24.1.0"

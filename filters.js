@@ -37,6 +37,7 @@
     }
     for (var j = 0; j < DISPLAY_KEYS.length; j++) d[DISPLAY_KEYS[j]] = false;
     d.aggressive = false;
+    d.enabled = true;   // master on/off; pause without uninstalling
     return d;
   }
   var DEFAULTS = buildDefaults();

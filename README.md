@@ -14,14 +14,14 @@ your LinkedIn home feed — driven by a per‑filter **Mute / Solo** mixer.
 
 FeedHacker watches your LinkedIn **home feed** (`linkedin.com/feed/`) and, for
 each post, decides whether it matches one of your enabled filters. Matches are
-collapsed to a small grey stub ("AI Slop • *matched phrase*") with a **Show
-anyway** button, or removed entirely if you prefer.
+collapsed to a small grey stub ("AI Slop • *why*") with a **Show anyway** button,
+or removed entirely if you prefer.
 
 ### Filters
 
 | Filter | What it catches |
 | --- | --- |
-| **AI slop** | Posts containing tell‑tale AI phrasing, drawn from a ~100‑entry banlist (`claudisms.json`) of words, phrases, and structural tics. Includes an **Aggressive** mode for broader, higher‑false‑positive rules. |
+| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. Includes an **Aggressive** mode for broader, higher‑false‑positive rules. |
 | **Promoted posts** | Sponsored/"Promoted" posts. |
 | **Newsletter signups** | Newsletter subscribe funnels. |
 | **Hiring posts** | "We're hiring", `#hiring`, "view job" cards, etc. |
@@ -34,107 +34,144 @@ Each filter has two independent toggles:
 
 - **M (Mute)** — hide posts of this kind.
 - **S (Solo)** — show *only* posts of soloed kinds and hide everything else.
-  Solo wins over mute: if anything is soloed, the feed is filtered down to just
-  those kinds.
+  Solo wins over mute.
+
+### AI‑slop scoring that learns
+
+Rather than hiding a post the moment a single banned word appears, the AI‑slop
+filter **scores** each post across a set of independent structural "tells" that
+AI‑written LinkedIn prose leans on, and flags only when the combined evidence
+crosses a threshold. Tells include:
+
+- em‑dash density, "not X, but Y" framing, rule‑of‑three cadence,
+- rhetorical fragments ("The result?"), emoji/bullet "listicle" layout,
+- formal connectives, formula openers ("Here's the thing…"),
+- unusually uniform sentence length, and
+- the curated phrase banlist (`claudisms.json`) as **one weighted signal** among
+  many (curated hits count more than common‑word ones).
+
+It **learns** from you: clicking **Show anyway** on a flagged post teaches a
+false positive; clicking **Hide again** after revealing confirms it. Each
+correction nudges the model's weights (a one‑step online logistic update) stored
+locally, so accuracy improves over time. Reset it any time from the popup or
+options page.
 
 ### Extra options
 
+- **Enable / disable** — a master switch in the popup pauses all filtering
+  without uninstalling.
 - **Name names** — stub shows *who* posted plus the category.
-- **Hide Hidden Content** — remove matched posts entirely instead of leaving a
-  placeholder stub.
+- **Hide Hidden Content** — remove matched posts entirely (no placeholder).
 - **Hide AI‑slop comments** — also collapse AI‑slop comments under posts.
-- **Toolbar badge** — shows how many posts are currently hidden on the page.
+- **Toolbar badge** — shows how many posts are hidden on the page, or a red `!`
+  if something errored.
+- **Options page** — properties/details, per‑filter activity, and the error log
+  (open it from the popup's "Details & activity" link).
 - **"Load more posts"** — a grafted button that drives LinkedIn's own
   infinite‑scroll loader so a batch that's entirely filtered doesn't dead‑end
   your feed.
 
 ---
 
-## Install (Chrome / unsigned dev build)
+## Install
 
-This is an unsigned developer build — installing takes about a minute.
+### Option A — Load unpacked (dev build, ~1 minute)
 
-1. Unzip `feedhacker-0.1.0.zip` (or clone this repo).
+1. Get the folder: unzip `feedhacker-0.1.0.zip`, or clone this repo and run
+   `npm run build` (produces `dist/feedhacker/` and `dist/feedhacker-0.1.0.zip`).
 2. Open `chrome://extensions` (paste it into the address bar).
 3. Turn on **Developer mode** (top‑right toggle).
-4. Click **Load unpacked** and select the unzipped `feedhacker` folder (the one
-   containing `manifest.json`).
+4. Click **Load unpacked** and select the extension folder (the one containing
+   `manifest.json`) — either the repo root or `dist/feedhacker/`.
 5. Click the toolbar puzzle icon 🧩 and **pin** FeedHacker.
 6. Open your LinkedIn feed, click the FeedHacker icon, and mute the noise.
 
-Works in any Chromium‑based browser that supports Manifest V3 (Chrome, Edge,
-Brave, Arc, etc.).
+### Option B — Build a zip to share
+
+```bash
+npm run build     # → dist/feedhacker-<version>.zip
+```
+
+Unzip it and follow steps 2–6 above. Works in any Chromium‑based browser with
+Manifest V3 (Chrome, Edge, Brave, Arc, …).
+
+### Enable, disable, or uninstall
+
+- **Pause:** toggle **Enabled** off in the popup (keeps it installed).
+- **Disable/enable fully:** `chrome://extensions` → FeedHacker → the toggle.
+- **Uninstall:** `chrome://extensions` → FeedHacker → **Remove** (or right‑click
+  the toolbar icon → **Remove from Chrome**).
 
 ---
 
 ## How it works
 
-FeedHacker is split into small, single‑purpose files. The design separates
-*pure logic* (unit‑testable, no browser APIs) from the *glue* that touches
-Chrome and the live DOM.
+FeedHacker separates *pure logic* (unit‑testable, no browser APIs) from the
+*glue* that touches Chrome and the live DOM.
 
 ```
-manifest.json     MV3 config: content scripts, permissions, popup, service worker
+manifest.json     MV3 config: content scripts, permissions, popup, options, worker
 inject.js         MAIN-world hook (document_start) — patches IntersectionObserver
+filters.js        shared source of truth: filter list, storage keys, DEFAULTS
 matcher.js        pure regex/string matcher over the banlist
+scorer.js         pure structural AI-tell scoring + online learning
 feed.js           pure DOM layer — find posts, classify, collapse/reveal
-content.js        glue — storage, banlist fetch, MutationObserver, badge, load-more
-background.js     service worker — per-tab badge showing hidden count
-popup.html/.js    the Mute/Solo mixer UI
+logger.js         pure error-log ring buffer helpers
+content.js        glue — storage, banlist fetch, learned weights, errors, observer
+background.js     service worker — per-tab badge (hidden count / error state)
+popup.html/.js    the Mute/Solo mixer + master switch + quick links
+options.html/.js  details, per-filter activity, and error log
 styles.css        stub + load-more styling
-claudisms.json    the AI-slop banlist (words, phrases, regex tics)
+claudisms.json    the AI-slop phrase banlist (one signal feeding the scorer)
+scripts/build.sh  packages the runtime files into dist/ + a zip
 ```
 
 **Content‑script pipeline**
 
-1. **`content.js`** (glue) loads your saved settings from `chrome.storage.sync`,
-   fetches `claudisms.json`, and hands it to `matcher.js` to compile a list of
-   regex matchers.
-2. A debounced **`MutationObserver`** (plus a slow 8s safety‑net interval) calls
-   into `feed.js` whenever the feed changes.
-3. **`feed.js`** finds each post by LinkedIn's hidden `<h2>Feed post</h2>`
-   heading (the visible feed CSS classes are hashed and unstable), walks up to
-   the post's container, and extracts the post body **excluding comments** so a
-   phrase in a comment doesn't flag the post itself.
-4. For each active filter it classifies the post (regex against the banlist for
-   slop; DOM/text heuristics for promoted, hiring, reshares, etc.) and, on a
-   match, **collapses** the post to a stub — or reveals it with an explainer if
-   you click "Show anyway."
-5. **`background.js`** receives a message with the hidden count and paints the
-   toolbar badge for that tab.
+1. `content.js` loads settings from `chrome.storage.sync` and learned slop
+   weights from `chrome.storage.local`, fetches `claudisms.json`, and compiles it
+   with `matcher.js`.
+2. A `MutationObserver` triages each batch (`feed.js` ignores FeedHacker's own DOM
+   and attribute‑only churn) and, on real new content, schedules an **idle** scan.
+3. `feed.js` finds each post by LinkedIn's hidden `<h2>Feed post</h2>` heading
+   (the visible CSS is hashed), extracts the post body **excluding comments**, and
+   classifies it — the AI‑slop verdict comes from `scorer.js`.
+4. Matches collapse to a stub; **Show anyway / Hide again** feed corrections back
+   into the learner.
+5. `background.js` paints the badge (hidden count, or a red `!` on error).
+6. Errors are captured with timestamps into `chrome.storage.local` and surfaced
+   in the popup and options page.
 
-**The IntersectionObserver hook (`inject.js`)**
-
-LinkedIn loads more posts via an `IntersectionObserver` on a bottom sentinel;
-faking a scroll event doesn't trigger it. So `inject.js` runs in the page's MAIN
-world at `document_start`, wraps the native `IntersectionObserver`, and records
-the callbacks LinkedIn registers. When you hit **Load more posts** (or scroll
-near the bottom), `content.js` dispatches a token‑named event that asks the hook
-to invoke LinkedIn's *own* loader callback with a synthetic "intersecting"
-entry — calling LinkedIn's real load‑more code directly. A per‑load random token
-(shared via a DOM attribute) keeps blind/hardcoded‑name page scripts from
-abusing the hook.
-
-**Settings** live in `chrome.storage.sync`, so they follow your Chrome profile
-and apply live — toggling a filter re‑reveals everything and re‑applies without
-a reload.
+**The IntersectionObserver hook (`inject.js`)** wraps the native observer in the
+page's MAIN world to capture LinkedIn's own feed‑loader callback, then invokes it
+directly (a token‑named event) so "Load more" drives LinkedIn's real load‑more
+code instead of a synthetic scroll.
 
 ---
 
 ## Privacy
 
-- No network requests except fetching the bundled `claudisms.json` from the
-  extension itself.
-- Only permission requested is `storage` (to save your filter settings).
-- Runs only on `https://www.linkedin.com/*`, and only acts on the home feed.
+- No network requests except fetching the bundled `claudisms.json`.
+- Learned weights, activity stats, and the error log stay in `chrome.storage`
+  (local for large/learned data, sync for your toggle settings) — never sent
+  anywhere.
+- Only permission requested is `storage`. Runs only on
+  `https://www.linkedin.com/*`, and only acts on the home feed.
 
 ---
 
-## Development notes
+## Development
 
-- Pure logic lives in `matcher.js` and `feed.js`; both export a CommonJS API
-  (`module.exports`) so they can be exercised under jsdom without a browser.
-- No build step, bundler, or dependencies — load the folder unpacked and edit
-  in place.
+No bundler, no framework — plain files loaded unpacked.
+
+```bash
+npm install     # dev-only: jsdom, for the DOM tests
+npm test        # node:test + jsdom, 47 tests over the pure modules
+npm run build   # package dist/feedhacker/ and a versioned zip
+```
+
+- Pure logic (`filters.js`, `matcher.js`, `scorer.js`, `feed.js`, `logger.js`)
+  exports a CommonJS API so it runs under jsdom without a browser.
+- CI (`.github/workflows/ci.yml`) runs the test suite on every push and PR.
 - To update the slop banlist, edit `claudisms.json` (see the `matchTypes` and
   `fields` docs inside the file).

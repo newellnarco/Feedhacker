@@ -33,6 +33,10 @@ test("DEFAULTS includes display keys and aggressive, all false", () => {
   assert.strictEqual(filters.DEFAULTS.aggressive, false);
 });
 
+test("master switch defaults to enabled", () => {
+  assert.strictEqual(filters.DEFAULTS.enabled, true);
+});
+
 test("buildDefaults returns a fresh object each call", () => {
   assert.notStrictEqual(filters.buildDefaults(), filters.buildDefaults());
   assert.deepStrictEqual(filters.buildDefaults(), filters.DEFAULTS);

@@ -35,11 +35,20 @@
     .err-actions { margin-top: 7px; display: flex; gap: 8px; }
     .linklike { background: none; border: 0; color: #0a66c2; cursor: pointer; font-size: 11.5px; padding: 0; }
     .linklike:hover { text-decoration: underline; }
-    .footer { margin-top: 12px; display: flex; justify-content: flex-end; }
+    .footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .master { display: flex; align-items: center; gap: 8px; padding: 7px 9px; margin: 0 0 10px;
+      border: 1px solid #e2e4e8; border-radius: 8px; background: #fafbfc; }
+    .master input { width: 16px; height: 16px; }
+    .master .lbl { font-weight: 700; }
+    .master.off { background: #fdecec; border-color: #f5c2c2; }
+    #paused-note { display: none; font-size: 11.5px; color: #b42318; margin: -6px 0 8px; }
+    #paused-note.show { display: block; }
   </style>
 </head>
 <body>
   <h1>FeedHacker</h1>
+  <label class="master" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
+  <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
   <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo &nbsp;·&nbsp; <b>A</b> aggressive slop</div>
   <div id="filters"></div>
 
@@ -56,7 +65,10 @@
     <div class="err-actions"><button type="button" class="linklike" id="clear-errors">Clear errors</button></div>
   </div>
 
-  <div class="footer"><button type="button" class="linklike" id="reset-learning">Reset AI-slop learning</button></div>
+  <div class="footer">
+    <button type="button" class="linklike" id="open-options">Details &amp; activity</button>
+    <button type="button" class="linklike" id="reset-learning">Reset AI-slop learning</button>
+  </div>
 
   <script src="filters.js"></script>
   <script src="logger.js"></script>

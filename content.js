@@ -10,6 +10,7 @@
   var Scorer = self.FeedHackerScorer;
   var DEFAULTS = Filters.DEFAULTS;
   var WEIGHTS_KEY = "feedhacker:slopWeights";
+  var STATS_KEY = "feedhacker:stats";
 
   var settings = Object.assign({}, DEFAULTS);
   var matchers = [];
@@ -82,6 +83,32 @@
     } catch (e) { /* messaging unavailable; ignore */ }
   }
 
+  // Activity stats for the options page: how many posts are hidden right now, broken
+  // down by filter. Snapshot of the current page (one storage key), throttled so a
+  // chatty feed doesn't hammer storage.
+  var statsTimer = null;
+  function recordActivitySoon() {
+    if (statsTimer) return;
+    statsTimer = setTimeout(function () {
+      statsTimer = null;
+      try {
+        var hidden = document.querySelectorAll('[data-feedhacker-hidden="1"]');
+        var by = {};
+        for (var i = 0; i < hidden.length; i++) {
+          var id = "other";
+          try {
+            var r = JSON.parse(hidden[i].dataset.feedhackerReasons || "[]");
+            if (r[0] && r[0].id) id = r[0].id; else if (r[0] && r[0].label) id = r[0].label;
+          } catch (e) {}
+          by[id] = (by[id] || 0) + 1;
+        }
+        var patch = {};
+        patch[STATS_KEY] = { total: hidden.length, byId: by, updated: Date.now(), url: location.pathname };
+        chrome.storage.local.set(patch);
+      } catch (e) { /* stats are best-effort */ }
+    }, 2000);
+  }
+
   // Only operate on the HOME feed ("/feed/"), not single-post permalinks
   // ("/feed/update/..."), profiles, search, etc. LinkedIn is a SPA, so check live.
   function isMainFeed() {
@@ -91,9 +118,11 @@
   function scanNow() {
     if (!ready) return;
     try {
-      if (!isMainFeed()) { F.reset(document); ensureLoadButton(false); return; } // off everywhere but the feed
+      // Master switch off, or not on the home feed: reveal everything and idle.
+      if (!settings.enabled || !isMainFeed()) { F.reset(document); ensureLoadButton(false); reportBadge(); return; }
       F.scan(document, matchers, settings);
       reportBadge();
+      recordActivitySoon();
       ensureLoadButton(F.anyActive(settings));
     } catch (e) { logError(e, "scan"); }
   }
@@ -119,7 +148,7 @@
   // early when visible content shows or the user scrolls away (unless forced by button).
   var pumping = false;
   function pump(force) {
-    if (pumping || !ready || !isMainFeed() || !F.anyActive(settings)) return;
+    if (pumping || !ready || !settings.enabled || !isMainFeed() || !F.anyActive(settings)) return;
     var se = document.scrollingElement || document.documentElement;
     if (!se) return;
     if (!force && (se.scrollHeight - (window.scrollY + window.innerHeight)) > 1000) return;
