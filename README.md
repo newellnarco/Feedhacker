@@ -56,6 +56,18 @@ correction nudges the model's weights (a one‑step online logistic update) stor
 locally, so accuracy improves over time. Reset it any time from the popup or
 options page.
 
+### Author actions
+
+Each hidden **post** stub carries two author controls:
+
+- **Unfollow** — drives LinkedIn's *own* post menu to unfollow the author. It
+  only ever runs from your click (never in bulk, on a timer, or during scans),
+  acts one at a time, and uses realistic, jittered pointer/mouse input so it reads
+  as a normal human action rather than automation.
+- **Profile ↗** — opens the author's profile in a new tab, where you can block
+  or report manually. Blocking is left manual on purpose — FeedHacker never
+  automates it — which keeps you clear of automation‑detection risk.
+
 ### Extra options
 
 - **Enable / disable** — a master switch in the popup pauses all filtering
