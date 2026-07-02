@@ -33,6 +33,22 @@ test("individual tells fire on their signatures", () => {
   assert.ok(scorer.extractFeatures("🚀🚀🚀🚀 growth").emoji > 0);
 });
 
+test("broetry tell fires on one-line-per-thought posts", () => {
+  const broetry = "I failed.\nThen I learned.\nThen I won.\nBig lesson here.\nRemember this.";
+  assert.ok(scorer.extractFeatures(broetry).broetry > 0);
+  assert.strictEqual(scorer.extractFeatures("A normal flowing paragraph that keeps going on one line without breaks.").broetry, 0);
+});
+
+test("threshold option controls only the decision, not the probability", () => {
+  const mild = "It's not about the destination, it's about the journey.";
+  const strict = scorer.classify(mild, null, { threshold: 0.95 });
+  const lax = scorer.classify(mild, null, { threshold: 0.2 });
+  assert.strictEqual(strict.prob, lax.prob, "prob is threshold-independent");
+  assert.strictEqual(strict.isSlop, strict.prob >= 0.95);
+  assert.strictEqual(lax.isSlop, lax.prob >= 0.2);
+  assert.ok(!strict.isSlop, "a very high threshold should pass borderline text");
+});
+
 test("empty / whitespace text yields all-zero features and low prob", () => {
   const f = scorer.extractFeatures("   ");
   for (const id of scorer.FEATURE_IDS) assert.strictEqual(f[id], 0);

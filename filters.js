@@ -21,7 +21,7 @@
   ];
 
   // Non-per-filter boolean settings (checkboxes in the popup).
-  var DISPLAY_KEYS = ["nameNames", "hideCompletely", "hideSlopComments"];
+  var DISPLAY_KEYS = ["nameNames", "hideCompletely", "hideSlopComments", "digest"];
 
   function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 
@@ -37,7 +37,12 @@
     }
     for (var j = 0; j < DISPLAY_KEYS.length; j++) d[DISPLAY_KEYS[j]] = false;
     d.aggressive = false;
-    d.enabled = true;   // master on/off; pause without uninstalling
+    d.enabled = true;            // master on/off; pause without uninstalling
+    d.slopThreshold = 0.5;       // AI-slop confidence cutoff (0.2 lax .. 0.8 strict)
+    d.implicitLearning = true;   // learn weak "confirmed" from posts scrolled past
+    d.scanEverywhere = false;    // beyond the home feed (permalinks, search, profiles)
+    d.remoteBanlist = false;     // opt-in: use banlist updates fetched from a URL
+    d.remoteBanlistUrl = "";     // where the extra banlist is fetched from (options)
     return d;
   }
   var DEFAULTS = buildDefaults();

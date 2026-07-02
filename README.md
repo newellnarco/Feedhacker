@@ -46,23 +46,49 @@ crosses a threshold. Tells include:
 - em‑dash density, "not X, but Y" framing, rule‑of‑three cadence,
 - rhetorical fragments ("The result?"), emoji/bullet "listicle" layout,
 - formal connectives, formula openers ("Here's the thing…"),
-- unusually uniform sentence length, and
+- "broetry" (one‑thought‑per‑line) structure, unusually uniform sentence length, and
 - the curated phrase banlist (`claudisms.json`) as **one weighted signal** among
   many (curated hits count more than common‑word ones).
 
-It **learns** from you: clicking **Show anyway** on a flagged post teaches a
-false positive; clicking **Hide again** after revealing confirms it. Each
+It **learns** from you: clicking **Show anyway** teaches a false positive, the
+**👍 slop** button or **Hide again** confirms a true positive, and a post you
+simply **scroll past** (still hidden) counts as a weak confirmation. Each
 correction nudges the model's weights (a one‑step online logistic update) stored
-locally, so accuracy improves over time. Reset it any time from the popup or
-options page.
+locally, so accuracy improves over time. Tune the cutoff with the sensitivity
+slider, and export/import or reset the model any time.
 
-### Author actions
+### Author memory
 
-Each hidden **post** stub carries a **Profile ↗** link that opens the author's
-profile in a new tab. From there you can **unfollow, block, or report** in
-LinkedIn's own UI. FeedHacker deliberately does *not* automate unfollow/block —
-those actions stay entirely manual, which keeps you clear of any
-automation‑detection risk.
+FeedHacker learns which *authors* you don't want to see:
+
+- **Mute author** — a one‑click button on each post stub. Muted authors are
+  always hidden, regardless of content.
+- **Always show (allowlist)** — trusted authors are never hidden, even if a post
+  would otherwise score as slop.
+- **Profile ↗** — opens the author's profile in a new tab, where you can
+  unfollow/block/report in LinkedIn's own UI. FeedHacker never automates those.
+- Muted/allowed lists are managed on the options page, which also shows your
+  **top hidden sources**.
+
+### Custom filters
+
+Define your own rules on the options page — **words/phrases, regexes, hashtags,
+and companies/authors** — to hide anything the built‑ins miss. They apply on top
+of the standard filters.
+
+### More controls
+
+- **AI‑slop sensitivity slider** — dial the confidence threshold from *aggressive*
+  to *strict* in the popup.
+- **Digest mode** — collapse a run of consecutive hidden posts into a single
+  "N low‑signal posts hidden" bar.
+- **Filter beyond the home feed** (opt‑in) — also clean permalinks, search
+  results, profiles, and company pages.
+- **Insights** — the options page keeps 30 days of daily hidden counts and your
+  top sources.
+- **Export / import the learned model** — back it up or move it between browsers.
+- **Remote banlist** (opt‑in, off by default) — point at a URL to pull extra
+  banlist entries; fetching asks for permission for that one site only.
 
 ### Extra options
 
@@ -121,14 +147,17 @@ FeedHacker separates *pure logic* (unit‑testable, no browser APIs) from the
 manifest.json     MV3 config: content scripts, permissions, popup, options, worker
 inject.js         MAIN-world hook (document_start) — patches IntersectionObserver
 filters.js        shared source of truth: filter list, storage keys, DEFAULTS
+selectors.js      centralized LinkedIn DOM contract + health probe (heartbeat)
 matcher.js        pure regex/string matcher over the banlist
 scorer.js         pure structural AI-tell scoring + online learning
-feed.js           pure DOM layer — find posts, classify, collapse/reveal
+authors.js        pure per-author memory (mute/allow, scores, top sources)
+customfilters.js  pure compiler+matcher for user-defined filters
+feed.js           pure DOM layer — find posts, classify, collapse/reveal, digest
 logger.js         pure error-log ring buffer helpers
-content.js        glue — storage, banlist fetch, learned weights, errors, observer
+content.js        glue — storage, banlist, learned weights, authors, errors, observer
 background.js     service worker — per-tab badge (hidden count / error state)
-popup.html/.js    the Mute/Solo mixer + master switch + quick links
-options.html/.js  details, per-filter activity, and error log
+popup.html/.js    Mute/Solo mixer + master switch + sensitivity slider + links
+options.html/.js  details, activity, insights, custom filters, authors, model I/O
 styles.css        stub + load-more styling
 claudisms.json    the AI-slop phrase banlist (one signal feeding the scorer)
 scripts/build.sh  packages the runtime files into dist/ + a zip
@@ -174,12 +203,13 @@ No bundler, no framework — plain files loaded unpacked.
 
 ```bash
 npm install     # dev-only: jsdom, for the DOM tests
-npm test        # node:test + jsdom, 47 tests over the pure modules
+npm test        # node:test + jsdom, 71 tests over the pure modules
 npm run build   # package dist/feedhacker/ and a versioned zip
 ```
 
-- Pure logic (`filters.js`, `matcher.js`, `scorer.js`, `feed.js`, `logger.js`)
-  exports a CommonJS API so it runs under jsdom without a browser.
+- Pure logic (`filters.js`, `selectors.js`, `matcher.js`, `scorer.js`,
+  `authors.js`, `customfilters.js`, `feed.js`, `logger.js`) exports a CommonJS
+  API so it runs under jsdom without a browser.
 - CI (`.github/workflows/ci.yml`) runs the test suite on every push and PR.
 - To update the slop banlist, edit `claudisms.json` (see the `matchTypes` and
   `fields` docs inside the file).

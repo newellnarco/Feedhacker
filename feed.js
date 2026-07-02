@@ -5,6 +5,9 @@
 (function (root) {
   "use strict";
 
+  var SEL = root.FeedHackerSelectors;
+  var MARKER_RE = SEL ? SEL.MARKER_RE : /^(feed post|promoted)/i;
+
   function getText(el) {
     if (!el) return "";
     var t = el.innerText;
@@ -12,7 +15,7 @@
     return el.textContent || "";
   }
 
-  function isMarker(h) { return /^(feed post|promoted)/i.test((h.textContent || "").trim()); }
+  function isMarker(h) { return MARKER_RE.test((h.textContent || "").trim()); }
 
   function leafWithText(el, re) {
     var nodes = el.querySelectorAll("button, a, span, div");
@@ -158,7 +161,13 @@
     for (var i = 0; i < FILTER_IDS.length; i++) if (s[kind + cap(FILTER_IDS[i])]) out.push(FILTER_IDS[i]);
     return out;
   }
-  function anyActive(s) { return listActive(s, "mute").length > 0 || listActive(s, "solo").length > 0; }
+  function anyActive(s) {
+    if (!s) return false;
+    if (listActive(s, "mute").length > 0 || listActive(s, "solo").length > 0) return true;
+    if (s.customActive) return true;        // user has custom filters configured
+    if (s.authorMutesActive) return true;   // user has muted at least one author
+    return false;
+  }
 
   // Flags [{id,label,detail}] for the ACTIVE filter ids this post matches.
   // Text of a post EXCLUDING its comments, so a claudism in a comment doesn't flag the
@@ -221,7 +230,11 @@
     var res = root.FeedHackerScorer.classify(
       text,
       settings && settings.slopWeights,
-      { matchers: matchers, aggressive: settings && settings.aggressive }
+      {
+        matchers: matchers,
+        aggressive: settings && settings.aggressive,
+        threshold: settings && typeof settings.slopThreshold === "number" ? settings.slopThreshold : undefined
+      }
     );
     if (!res.isSlop) return null;
     return { id: "sloppy", label: "AI Slop", detail: res.detail, features: res.features };
@@ -286,17 +299,31 @@
   // Author control on the stub: a "Profile ↗" quick-link that opens the author's
   // profile in a new tab, where the user can unfollow/block/report in LinkedIn's own
   // UI. FeedHacker never automates those actions. Posts only, not comments.
-  function appendAuthorActions(doc, el, stub) {
+  function hasFlag(flags, id) {
+    for (var i = 0; i < flags.length; i++) if (flags[i].id === id) return true;
+    return false;
+  }
+
+  function appendAuthorActions(doc, el, stub, settings) {
     if (markerCountWithin(el) < 1) return;          // comments have no post marker; skip
     var info = authorInfo(el);
-    if (!info.url) return;
-    var prof = doc.createElement("a");
-    prof.className = "feedhacker-profile"; prof.href = info.url;
-    prof.target = "_blank"; prof.rel = "noopener noreferrer";
-    prof.textContent = "Profile ↗";
-    prof.title = info.name ? "Open " + info.name + "'s profile (unfollow/block there)" : "Open profile (unfollow/block there)";
-    prof.addEventListener("click", function (ev) { ev.stopPropagation(); });
-    stub.appendChild(prof);
+    if (!info.url && !info.name) return;
+    if (settings && typeof settings.onMuteAuthor === "function") {   // one-click mute author
+      var mute = doc.createElement("button");
+      mute.type = "button"; mute.className = "feedhacker-muteauthor"; mute.textContent = "Mute author";
+      mute.title = info.name ? "Always hide posts from " + info.name : "Always hide this author";
+      mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); });
+      stub.appendChild(mute);
+    }
+    if (info.url) {
+      var prof = doc.createElement("a");
+      prof.className = "feedhacker-profile"; prof.href = info.url;
+      prof.target = "_blank"; prof.rel = "noopener noreferrer";
+      prof.textContent = "Profile ↗";
+      prof.title = info.name ? "Open " + info.name + "'s profile (unfollow/block there)" : "Open profile (unfollow/block there)";
+      prof.addEventListener("click", function (ev) { ev.stopPropagation(); });
+      stub.appendChild(prof);
+    }
   }
 
   function renderCollapsed(doc, el, stub, flags, settings) {
@@ -305,18 +332,35 @@
     var label = doc.createElement("span");
     label.className = "feedhacker-stub-label";
     label.textContent = collapsedText(el, flags, settings);
+    stub.appendChild(label);
+
+    // Explicit positive training for AI slop, without un-hiding (cleaner signal than
+    // overloading Show/Hide). Only when we have the scored features to learn from.
+    if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
+      var yes = doc.createElement("button");
+      yes.type = "button"; yes.className = "feedhacker-confirm"; yes.textContent = "👍 slop";
+      yes.title = "Confirm this is AI slop (teaches the filter)";
+      yes.addEventListener("click", function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        emitFeedback(el, flags, settings, 1);
+        yes.textContent = "thanks ✓"; yes.disabled = true;
+      });
+      stub.appendChild(yes);
+    }
+
+    appendAuthorActions(doc, el, stub, settings);
+
     var btn = doc.createElement("button");
     btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Show anyway";
     btn.addEventListener("click", function (ev) {
       ev.preventDefault(); ev.stopPropagation();
       revealWithExplainer(doc, el, stub, flags, settings);
     });
-    stub.appendChild(label);
-    appendAuthorActions(doc, el, stub);
     stub.appendChild(btn);
   }
   function revealWithExplainer(doc, el, stub, flags, settings) {
     emitFeedback(el, flags, settings, 0);   // user disagreed: false positive
+    if (markerCountWithin(el) >= 1) recordOutcome(settings, authorInfo(el), false);  // kept: author "shown"
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;
     el.classList.remove("feedhacker-hidden");
@@ -353,12 +397,17 @@
         if (flags[fi].features) { el.dataset.feedhackerFeatures = JSON.stringify(flags[fi].features); break; }
       }
     } catch (e) {}
+    if (settings && typeof settings.onHidden === "function") { try { settings.onHidden(flags); } catch (e) {} }
     if (settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
     el.classList.add("feedhacker-hidden");
     if (directChildStub(el)) return;
     var stub = doc.createElement("div");
     renderCollapsed(doc, el, stub, flags, settings);
     el.insertBefore(stub, el.firstChild);
+  }
+
+  function recordOutcome(settings, info, hidden) {
+    if (settings && typeof settings.onAuthorOutcome === "function") settings.onAuthorOutcome(info, hidden);
   }
 
   function consider(doc, el, matchers, settings) {
@@ -369,19 +418,48 @@
     if (!text.trim()) return null;                           // body not rendered yet — retried on a later scan
     el.dataset.feedhackerScanned = "1";
 
+    // Author memory: an allowlisted author is always shown; a muted author is always
+    // hidden — both independent of the per-kind toggles.
+    var A = root.FeedHackerAuthors, info = null;
+    function author() { if (info === null) info = authorInfo(el); return info; }
+    if (A && settings.authors) {
+      var key = A.keyFor(author());
+      if (key) {
+        if (A.isAllowed(settings.authors, key)) return null;
+        if (A.isMuted(settings.authors, key)) {
+          if (settings.nameNames) el.dataset.feedhackerActor = getActor(el);
+          recordOutcome(settings, author(), true);
+          collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings);
+          return ["author"];
+        }
+      }
+    }
+
     var solos = listActive(settings, "solo");
     var muted = listActive(settings, "mute");
-    if (!solos.length && !muted.length) return null;
-    // Solo wins: if anything is soloed, show ONLY soloed kinds and hide the rest.
-    var active = solos.length ? solos : muted;
-    var flags = matchedFlags(el, matchers, active, text, settings);
+    // Custom user filters act as always-on hides (only in mute mode; solo is already
+    // restrictive). Computed here so they count toward "should we hide this".
+    var custom = [];
+    if (!solos.length && root.FeedHackerCustom && settings.customCompiled) {
+      custom = root.FeedHackerCustom.match(text, author(), settings.customCompiled);
+    }
+    if (!solos.length && !muted.length && !custom.length) return null;
     if (settings.nameNames) el.dataset.feedhackerActor = getActor(el); // capture while visible
-    if (solos.length) {
-      if (flags.length) return null;                                  // soloed kind -> keep visible
+
+    if (solos.length) {   // Solo wins: show ONLY soloed kinds, hide the rest.
+      var flagsS = matchedFlags(el, matchers, solos, text, settings);
+      if (flagsS.length) return null;
       collapse(doc, el, [{ label: "Filtered out", detail: "" }], settings);
       return ["filtered"];
     }
-    if (flags.length) { collapse(doc, el, flags, settings); return flags; } // muted kind -> hide
+
+    var flags = matchedFlags(el, matchers, muted, text, settings);
+    if (custom.length) flags.push({ id: "custom", label: "Custom filter", detail: root.FeedHackerCustom.detail(custom) });
+    if (flags.length) {
+      recordOutcome(settings, author(), true);
+      collapse(doc, el, flags, settings);
+      return flags;
+    }
     return null;
   }
 
@@ -490,7 +568,51 @@
       }
     }
     hidden += scanComments(doc, matchers, settings);   // comment filter runs on its own
+    applyDigest(doc, settings);                         // group runs of hidden posts (no-op if off)
     return hidden;
+  }
+
+  // --- digest mode: group a run of consecutive hidden posts into one summary bar ---
+  function clearDigest(doc) {
+    var sums = doc.querySelectorAll(".feedhacker-digest-summary");
+    for (var i = 0; i < sums.length; i++) if (sums[i].parentNode) sums[i].parentNode.removeChild(sums[i]);
+    var d = doc.querySelectorAll(".feedhacker-digested");
+    for (var j = 0; j < d.length; j++) d[j].classList.remove("feedhacker-digested");
+  }
+  function buildDigestSummary(doc, run) {
+    var el = doc.createElement("div");
+    el.className = "feedhacker-stub feedhacker-digest-summary";
+    var label = doc.createElement("span");
+    label.className = "feedhacker-stub-label";
+    label.textContent = run.length + " low-signal posts hidden";
+    var btn = doc.createElement("button");
+    btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Show these";
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      for (var k = 0; k < run.length; k++) run[k].classList.remove("feedhacker-digested");
+      if (el.parentNode) el.parentNode.removeChild(el);   // reveal individual stubs
+    });
+    el.appendChild(label); el.appendChild(btn);
+    return el;
+  }
+  function applyDigest(doc, settings) {
+    clearDigest(doc);
+    if (!settings.digest) return;
+    var posts = findPostContainers(doc);
+    function hidden(p) { return p.classList.contains("feedhacker-hidden"); }
+    var i = 0;
+    while (i < posts.length) {
+      if (!hidden(posts[i])) { i++; continue; }
+      var run = [posts[i]], j = i + 1;
+      while (j < posts.length && hidden(posts[j]) && posts[j].parentNode && posts[j].parentNode === posts[j - 1].parentNode) {
+        run.push(posts[j]); j++;
+      }
+      if (run.length >= 2) {
+        for (var k = 0; k < run.length; k++) run[k].classList.add("feedhacker-digested");
+        run[0].parentNode.insertBefore(buildDigestSummary(doc, run), run[0]);
+      }
+      i = j;
+    }
   }
 
   // --- performance: mutation triage ---
@@ -520,6 +642,7 @@
   }
 
   function reset(doc) {
+    clearDigest(doc);
     var stubs = doc.querySelectorAll(".feedhacker-stub");
     for (var i = 0; i < stubs.length; i++) stubs[i].remove();
     var hid = doc.querySelectorAll(".feedhacker-hidden, .feedhacker-gone");
@@ -545,7 +668,7 @@
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
-    authorInfo: authorInfo, actorAnchor: actorAnchor
+    authorInfo: authorInfo, actorAnchor: actorAnchor, applyDigest: applyDigest, clearDigest: clearDigest
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerFeed = api;

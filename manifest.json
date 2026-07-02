@@ -6,6 +6,9 @@
   "permissions": [
     "storage"
   ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
   "content_scripts": [
     {
       "matches": [
@@ -24,8 +27,11 @@
       "js": [
         "filters.js",
         "logger.js",
+        "selectors.js",
         "matcher.js",
         "scorer.js",
+        "authors.js",
+        "customfilters.js",
         "feed.js",
         "content.js"
       ],

@@ -52,9 +52,16 @@
   <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo &nbsp;·&nbsp; <b>A</b> aggressive slop</div>
   <div id="filters"></div>
 
+  <div class="group-label">AI-slop sensitivity</div>
+  <div class="frow">
+    <input type="range" id="slopThreshold" min="0.2" max="0.8" step="0.05" style="flex:1">
+    <span id="slopThresholdVal" class="muted" style="width:64px; text-align:right"></span>
+  </div>
+
   <div class="group-label">Display</div>
   <label class="row"><input type="checkbox" id="nameNames"> Name names <span class="muted">(who + category)</span></label>
   <label class="row"><input type="checkbox" id="hideCompletely"> Hide Hidden Content <span class="muted">(no placeholder)</span></label>
+  <label class="row"><input type="checkbox" id="digest"> Digest runs of hidden posts <span class="muted">(one summary bar)</span></label>
 
   <div class="group-label">Comments</div>
   <label class="row"><input type="checkbox" id="hideSlopComments"> Hide AI-slop comments</label>

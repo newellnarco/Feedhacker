@@ -8,9 +8,16 @@
   var Filters = self.FeedHackerFilters;
   var Log = self.FeedHackerLog;
   var Scorer = self.FeedHackerScorer;
+  var Authors = self.FeedHackerAuthors;
+  var Custom = self.FeedHackerCustom;
+  var SEL = self.FeedHackerSelectors;
   var DEFAULTS = Filters.DEFAULTS;
   var WEIGHTS_KEY = "feedhacker:slopWeights";
   var STATS_KEY = "feedhacker:stats";
+  var CUSTOM_KEY = "feedhacker:custom";
+  var AUTHORS_KEY = "feedhacker:authors";
+  var HISTORY_KEY = "feedhacker:history";
+  var authorStore = {};
 
   var settings = Object.assign({}, DEFAULTS);
   var matchers = [];
@@ -65,16 +72,96 @@
     }, 1200);
   }
   // Called by feed.js when the user corrects a slop decision. One online gradient
-  // step nudges the weights; future posts use the updated model immediately.
-  function onFeedback(features, label) {
+  // step nudges the weights; future posts use the updated model immediately. lr is
+  // smaller for implicit signals (scrolled-past) than explicit clicks.
+  function onFeedback(features, label, lr) {
     try {
       if (!Scorer) return;
-      settings.slopWeights = Scorer.learn(settings.slopWeights, features, label, 0.3);
+      settings.slopWeights = Scorer.learn(settings.slopWeights, features, label, typeof lr === "number" ? lr : 0.3);
       weightsDirty = true;
       saveWeightsSoon();
     } catch (e) { logError(e, "learn"); }
   }
   settings.onFeedback = onFeedback;
+
+  // --- per-author memory -------------------------------------------------
+  var authorsDirty = false, authorsTimer = null;
+  function saveAuthorsSoon() {
+    if (authorsTimer) return;
+    authorsTimer = setTimeout(function () {
+      authorsTimer = null;
+      if (!authorsDirty) return;
+      authorsDirty = false;
+      try { var p = {}; p[AUTHORS_KEY] = authorStore; chrome.storage.local.set(p); }
+      catch (e) { logError(e, "save-authors"); }
+    }, 1500);
+  }
+  function refreshAuthorFlags() {
+    settings.authors = authorStore;
+    settings.authorMutesActive = !!(Authors && Authors.listMuted(authorStore).length);
+  }
+  function onMuteAuthor(info) {
+    try {
+      if (!Authors) return;
+      authorStore = Authors.mute(authorStore, Authors.keyFor(info), info && info.name);
+      refreshAuthorFlags();
+      authorsDirty = true; saveAuthorsSoon();
+      if (ready) { F.reset(document); scanNow(); reportBadge(); }   // apply immediately
+    } catch (e) { logError(e, "mute-author"); }
+  }
+  settings.onMuteAuthor = onMuteAuthor;
+  function onAuthorOutcome(info, hidden) {
+    try {
+      if (!Authors) return;
+      var key = Authors.keyFor(info);
+      if (!key) return;
+      authorStore = Authors.record(authorStore, key, info && info.name, hidden);
+      authorsDirty = true; saveAuthorsSoon();
+    } catch (e) { /* stats best-effort */ }
+  }
+  settings.onAuthorOutcome = onAuthorOutcome;
+
+  // --- history (daily hidden counts) -------------------------------------
+  var histPending = null, histTimer = null;
+  function todayKey() { try { return new Date().toISOString().slice(0, 10); } catch (e) { return "?"; } }
+  function onHidden(flags) {
+    try {
+      var id = (flags && flags[0] && flags[0].id) || "other";
+      if (!histPending) histPending = {};
+      histPending[id] = (histPending[id] || 0) + 1;
+      if (histTimer) return;
+      histTimer = setTimeout(flushHistory, 4000);
+    } catch (e) {}
+  }
+  settings.onHidden = onHidden;
+  function flushHistory() {
+    histTimer = null;
+    var pend = histPending; histPending = null;
+    if (!pend) return;
+    var day = todayKey();
+    chrome.storage.local.get([HISTORY_KEY], function (o) {
+      try {
+        var h = (o && o[HISTORY_KEY]) || {};
+        var d = h[day] || { total: 0, byId: {} };
+        for (var id in pend) if (Object.prototype.hasOwnProperty.call(pend, id)) {
+          d.byId[id] = (d.byId[id] || 0) + pend[id];
+          d.total += pend[id];
+        }
+        h[day] = d;
+        var days = Object.keys(h).sort();
+        while (days.length > 30) { delete h[days.shift()]; }   // keep ~30 days
+        var patch = {}; patch[HISTORY_KEY] = h; chrome.storage.local.set(patch);
+      } catch (e) { logError(e, "history"); }
+    });
+  }
+
+  // --- custom filters ----------------------------------------------------
+  function applyCustom(raw) {
+    try {
+      settings.customCompiled = Custom ? Custom.compile(raw || {}) : null;
+      settings.customActive = !!(Custom && Custom.anyConfigured(settings.customCompiled));
+    } catch (e) { logError(e, "custom-compile"); }
+  }
 
   function reportBadge() {
     try {
@@ -109,20 +196,36 @@
     }, 2000);
   }
 
-  // Only operate on the HOME feed ("/feed/"), not single-post permalinks
-  // ("/feed/update/..."), profiles, search, etc. LinkedIn is a SPA, so check live.
+  // Home feed only by default; with scanEverywhere, also permalinks/search/profiles/
+  // company pages. LinkedIn is a SPA, so check live each scan.
   function isMainFeed() {
-    return /^\/feed\/?$/.test(location.pathname);
+    var p = location.pathname;
+    if (SEL) return settings.scanEverywhere ? SEL.isSupportedSurface(p) : SEL.isHomeFeed(p);
+    return /^\/feed\/?$/.test(p);
+  }
+
+  // DOM-break heartbeat: if we're on a feed but repeatedly find zero post markers,
+  // LinkedIn's markup probably changed — surface it once instead of silently doing nothing.
+  var noMarkerRuns = 0, heartbeatLogged = false;
+  function heartbeat() {
+    if (!SEL) return;
+    var n = SEL.markerCount(document);
+    if (n > 0) { noMarkerRuns = 0; heartbeatLogged = false; return; }
+    if (++noMarkerRuns >= 3 && !heartbeatLogged) {
+      heartbeatLogged = true;
+      logError(new Error("No LinkedIn post markers found on a feed page — selectors may be out of date"), "heartbeat");
+    }
   }
 
   function scanNow() {
     if (!ready) return;
     try {
-      // Master switch off, or not on the home feed: reveal everything and idle.
+      // Master switch off, or not on a scanned surface: reveal everything and idle.
       if (!settings.enabled || !isMainFeed()) { F.reset(document); ensureLoadButton(false); reportBadge(); return; }
       F.scan(document, matchers, settings);
       reportBadge();
       recordActivitySoon();
+      heartbeat();
       ensureLoadButton(F.anyActive(settings));
     } catch (e) { logError(e, "scan"); }
   }
@@ -163,7 +266,23 @@
       setTimeout(step, 700);
     })();
   }
-  function onUserScroll() { pump(false); }
+  // Implicit learning: a slop-flagged post the user scrolled well past (without
+  // revealing it) is a weak "confirmed" — train on it once, at a low learning rate.
+  function harvestImplicit() {
+    if (!settings.implicitLearning || !Scorer) return;
+    var hid = document.querySelectorAll('[data-feedhacker-hidden="1"][data-feedhacker-features]');
+    for (var i = 0; i < hid.length; i++) {
+      var el = hid[i];
+      if (el.dataset.feedhackerImplicit === "1" || el.dataset.feedhackerReveal === "1") continue;
+      var rect;
+      try { rect = el.getBoundingClientRect(); } catch (e) { continue; }
+      if (rect.bottom < -1000) {   // scrolled well above the viewport
+        el.dataset.feedhackerImplicit = "1";
+        try { onFeedback(JSON.parse(el.dataset.feedhackerFeatures), 1, 0.08); } catch (e) {}
+      }
+    }
+  }
+  function onUserScroll() { pump(false); harvestImplicit(); }
 
   // Grafted "Load more" bar — inline at the feed's end, spaced + boxed (a fixed button
   // was hidden behind LinkedIn's Messaging widget). Repositioned as the feed grows;
@@ -230,6 +349,12 @@
     window.addEventListener("scroll", onScrollRaf, { passive: true });   // load as you scroll near bottom
   }
 
+  var REMOTE_KEY = "feedhacker:remotebanlist";
+  function buildAllMatchers(bundled, remote) {
+    var entries = (bundled && bundled.entries) ? bundled.entries.slice() : [];
+    if (remote && Array.isArray(remote.entries)) entries = entries.concat(remote.entries);
+    return self.FeedHackerMatcher.buildMatchers({ entries: entries });
+  }
   function init() {
     fetch(chrome.runtime.getURL("claudisms.json"))
       .then(function (r) {
@@ -237,28 +362,37 @@
         return r.json();
       })
       .then(function (data) {
-        matchers = self.FeedHackerMatcher.buildMatchers(data);
-        ready = true;
-        start();
+        chrome.storage.local.get([REMOTE_KEY], function (o) {
+          var remote = settings.remoteBanlist ? (o && o[REMOTE_KEY]) : null;   // opt-in extra entries
+          matchers = buildAllMatchers(data, remote);
+          ready = true;
+          start();
+        });
       })
       .catch(function (err) { logError(err, "banlist-fetch"); });
   }
 
-  // Load settings (sync) + learned weights (local) before starting.
+  // Load settings (sync) + learned weights, custom filters, author memory (local).
   chrome.storage.sync.get(DEFAULTS, function (s) {
-    settings = Object.assign({}, DEFAULTS, s);
-    settings.onFeedback = onFeedback;
-    chrome.storage.local.get([WEIGHTS_KEY], function (o) {
+    Object.assign(settings, DEFAULTS, s);   // mutate in place so runtime callbacks survive
+    chrome.storage.local.get([WEIGHTS_KEY, CUSTOM_KEY, AUTHORS_KEY], function (o) {
       var stored = o && o[WEIGHTS_KEY];
       settings.slopWeights = (stored && typeof stored === "object") ? stored : (Scorer ? Scorer.defaultWeights() : null);
+      authorStore = (o && o[AUTHORS_KEY]) || {};
+      applyCustom(o && o[CUSTOM_KEY]);
+      refreshAuthorFlags();
       init();
     });
   });
 
   chrome.storage.onChanged.addListener(function (changes, area) {
-    if (area === "local" && changes[WEIGHTS_KEY]) {
-      var nv = changes[WEIGHTS_KEY].newValue;
-      settings.slopWeights = (nv && typeof nv === "object") ? nv : (Scorer ? Scorer.defaultWeights() : settings.slopWeights);
+    if (area === "local") {
+      if (changes[WEIGHTS_KEY]) {
+        var nv = changes[WEIGHTS_KEY].newValue;
+        settings.slopWeights = (nv && typeof nv === "object") ? nv : (Scorer ? Scorer.defaultWeights() : settings.slopWeights);
+      }
+      if (changes[CUSTOM_KEY]) { applyCustom(changes[CUSTOM_KEY].newValue); reapply(); }
+      if (changes[AUTHORS_KEY]) { authorStore = changes[AUTHORS_KEY].newValue || {}; refreshAuthorFlags(); reapply(); }
       return;
     }
     if (area !== "sync") return;
@@ -269,10 +403,13 @@
         touched = true;
       }
     }
-    if (touched) {
-      F.reset(document);          // live toggle: reveal everything, then re-apply
-      scanNow();                  // scanNow no-ops cleanly if all filters are off
-      reportBadge();
-    }
+    if (touched) reapply();
   });
+
+  function reapply() {
+    if (!ready) return;
+    F.reset(document);          // reveal everything, then re-apply with new settings
+    scanNow();                  // no-ops cleanly if nothing is active
+    reportBadge();
+  }
 })();

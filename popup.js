@@ -53,6 +53,22 @@ document.getElementById("open-options").addEventListener("click", function () {
   if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
 });
 
+// AI-slop sensitivity slider. Lower threshold = more aggressive hiding. Label the
+// extremes so the number means something.
+var slop = document.getElementById("slopThreshold");
+var slopVal = document.getElementById("slopThresholdVal");
+function slopLabel(v) {
+  v = Number(v);
+  var word = v <= 0.35 ? "aggressive" : v >= 0.65 ? "strict" : "balanced";
+  return word + " (" + v.toFixed(2) + ")";
+}
+chrome.storage.sync.get({ slopThreshold: DEFAULTS.slopThreshold }, function (st) {
+  slop.value = st.slopThreshold;
+  slopVal.textContent = slopLabel(st.slopThreshold);
+});
+slop.addEventListener("input", function () { slopVal.textContent = slopLabel(slop.value); });
+slop.addEventListener("change", function () { chrome.storage.sync.set({ slopThreshold: Number(slop.value) }); });
+
 document.querySelectorAll(".ms").forEach(function (b) {
   b.addEventListener("click", function () {
     chrome.storage.sync.get(DEFAULTS, function (st) {

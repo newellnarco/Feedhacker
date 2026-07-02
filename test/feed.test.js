@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { feed, filters, scorer, makeDoc } = require("./helper");
+const { feed, filters, scorer, authors, customfilters, makeDoc } = require("./helper");
 
 function baseSettings(over) {
   return Object.assign({}, filters.DEFAULTS, { slopWeights: scorer.defaultWeights() }, over || {});
@@ -192,8 +192,70 @@ test("no unfollow automation is exposed by the API", () => {
   assert.strictEqual(feed.humanClick, undefined);
 });
 
-test("anyActive reflects mute/solo toggles", () => {
+test("anyActive reflects mute/solo toggles, custom filters, and author mutes", () => {
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false })), false);
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: true })), true);
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, soloHiring: true })), true);
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, customActive: true })), true);
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, authorMutesActive: true })), true);
+});
+
+test("muted author is hidden regardless of content; allowed author always shows", () => {
+  const html = feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>a totally normal human post</div>`));
+  // muted
+  let doc = makeDoc(html);
+  let el = feed.findPostContainers(doc)[0];
+  let store = authors.mute({}, "/in/jane", "Jane Doe");
+  const r = feed.consider(doc, el, [], baseSettings({ muteSloppy: false, authors: store }));
+  assert.deepStrictEqual(r, ["author"]);
+  assert.ok(el.classList.contains("feedhacker-hidden"));
+  // allowed beats slop
+  doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  el = feed.findPostContainers(doc)[0];
+  store = authors.allow({}, "/in/jane", "Jane Doe");
+  assert.strictEqual(feed.consider(doc, el, [], baseSettings({ authors: store })), null);
+  assert.ok(!el.classList.contains("feedhacker-hidden"));
+});
+
+test("custom word filter hides a matching post", () => {
+  const doc = makeDoc(feedHtml(post(`<div>big news about crypto today</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const settings = baseSettings({ muteSloppy: false, customCompiled: customfilters.compile({ words: ["crypto"] }) });
+  const flags = feed.consider(doc, el, [], settings);
+  assert.ok(flags && flags.some((f) => f.id === "custom"));
+  assert.ok(el.classList.contains("feedhacker-hidden"));
+});
+
+test("Mute author button invokes the onMuteAuthor callback with the author info", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  let muted = null;
+  feed.consider(doc, el, [], baseSettings({ onMuteAuthor: (info) => { muted = info; } }));
+  const btn = el.querySelector(".feedhacker-stub .feedhacker-muteauthor");
+  assert.ok(btn, "mute-author button present");
+  btn.click();
+  assert.ok(muted && /jane/i.test(muted.name || ""));
+  assert.ok(/\/in\/jane$/.test(muted.url));
+});
+
+test("👍 confirm trains a positive without un-hiding", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const seen = [];
+  feed.consider(doc, el, [], baseSettings({ onFeedback: (f, label) => seen.push(label) }));
+  const yes = el.querySelector(".feedhacker-stub .feedhacker-confirm");
+  assert.ok(yes, "confirm button present");
+  yes.click();
+  assert.deepStrictEqual(seen, [1]);
+  assert.ok(el.classList.contains("feedhacker-hidden"), "still hidden after confirm");
+});
+
+test("digest groups consecutive hidden posts into one summary bar", () => {
+  const list = post(`<div>${SLOP_BODY}</div>`) + post(`<div>${SLOP_BODY}</div>`) + post("<div>a normal human post</div>");
+  const doc = makeDoc(feedHtml(list));
+  feed.scan(doc, [], baseSettings({ digest: true }));
+  const summaries = doc.querySelectorAll(".feedhacker-digest-summary");
+  assert.strictEqual(summaries.length, 1, "one summary for the run of two");
+  assert.ok(/2 low-signal posts hidden/.test(summaries[0].textContent));
+  assert.strictEqual(doc.querySelectorAll(".feedhacker-digested").length, 2);
 });

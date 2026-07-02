@@ -20,8 +20,11 @@ FILES=(
   inject.js
   filters.js
   logger.js
+  selectors.js
   matcher.js
   scorer.js
+  authors.js
+  customfilters.js
   feed.js
   content.js
   popup.html

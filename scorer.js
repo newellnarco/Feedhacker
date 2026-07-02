@@ -77,6 +77,19 @@
         var n = (t.match(/(?:^|\n)\s*(?:let['’]?s be honest|here['’]?s the thing|here['’]?s (?:what|why|how)|the truth is|let that sink in|read that again|hot take|unpopular opinion|plot twist|here['’]?s what (?:nobody|no one) tells you)\b/gi) || []).length;
         return clamp01(n / 1);
       } },
+    // "Broetry": one thought per line, lots of short standalone lines. A very
+    // LinkedIn-specific slop shape. Needs several short lines AND a high ratio.
+    { id: "broetry", label: "one-line-per-thought", fn: function (t) {
+        var lines = t.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+        if (lines.length < 3) return 0;
+        var short = 0;
+        for (var i = 0; i < lines.length; i++) {
+          var w = (lines[i].match(/\b[\w'’]+\b/g) || []).length;
+          if (w > 0 && w <= 12) short++;
+        }
+        var ratio = short / lines.length;
+        return clamp01((ratio - 0.5) / 0.5) * clamp01(short / 4);
+      } },
     // Sentence-length uniformity: AI prose has unusually even sentence lengths.
     // Only meaningful with >=4 sentences; returns 0 otherwise (not a penalty).
     { id: "uniformity", label: "uniform sentence length", fn: function (t) {
@@ -125,7 +138,7 @@
       bias: -1.6,
       banlist: 3.2,
       emdash: 1.3, antithesis: 1.6, ruleofthree: 1.1, rhetorical: 1.4,
-      emoji: 1.0, bullets: 0.9, connectives: 1.0, openers: 1.5, uniformity: 0.8
+      emoji: 1.0, bullets: 0.9, connectives: 1.0, openers: 1.5, broetry: 1.4, uniformity: 0.8
     };
   }
 
@@ -173,7 +186,8 @@
   function classify(text, weights, opts) {
     var features = extractFeatures(text, opts);
     var s = score(features, weights);
-    var isSlop = s.prob >= THRESHOLD;
+    var threshold = (opts && typeof opts.threshold === "number") ? opts.threshold : THRESHOLD;
+    var isSlop = s.prob >= threshold;
     var top = s.contributions.slice(0, 5).map(function (c) {
       if (c.id === "banlist") {
         var names = (features._hits || []).slice(0, 3).map(function (h) {
