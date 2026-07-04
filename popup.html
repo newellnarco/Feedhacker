@@ -23,19 +23,62 @@
     label.row input { margin-top: 2px; }
     .muted { color: #8a94a3; }
     .hint { margin: 11px 0 0; font-size: 11.5px; color: #6a7686; }
+    #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
+      background: #fdecec; border: 1px solid #f5c2c2; }
+    #errors.show { display: block; }
+    .err-title { font-weight: 700; color: #b42318; font-size: 12.5px; margin: 0 0 5px; }
+    .err-list { margin: 0; padding: 0; list-style: none; max-height: 132px; overflow: auto; }
+    .err-item { font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #7a271a; padding: 3px 0; border-top: 1px solid #f5d0d0; word-break: break-word; }
+    .err-item:first-child { border-top: 0; }
+    .err-item a { color: #b42318; text-decoration: underline; }
+    .err-actions { margin-top: 7px; display: flex; gap: 8px; }
+    .linklike { background: none; border: 0; color: #0a66c2; cursor: pointer; font-size: 11.5px; padding: 0; }
+    .linklike:hover { text-decoration: underline; }
+    .footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .master { display: flex; align-items: center; gap: 8px; padding: 7px 9px; margin: 0 0 10px;
+      border: 1px solid #e2e4e8; border-radius: 8px; background: #fafbfc; }
+    .master input { width: 16px; height: 16px; }
+    .master .lbl { font-weight: 700; }
+    .master.off { background: #fdecec; border-color: #f5c2c2; }
+    #paused-note { display: none; font-size: 11.5px; color: #b42318; margin: -6px 0 8px; }
+    #paused-note.show { display: block; }
   </style>
 </head>
 <body>
   <h1>FeedHacker</h1>
+  <label class="master" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
+  <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
   <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo &nbsp;·&nbsp; <b>A</b> aggressive slop</div>
   <div id="filters"></div>
+
+  <div class="group-label">AI-slop sensitivity</div>
+  <div class="frow">
+    <input type="range" id="slopThreshold" min="0.2" max="0.8" step="0.05" style="flex:1">
+    <span id="slopThresholdVal" class="muted" style="width:64px; text-align:right"></span>
+  </div>
 
   <div class="group-label">Display</div>
   <label class="row"><input type="checkbox" id="nameNames"> Name names <span class="muted">(who + category)</span></label>
   <label class="row"><input type="checkbox" id="hideCompletely"> Hide Hidden Content <span class="muted">(no placeholder)</span></label>
+  <label class="row"><input type="checkbox" id="digest"> Digest runs of hidden posts <span class="muted">(one summary bar)</span></label>
 
   <div class="group-label">Comments</div>
   <label class="row"><input type="checkbox" id="hideSlopComments"> Hide AI-slop comments</label>
+
+  <div id="errors">
+    <p class="err-title">⚠ FeedHacker hit an error</p>
+    <ul class="err-list" id="err-list"></ul>
+    <div class="err-actions"><button type="button" class="linklike" id="clear-errors">Clear errors</button></div>
+  </div>
+
+  <div class="footer">
+    <button type="button" class="linklike" id="open-options">Details &amp; activity</button>
+    <button type="button" class="linklike" id="reset-learning">Reset AI-slop learning</button>
+  </div>
+
+  <script src="filters.js"></script>
+  <script src="logger.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "none",
+    "rootDir": "src",
+    "outDir": "build",
+    "strict": true,
+    "noImplicitAny": false,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "newLine": "lf"
+  },
+  "include": ["src/**/*.ts", "types/**/*.d.ts"]
+}

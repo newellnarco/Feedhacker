@@ -10,10 +10,10 @@
   var Native = window.IntersectionObserver;
   if (!Native) return;
 
-  var records = [];
+  var records: any[] = [];
   function Patched(cb, opts) {
     var inst = new Native(cb, opts);
-    var rec = { cb: cb, inst: inst, targets: [] };
+    var rec: any = { cb: cb, inst: inst, targets: [] };
     records.push(rec);
     var obs = inst.observe.bind(inst);
     inst.observe = function (el) { if (rec.targets.indexOf(el) === -1) rec.targets.push(el); return obs(el); };
@@ -29,7 +29,7 @@
   }
   Patched.prototype = Native.prototype;
   try { Object.defineProperty(window, "IntersectionObserver", { value: Patched, writable: true, configurable: true }); }
-  catch (e) { try { window.IntersectionObserver = Patched; } catch (e2) { return; } }
+  catch (e) { try { (window as any).IntersectionObserver = Patched; } catch (e2) { return; } }
 
   function entry(t) {
     var r;

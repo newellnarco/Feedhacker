@@ -15,6 +15,24 @@
 }
 .feedhacker-show:hover { background: #e6eefb; }
 
+.feedhacker-profile {
+  color: #0a66c2; font-size: 12px; font-weight: 600; text-decoration: none;
+  padding: 3px 6px; border-radius: 12px;
+}
+.feedhacker-profile:hover { background: #e6eefb; text-decoration: underline; }
+
+.feedhacker-muteauthor, .feedhacker-confirm {
+  cursor: pointer; border: 1px solid #c7ccd4; background: #fff;
+  color: #5f6b7a; border-radius: 14px; padding: 3px 10px;
+  font-size: 12px; font-weight: 600;
+}
+.feedhacker-muteauthor:hover:not([disabled]) { background: #f0f2f5; color: #b42318; border-color: #e2b6b6; }
+.feedhacker-confirm:hover:not([disabled]) { background: #eefaf3; color: #047857; border-color: #b7e2cd; }
+.feedhacker-confirm[disabled] { opacity: .7; cursor: default; }
+
+.feedhacker-digested { display: none !important; }
+.feedhacker-digest-summary { background: #eef0f3; color: #5f6b7a; font-style: italic; }
+
 .feedhacker-gone { display: none !important; }
 
 #feedhacker-loadmore, .feedhacker-loadmore {

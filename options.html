@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FeedHacker — details & activity</title>
+  <style>
+    :root { color-scheme: light; }
+    body { max-width: 720px; margin: 0 auto; padding: 28px 22px 60px;
+      font: 14px/1.5 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; background: #f6f7f9; }
+    h1 { font-size: 22px; margin: 0 0 2px; }
+    .sub { color: #8a94a3; margin: 0 0 22px; font-size: 13px; }
+    section { background: #fff; border: 1px solid #e2e4e8; border-radius: 12px; padding: 18px 20px; margin: 0 0 16px; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: #6a7686; margin: 0 0 12px; }
+    .kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; font-size: 13.5px; }
+    .kv dt { color: #8a94a3; }
+    .kv dd { margin: 0; word-break: break-word; }
+    .switch { display: flex; align-items: center; gap: 12px; }
+    .switch input { width: 18px; height: 18px; }
+    .switch .state { font-weight: 700; }
+    .on { color: #047857; } .off { color: #b42318; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eef0f3; }
+    th { color: #8a94a3; font-weight: 600; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .muted { color: #8a94a3; }
+    .errs { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
+    .errs li { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: #7a271a;
+      padding: 6px 0; border-bottom: 1px solid #f2dede; word-break: break-word; }
+    .actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { cursor: pointer; border: 1px solid #c7ccd4; background: #fff; color: #0a66c2;
+      border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; }
+    button:hover { background: #eef3fb; }
+    button.danger { color: #b42318; border-color: #f0c4c4; }
+    button.danger:hover { background: #fdecec; }
+    .empty { color: #8a94a3; font-style: italic; }
+    code { background: #f0f2f5; padding: 1px 5px; border-radius: 4px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid2 label { display: flex; flex-direction: column; font-size: 12px; color: #6a7686; gap: 4px; }
+    textarea, input[type=url] { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+      border: 1px solid #c7ccd4; border-radius: 6px; padding: 7px 9px; resize: vertical; }
+    .rowline { display: flex; align-items: center; gap: 9px; padding: 5px 0; }
+    .frow2 { display: flex; gap: 8px; margin-top: 8px; }
+    .chiplist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .chiplist li { display: flex; align-items: center; gap: 6px; background: #f0f2f5;
+      border-radius: 14px; padding: 4px 6px 4px 12px; font-size: 12.5px; }
+    .chiplist button { border: 0; background: #d9dde3; color: #444; border-radius: 50%;
+      width: 18px; height: 18px; line-height: 1; padding: 0; cursor: pointer; font-weight: 700; }
+    .chiplist button:hover { background: #b42318; color: #fff; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>FeedHacker</h1>
+  <p class="sub">Details, activity, and diagnostics. The Mute/Solo mixer lives in the toolbar popup.</p>
+
+  <section>
+    <h2>Status</h2>
+    <div class="switch">
+      <input type="checkbox" id="enabled">
+      <label for="enabled">Extension enabled — <span class="state" id="enabled-state"></span></label>
+    </div>
+    <p class="muted" id="active-summary" style="margin:10px 0 0;"></p>
+  </section>
+
+  <section>
+    <h2>Properties</h2>
+    <dl class="kv" id="props"></dl>
+  </section>
+
+  <section>
+    <h2>Activity</h2>
+    <div id="activity"></div>
+  </section>
+
+  <section>
+    <h2>Insights (last 30 days)</h2>
+    <div id="insights"></div>
+    <h3 style="font-size:12px;color:#8a94a3;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;">Top sources</h3>
+    <div id="top-sources"></div>
+  </section>
+
+  <section>
+    <h2>Custom filters</h2>
+    <p class="muted" style="margin:0 0 10px;">Hide posts matching any of these (one per line). Applies on top of the built-in filters.</p>
+    <div class="grid2">
+      <label>Words / phrases<textarea id="cf-words" rows="4" placeholder="crypto&#10;hustle culture"></textarea></label>
+      <label>Regexes<textarea id="cf-regexes" rows="4" placeholder="\bweb3\b"></textarea></label>
+      <label>Hashtags<textarea id="cf-hashtags" rows="4" placeholder="#hustle&#10;grindset"></textarea></label>
+      <label>Companies / authors<textarea id="cf-companies" rows="4" placeholder="Acme Corp&#10;Jane Doe"></textarea></label>
+    </div>
+    <div class="actions"><button id="cf-save">Save custom filters</button> <span class="muted" id="cf-status"></span></div>
+  </section>
+
+  <section>
+    <h2>Authors</h2>
+    <h3 style="font-size:12px;color:#8a94a3;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;">Muted (always hidden)</h3>
+    <ul class="chiplist" id="muted-list"></ul>
+    <h3 style="font-size:12px;color:#8a94a3;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;">Always shown</h3>
+    <ul class="chiplist" id="allowed-list"></ul>
+  </section>
+
+  <section>
+    <h2>Advanced</h2>
+    <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
+    <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
+    <div style="margin-top:12px;">
+      <label class="rowline"><input type="checkbox" id="remoteBanlist"> Use a remote banlist update</label>
+      <div class="frow2">
+        <input type="url" id="remoteBanlistUrl" placeholder="https://example.com/claudisms.json" style="flex:1">
+        <button id="remote-fetch">Fetch &amp; save</button>
+      </div>
+      <span class="muted" id="remote-status"></span>
+      <p class="muted" style="margin:6px 0 0;">Off by default. Fetching asks for permission for that site only; nothing else is sent.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Learned model</h2>
+    <p class="muted" style="margin:0 0 8px;">Your on-device AI-slop weights. Export to back up or move to another browser.</p>
+    <div class="actions">
+      <button id="export-model">Export</button>
+      <button id="import-model">Import</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none">
+      <span class="muted" id="model-status"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Error log</h2>
+    <ul class="errs" id="errs"></ul>
+    <p class="empty" id="errs-empty">No errors logged. 🎉</p>
+    <div class="actions">
+      <button id="clear-errors" class="danger">Clear error log</button>
+      <button id="reset-learning">Reset AI-slop learning</button>
+      <button id="refresh">Refresh</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Manage</h2>
+    <p style="margin:0 0 6px;">Disable or remove FeedHacker any time from Chrome's extensions page:
+      open <code>chrome://extensions</code>, find <b>FeedHacker</b>, then use the toggle to
+      disable or <b>Remove</b> to uninstall.</p>
+    <p class="muted" style="margin:0;">The master switch above pauses filtering without uninstalling.</p>
+  </section>
+
+  <script src="filters.js"></script>
+  <script src="logger.js"></script>
+  <script src="authors.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
