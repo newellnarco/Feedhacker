@@ -1,6 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Shell scripts must stay LF, even when checked out on Windows, or bash
+# chokes on the CR ("set: pipefail: invalid option name").
+*.sh text eol=lf
+
 # Windows launchers need CRLF; PowerShell is happy with LF.
 *.bat text eol=crlf
 *.cmd text eol=crlf
