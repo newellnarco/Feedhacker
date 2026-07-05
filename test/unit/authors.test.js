@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { authors } = require("./helper");
+const { authors } = require("../helper");
 
 test("keyFor prefers the profile path over the name", () => {
   assert.strictEqual(authors.keyFor({ name: "Jane Doe", url: "https://www.linkedin.com/in/jane-doe" }), "/in/jane-doe");

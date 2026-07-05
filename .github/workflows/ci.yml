@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  # --- Level 1: unit — pure per-module logic (fast, no DOM host, no browser) ---
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,5 +21,52 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:unit
+
+  # --- Level 2: integration — modules wired together via jsdom + a mock chrome ---
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run test:integration
+
+  # --- Level 3: system — the packaged extension in real headless Chromium ---
+  system:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:system # builds the extension, then drives it end-to-end
+
+  # --- Publish the green build so end users / the auto-updater never build locally ---
+  package:
+    needs: [unit, integration, system]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
       - run: npm run build
+      - name: Upload prebuilt extension (green build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: feedhacker-extension
+          path: |
+            dist/feedhacker/**
+            dist/feedhacker-*.zip
+          if-no-files-found: error
+          retention-days: 90

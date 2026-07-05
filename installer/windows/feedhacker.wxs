@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FeedHacker MSI (best-effort). Lays the prebuilt extension + the guided installer
+  scripts into %LOCALAPPDATA%\FeedHacker and adds a Start-Menu shortcut that runs the
+  one-time setup (install.ps1: registers auto-update + guides "Load unpacked").
+
+  NOTE: Chrome blocks silently enabling an off-store extension, so even an MSI cannot
+  make Chrome load it without a one-time Developer-mode "Load unpacked" (or an
+  enterprise force-install policy). The true one-click path is the Chrome Web Store.
+
+  Built in CI with WiX v5 (`wix build`). Version is injected via -d Version=<x.y.z>.
+  Payload files are staged under .\payload\ before building.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="FeedHacker"
+           Manufacturer="FeedHacker"
+           Version="$(var.Version)"
+           UpgradeCode="8f2c1d3e-6b4a-4c2f-9e7a-2b1c3d4e5f60"
+           Scope="perUser">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of FeedHacker is already installed." />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="FeedHacker" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppShortcutFolder" Name="FeedHacker" />
+    </StandardDirectory>
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="Payload" />
+      <ComponentRef Id="SetupShortcut" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <!-- Harvest the staged payload (prebuilt extension + installer scripts). -->
+    <ComponentGroup Id="Payload" Directory="INSTALLFOLDER">
+      <Files Include="payload\**" />
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="SetupShortcut" Directory="AppShortcutFolder" Guid="7a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9">
+      <Shortcut Id="RunSetup"
+                Name="Finish FeedHacker setup"
+                Target="[System64Folder]WindowsPowerShell\v1.0\powershell.exe"
+                Arguments="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]installer\install.ps1&quot;"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="RemoveAppShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\FeedHacker" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+  </Fragment>
+</Wix>

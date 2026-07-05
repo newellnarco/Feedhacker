@@ -69,6 +69,16 @@
   </section>
 
   <section>
+    <h2>Updates</h2>
+    <p class="muted" id="update-status">Running version <span id="update-current"></span>.</p>
+    <div class="actions">
+      <button id="check-updates">Check for updates</button>
+      <a id="releases-link" href="https://github.com/newellnarco/Feedhacker/releases/latest" target="_blank" rel="noopener" style="align-self:center;">Releases ↗</a>
+    </div>
+    <p class="muted" style="margin:10px 0 0;">Windows installs auto-update daily from GitHub. For a manual load, download the latest release and reload FeedHacker on <code>chrome://extensions</code>.</p>
+  </section>
+
+  <section>
     <h2>Activity</h2>
     <div id="activity"></div>
   </section>
@@ -148,6 +158,7 @@
   <script src="filters.js"></script>
   <script src="logger.js"></script>
   <script src="authors.js"></script>
+  <script src="update.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

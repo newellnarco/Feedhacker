@@ -7,11 +7,15 @@
     "compile": "tsc",
     "typecheck": "tsc --noEmit",
     "pretest": "tsc",
-    "test": "node --test test/*.test.js",
-    "build": "bash scripts/build.sh"
+    "test": "node --test \"test/unit/*.test.js\" \"test/integration/*.test.js\"",
+    "test:unit": "tsc && node --test \"test/unit/*.test.js\"",
+    "test:integration": "tsc && node --test \"test/integration/*.test.js\"",
+    "test:system": "npm run build && node --test \"test/system/*.test.js\"",
+    "build": "node scripts/build.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.1.0",
+    "playwright": "^1.61.1",
     "typescript": "^5.9.3"
   }
 }

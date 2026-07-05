@@ -1,0 +1,41 @@
+"use strict";
+// System (build): the packaged output must be a complete, loadable extension. Guards
+// against the build silently dropping a file the manifest references (the class of
+// bug the old bash build could hit) and against a corrupt distribution zip.
+const test = require("node:test");
+const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
+const { EXT, ROOT } = require("./helper");
+
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8"));
+
+test("every file the manifest references is present in dist/feedhacker", () => {
+  assert.ok(fs.existsSync(path.join(EXT, "manifest.json")), "run `npm run build` first");
+  const referenced = new Set(["manifest.json"]);
+  for (const cs of manifest.content_scripts || []) {
+    for (const j of cs.js || []) referenced.add(j);
+    for (const c of cs.css || []) referenced.add(c);
+  }
+  if (manifest.background?.service_worker) referenced.add(manifest.background.service_worker);
+  if (manifest.action?.default_popup) referenced.add(manifest.action.default_popup);
+  if (manifest.options_ui?.page) referenced.add(manifest.options_ui.page);
+  for (const war of manifest.web_accessible_resources || []) {
+    for (const r of war.resources || []) referenced.add(r);
+  }
+  for (const size of Object.values(manifest.icons || {})) referenced.add(size);
+
+  const missing = [...referenced].filter((f) => !fs.existsSync(path.join(EXT, f)));
+  assert.deepStrictEqual(missing, [], `dist/feedhacker is missing: ${missing.join(", ")}`);
+});
+
+test("the distribution zip exists and has a valid ZIP signature", () => {
+  const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}.zip`);
+  assert.ok(fs.existsSync(zip), `expected ${zip} — run \`npm run build\``);
+  const head = Buffer.alloc(4);
+  const fd = fs.openSync(zip, "r");
+  try { fs.readSync(fd, head, 0, 4, 0); } finally { fs.closeSync(fd); }
+  assert.strictEqual(head.toString("latin1", 0, 2), "PK", "zip must start with the PK local-file signature");
+  assert.strictEqual(head[2], 0x03);
+  assert.strictEqual(head[3], 0x04);
+});

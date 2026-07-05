@@ -6,6 +6,7 @@ var byId = function (id) { return document.getElementById(id) as any; };
 var Filters = self.FeedHackerFilters;
 var Log = self.FeedHackerLog;
 var Authors = self.FeedHackerAuthors;
+var Update = self.FeedHackerUpdate;
 var DEFAULTS = Filters.DEFAULTS;
 var WEIGHTS_KEY = "feedhacker:slopWeights";
 var STATS_KEY = "feedhacker:stats";
@@ -152,6 +153,31 @@ byId("reset-learning").addEventListener("click", function () {
   });
 });
 byId("refresh").addEventListener("click", loadAll);
+
+// --- update check: compare the running version against the latest GitHub release ---
+function currentVersion() { try { return chrome.runtime.getManifest().version; } catch (e) { return ""; } }
+(function initUpdates() {
+  var cur = byId("update-current");
+  if (cur) cur.textContent = currentVersion();
+  var btn = byId("check-updates"), status = byId("update-status");
+  if (!btn || !status || !Update) return;
+  btn.addEventListener("click", function () {
+    btn.disabled = true;
+    var label = btn.textContent;
+    btn.textContent = "Checking…";
+    Update.checkForUpdate(null, currentVersion()).then(function (res) {
+      status.textContent = res.updateAvailable
+        ? "Update available: v" + res.current + " → v" + res.latest +
+          ". Download the latest release, then reload FeedHacker on chrome://extensions."
+        : "You're on the latest version (v" + res.current + ").";
+    }).catch(function (e) {
+      status.textContent = "Couldn't check for updates: " + ((e && e.message) || e);
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = label;
+    });
+  });
+})();
 
 // --- Insights (daily history + top sources) ---
 function renderInsights(history) {

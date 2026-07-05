@@ -1,29 +1,23 @@
-# FeedHacker — Windows installer (no admin required).
-# Clones/builds FeedHacker into %LOCALAPPDATA%\FeedHacker, registers a per-user
-# daily auto-update task, then guides the one-time "Load unpacked" (Chrome does not
-# allow unsigned extensions to be installed silently). Re-running updates in place.
+# FeedHacker — Windows installer (no admin, no build, no source).
+# Installs the PREBUILT extension into %LOCALAPPDATA%\FeedHacker\extension, registers a
+# per-user daily auto-update task (pulls the latest GREEN release from GitHub), then
+# guides the one-time "Load unpacked" click Chrome requires for off-store extensions.
 #
 # Usage:  double-click install.bat, or:
-#   powershell -ExecutionPolicy Bypass -File install.ps1 [-Branch main] [-NoSchedule]
+#   powershell -ExecutionPolicy Bypass -File install.ps1 [-NoSchedule]
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-  [string]$RepoUrl = "https://github.com/newellnarco/Feedhacker.git",
-  [string]$Branch  = "main",
+  [string]$Repo = "newellnarco/Feedhacker",
   [switch]$NoSchedule
 )
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+. (Join-Path $PSScriptRoot "lib.ps1")
 
 function Info($m) { Write-Host "[FeedHacker] $m" -ForegroundColor Cyan }
 function Warn($m) { Write-Host "[FeedHacker] $m" -ForegroundColor Yellow }
 function Die($m)  { Write-Host "[FeedHacker] ERROR: $m" -ForegroundColor Red; Read-Host "Press Enter to close"; exit 1 }
-function Have($cmd) { return [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
-function Update-Path {
-  $m = [Environment]::GetEnvironmentVariable("Path", "Machine")
-  $u = [Environment]::GetEnvironmentVariable("Path", "User")
-  $env:Path = "$m;$u"
-}
 function Find-Chrome {
   $paths = @(
     (Join-Path $env:ProgramFiles "Google\Chrome\Application\chrome.exe"),
@@ -34,57 +28,40 @@ function Find-Chrome {
 }
 
 $Root = Join-Path $env:LOCALAPPDATA "FeedHacker"
-$Repo = Join-Path $Root "repo"
-$Ext  = Join-Path $Repo "dist\feedhacker"
-
+$Ext  = Join-Path $Root "extension"
+$Inst = Join-Path $Root "installer"
+New-Item -ItemType Directory -Force -Path $Root, $Inst | Out-Null
 Info "Install location: $Root"
 
-# --- 1. Prerequisites (Git + Node.js). Try winget if missing. ---
-if (-not (Have git)) {
-  Warn "Git not found."
-  if (Have winget) { Info "Installing Git via winget…"; winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements | Out-Null; Update-Path }
-  if (-not (Have git)) { Die "Git is required. Install it from https://git-scm.com/download/win , reopen this window, and re-run." }
-}
-if (-not (Have node)) {
-  Warn "Node.js not found."
-  if (Have winget) { Info "Installing Node.js LTS via winget…"; winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements | Out-Null; Update-Path }
-  if (-not (Have node)) { Die "Node.js LTS is required. Install it from https://nodejs.org , reopen this window, and re-run." }
-}
-
-# --- 2. Clone or update the repository ---
-New-Item -ItemType Directory -Force -Path $Root | Out-Null
-if (Test-Path (Join-Path $Repo ".git")) {
-  Info "Updating existing checkout…"
-  git -C $Repo fetch origin $Branch
-  git -C $Repo checkout $Branch
-  git -C $Repo reset --hard "origin/$Branch"
+# --- 1. Get the prebuilt extension files (NO building) ---
+# The Windows bundle ships a ready-built `feedhacker\` folder next to this installer;
+# use it for an instant, offline install. Otherwise download the latest GitHub release.
+$bundled = Join-Path $PSScriptRoot "..\feedhacker"
+if (Test-Path (Join-Path $bundled "manifest.json")) {
+  Info "Installing the bundled prebuilt extension…"
+  Copy-ExtensionInto -Src $bundled -ExtDir $Ext
 } else {
-  Info "Cloning $RepoUrl ($Branch)…"
-  git clone --branch $Branch $RepoUrl $Repo
+  Info "Downloading the latest green release from GitHub…"
+  try { Sync-LatestRelease -Repo $Repo -ExtDir $Ext -Force -Log { param($m) Info $m } | Out-Null }
+  catch { Die ("Could not download the extension: " + $_.Exception.Message) }
 }
+if (-not (Test-Path (Join-Path $Ext "manifest.json"))) { Die "Install did not produce $Ext" }
 
-# --- 3. Build the extension ---
-Push-Location $Repo
-try {
-  Info "Installing dependencies (npm ci)…"
-  npm ci
-  Info "Building (npm run build)…"
-  npm run build
-} finally { Pop-Location }
-if (-not (Test-Path (Join-Path $Ext "manifest.json"))) { Die "Build did not produce $Ext" }
+# Keep the installer scripts at a stable path so the scheduled task can call them.
+Copy-Item -Path (Join-Path $PSScriptRoot "*") -Destination $Inst -Recurse -Force
 
-# --- 4. Per-user daily auto-update task (no admin) ---
+# --- 2. Per-user daily auto-update task (no admin) ---
 if (-not $NoSchedule) {
-  $updater = Join-Path $Repo "installer\windows\update.ps1"
+  $updater = Join-Path $Inst "update.ps1"
   $taskName = "FeedHacker Auto-Update"
-  $cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$updater`" -Branch $Branch"
+  $cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$updater`" -Repo $Repo"
   try {
     schtasks /Create /F /SC DAILY /ST 09:00 /TN $taskName /TR $cmd | Out-Null
-    Info "Registered daily auto-update task '$taskName' (updates from GitHub, then rebuilds)."
+    Info "Registered daily auto-update task '$taskName' (pulls the latest green release)."
   } catch { Warn "Could not register the scheduled task; you can still update by running update.bat." }
 }
 
-# --- 5. One-time Load unpacked ---
+# --- 3. One-time Load unpacked (Chrome blocks silent off-store installs) ---
 Set-Clipboard -Value $Ext
 $chrome = Find-Chrome
 if ($chrome) { Start-Process $chrome "chrome://extensions/" } else { Warn "Chrome not found automatically — open chrome://extensions manually." }
@@ -100,5 +77,5 @@ Write-Host "   3. Paste the path (Ctrl+V) in the dialog and Select Folder."
 Write-Host "   4. Click the puzzle icon and pin FeedHacker."
 Write-Host "===============================================" -ForegroundColor White
 Write-Host ""
-Info "Installed. Updates apply automatically; new files load when you restart Chrome."
+Info "Installed. Updates download automatically; new files load when you restart Chrome."
 Read-Host "Press Enter to close"

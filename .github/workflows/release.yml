@@ -1,0 +1,103 @@
+name: Release
+
+# Publish a ready-to-install build so end users never touch source or build tools.
+# Tag a version (e.g. `git tag v0.1.0 && git push --tags`) to cut a GitHub Release with
+# the prebuilt extension zip, the Windows one-click bundle, and a best-effort MSI.
+# `workflow_dispatch` builds the same assets without publishing (for a dry run).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  # Best-effort Windows MSI. Never blocks the release: if WiX build fails, the release
+  # still ships the zips.
+  msi:
+    needs: build
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Stage MSI payload (prebuilt extension + installer scripts)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer/windows/payload/feedhacker | Out-Null
+          Copy-Item dist/feedhacker/* installer/windows/payload/feedhacker -Recurse -Force
+          New-Item -ItemType Directory -Force -Path installer/windows/payload/installer | Out-Null
+          Copy-Item installer/windows/*.ps1, installer/windows/*.bat installer/windows/payload/installer -Force
+      - name: Install WiX
+        shell: pwsh
+        run: dotnet tool install --global wix
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          $v = (Get-Content dist/feedhacker/manifest.json -Raw | ConvertFrom-Json).version
+          wix build installer/windows/feedhacker.wxs -d Version=$v -arch x64 -o "dist/FeedHacker-$v.msi"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: msi
+          path: dist/*.msi
+          if-no-files-found: ignore
+
+  release:
+    needs: [build, msi]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: msi
+          path: dist
+      - name: Create GitHub Release with prebuilt assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(cat <<EOF
+          ## Install FeedHacker (no build, no source)
+
+          **Easiest (Windows):** download \`feedhacker-${VERSION}-win.zip\`, unzip, double-click \`installer/install.bat\`. It installs the prebuilt extension, sets up daily auto-updates, and walks you through the one-time "Load unpacked" click Chrome requires.
+
+          **Any browser (manual):** download \`feedhacker-${VERSION}.zip\`, unzip, open \`chrome://extensions\`, turn on **Developer mode**, click **Load unpacked**, and pick the unzipped \`feedhacker\` folder.
+
+          > Chrome only allows silent, one-click install from the Chrome Web Store. Everything here is the closest no-account alternative.
+
+          _These assets are published automatically only after CI passes on all three test levels (unit, integration, system)._
+          EOF
+          )
+          shopt -s nullglob
+          ASSETS=(dist/feedhacker-*.zip dist/*.msi)
+          gh release create "$GITHUB_REF_NAME" \
+            --title "FeedHacker $GITHUB_REF_NAME" \
+            --notes "$NOTES" \
+            "${ASSETS[@]}"

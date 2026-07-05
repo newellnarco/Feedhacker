@@ -109,30 +109,40 @@ of the standard filters.
 
 ## Install
 
-See **[INSTALL.md](INSTALL.md)** for the full, step-by-step Chrome Extensions
-manager walkthrough (with managing/uninstalling and troubleshooting). Quick
-version below.
+No build, no source, no account — grab a prebuilt release. See
+**[INSTALL.md](INSTALL.md)** for the full walkthrough (managing, updating,
+troubleshooting).
 
-### Option A — Load unpacked (dev build, ~1 minute)
+> Chrome only allows fully silent, one‑click installs from the Chrome Web Store.
+> Until FeedHacker is listed there, the steps below are the closest no‑account
+> path: a prebuilt download plus a single "Load unpacked" click.
 
-1. Build the extension: `npm install && npm run build` (compiles the TypeScript
-   and produces `dist/feedhacker/` plus `dist/feedhacker-0.1.0.zip`). Or unzip a
-   prebuilt `feedhacker-0.1.0.zip`.
-2. Open `chrome://extensions` (paste it into the address bar).
-3. Turn on **Developer mode** (top‑right toggle).
-4. Click **Load unpacked** and select **`dist/feedhacker/`** (the folder
-   containing `manifest.json`).
-5. Click the toolbar puzzle icon 🧩 and **pin** FeedHacker.
-6. Open your LinkedIn feed, click the FeedHacker icon, and mute the noise.
+### Option A — Windows one‑click bundle (recommended)
 
-### Option B — Build a zip to share
+1. Download **`feedhacker-<version>-win.zip`** from the
+   [**latest release**](https://github.com/newellnarco/Feedhacker/releases/latest).
+2. Unzip it and double‑click **`installer/install.bat`**.
+3. It installs the prebuilt extension, sets up **daily auto‑updates** (pulls each
+   new green release from GitHub — no rebuilding), and opens Chrome for the
+   one‑time **Load unpacked** click. Done. No admin, no Node, no Git.
+
+### Option B — Prebuilt zip, any Chromium browser (~1 minute)
+
+1. Download **`feedhacker-<version>.zip`** from the
+   [latest release](https://github.com/newellnarco/Feedhacker/releases/latest) and
+   unzip it (you get a `feedhacker/` folder containing `manifest.json`).
+2. Open `chrome://extensions`, turn on **Developer mode** (top‑right).
+3. Click **Load unpacked** and select the unzipped **`feedhacker/`** folder.
+4. Pin it via the puzzle icon 🧩, open your LinkedIn feed, and mute the noise.
+
+### Option C — Build it yourself (contributors)
 
 ```bash
-npm run build     # → dist/feedhacker-<version>.zip
+npm install && npm run build   # → dist/feedhacker/ and dist/feedhacker-<version>.zip
 ```
 
-Unzip it and follow steps 2–6 above. Works in any Chromium‑based browser with
-Manifest V3 (Chrome, Edge, Brave, Arc, …).
+Then load `dist/feedhacker/` via Option B, steps 2–4. Releases are cut
+automatically by CI; see [`.github/workflows/release.yml`](.github/workflows/release.yml).
 
 ### Enable, disable, or uninstall
 
