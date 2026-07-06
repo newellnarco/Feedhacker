@@ -402,7 +402,7 @@
   }
   function iconSvg(doc, opts, kids?: any[]) {
     return svgEl(doc, "svg", {
-      viewBox: "0 0 24 24", width: "16", height: "16",
+      viewBox: "0 0 24 24", width: "25", height: "25",
       fill: opts.fill || "none", stroke: opts.stroke || "none",
       "stroke-width": opts.sw || "0", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true"
     }, kids);
