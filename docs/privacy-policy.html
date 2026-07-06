@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FeedHacker — Privacy Policy</title>
+  <meta name="description" content="Privacy policy for the FeedHacker Chrome extension. FeedHacker does not collect, transmit, or sell any personal data.">
+  <style>
+    :root { color-scheme: light dark; }
+    body { max-width: 720px; margin: 0 auto; padding: 40px 22px 72px;
+      font: 16px/1.6 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; background: #f6f7f9; }
+    h1 { font-size: 26px; margin: 0 0 4px; }
+    h2 { font-size: 18px; margin: 30px 0 8px; }
+    .updated { color: #8a94a3; margin: 0 0 24px; font-size: 14px; }
+    strong { color: #0a2540; }
+    a { color: #0a66c2; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    code { background: #eceef1; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
+    .note { color: #6a7686; font-size: 14px; margin-top: 32px; border-top: 1px solid #e2e4e8; padding-top: 16px; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e7e9ec; background: #14171a; }
+      strong { color: #cfe0ff; }
+      code { background: #262b30; }
+      .note { border-top-color: #2b3138; color: #9aa4b0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>FeedHacker — Privacy Policy</h1>
+  <p class="updated">Last updated: 2026-07-06</p>
+
+  <p>FeedHacker is a browser extension that filters low-signal posts out of your LinkedIn
+     home feed. This policy explains what it does and does not do with your data.</p>
+
+  <h2>Summary</h2>
+  <p><strong>FeedHacker does not collect, transmit, or sell any personal data.</strong>
+     Everything it does happens locally in your browser.</p>
+
+  <h2>What FeedHacker stores</h2>
+  <p>FeedHacker uses your browser's local extension storage (<code>chrome.storage</code>)
+     to save, on your device only:</p>
+  <ul>
+    <li>Your filter settings (which filters are muted/soloed, sensitivity, custom
+        word/regex/hashtag/company filters, muted authors).</li>
+    <li>A small AI-slop scoring model that adapts to your corrections.</li>
+    <li>Local activity counts (how many posts were hidden) shown on the options page.</li>
+    <li>A short local error log to help diagnose problems.</li>
+  </ul>
+  <p>This data never leaves your device and is not sent to us or anyone else. Uninstalling
+     the extension (or clearing its storage) removes it.</p>
+
+  <h2>What FeedHacker accesses</h2>
+  <ul>
+    <li>It reads the content of posts on <code>www.linkedin.com</code> while you view your
+        feed, in order to decide which posts to hide. This reading happens locally and in
+        real time; post content is not stored or transmitted.</li>
+    <li><strong>Optional banlist update (off by default):</strong> if you click "Update
+        banlist now" on the options page, FeedHacker asks for permission scoped to the
+        project's own files on GitHub
+        (<code>https://raw.githubusercontent.com/newellnarco/Feedhacker/*</code>) and
+        fetches its curated AI-slop phrase list from there. Only then does it make a
+        network request, and only to that address. The fetched list is stored locally on
+        your device; no personal data is sent, and nothing about you is included in the
+        request.</li>
+  </ul>
+
+  <h2>What FeedHacker does NOT do</h2>
+  <ul>
+    <li>No analytics, tracking, or telemetry.</li>
+    <li>No accounts, no advertising, no selling or sharing of data.</li>
+    <li>No remotely-executed code — all logic ships inside the extension package.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>FeedHacker is published by <strong>MAX Research Collective</strong>.<br>
+     Questions: open an issue at
+     <a href="https://github.com/newellnarco/Feedhacker/issues">github.com/newellnarco/Feedhacker/issues</a>.</p>
+
+  <p class="note">FeedHacker is unofficial and not affiliated with, endorsed by, or
+     sponsored by LinkedIn.</p>
+</body>
+</html>
