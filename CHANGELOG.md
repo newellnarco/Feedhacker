@@ -36,6 +36,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   reviewer verifies this reliably, unlike a `raw.githubusercontent.com` link.
 
 ### Changed
+- Popup: **Aggressive (A) is now coupled to the AI-slop Mute (M)** — clicking A also
+  turns Mute on, turning Mute off clears Aggressive, and A is dimmed with a hint
+  while AI slop isn't muted. Removes the old dead state where A did nothing on its own.
 - Clearer wording for the **Solo** action in the new Actions card ("show me just
   this" mode, with a concrete example).
 - Options page "Updates" text now explains updating per install method (Chrome Web

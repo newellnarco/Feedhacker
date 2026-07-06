@@ -31,6 +31,18 @@ function paint(b, on) {
   b.classList.toggle(cls, !!on);
 }
 
+// Aggressive is a modifier on the AI-slop Mute, not a filter of its own — it does
+// nothing unless AI slop is muted. So we couple them: clicking A also turns M on,
+// turning M off clears A, and A is dimmed (with a hint) whenever M is off.
+var aggBtn = document.querySelector('.ms[data-key="aggressive"]') as any;
+function paintAggAvailability(muteOn) {
+  if (!aggBtn) return;
+  aggBtn.classList.toggle("ms-dim", !muteOn);
+  aggBtn.title = muteOn
+    ? "Aggressive: also apply broader, higher-false-positive AI-slop rules"
+    : "Turn on Mute (M) for AI slop to use Aggressive";
+}
+
 // Master enable/disable — pauses all filtering without uninstalling.
 var enabledBox = byId("enabled");
 var masterEl = byId("master");
@@ -49,6 +61,7 @@ chrome.storage.sync.get(DEFAULTS, function (st) {
   paintMaster(st.enabled);
   document.querySelectorAll(".ms").forEach(function (b) { paint(b, st[b.dataset.key]); });
   DISPLAY.forEach(function (id) { byId(id).checked = !!st[id]; });
+  paintAggAvailability(st.muteSloppy);
 });
 
 byId("open-options").addEventListener("click", function () {
@@ -75,9 +88,16 @@ document.querySelectorAll(".ms").forEach(function (b) {
   b.addEventListener("click", function () {
     chrome.storage.sync.get(DEFAULTS, function (st) {
       var nv = !st[b.dataset.key];
-      var patch = {}; patch[b.dataset.key] = nv;
+      var patch: any = {}; patch[b.dataset.key] = nv;
+      // Couple Aggressive to the AI-slop Mute: A implies M; clearing M clears A.
+      if (b.dataset.key === "aggressive" && nv && !st.muteSloppy) patch.muteSloppy = true;
+      if (b.dataset.key === "muteSloppy" && !nv && st.aggressive) patch.aggressive = false;
       chrome.storage.sync.set(patch);
-      paint(b, nv);
+      for (var k in patch) {
+        var btn = document.querySelector('.ms[data-key="' + k + '"]') as any;
+        if (btn) paint(btn, patch[k]);
+      }
+      paintAggAvailability(patch.muteSloppy != null ? patch.muteSloppy : st.muteSloppy);
     });
   });
 });

@@ -45,11 +45,9 @@ according to filters the user configures.
 - **Host access to `www.linkedin.com`** (content script) — Read the posts on the
   LinkedIn feed the user is actively viewing so matching posts can be hidden. The
   extension runs only on `www.linkedin.com`.
-- **`optional_host_permissions: https://raw.githubusercontent.com/newellnarco/Feedhacker/*`**
-  — Requested **only at runtime, only if** the user clicks "Update banlist now", to fetch
-  the curated AI-slop phrase list from the project's own GitHub-hosted file. Scoped to that
-  single repo path, not requested on install, and the fetched list is stored only in the
-  user's local browser storage.
+
+The extension requests no host permissions beyond `www.linkedin.com` and makes no
+network requests — its curated AI-slop phrase list ships inside the package.
 
 ## Data usage disclosures (Privacy practices tab)
 
