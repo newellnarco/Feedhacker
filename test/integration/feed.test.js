@@ -35,6 +35,21 @@ test("isPromoted ignores 'Promoted to VP' text", () => {
   assert.strictEqual(feed.isPromoted(el), false);
 });
 
+test("isCompanyAuthor detects a Company/School page author, not a person", () => {
+  const co = makeDoc(feedHtml(post(`<a href="/company/wsj">The Wall Street Journal</a><div>Moving back home shows financial savvy.</div>`)));
+  assert.strictEqual(feed.isCompanyAuthor(feed.findPostContainers(co)[0]), true);
+  const person = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>a normal human post</div>`)));
+  assert.strictEqual(feed.isCompanyAuthor(feed.findPostContainers(person)[0]), false);
+});
+
+test("Company/brand filter hides a company-authored post when muted", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/company/wsj">The Wall Street Journal</a><div>Some corporate headline here.</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const flags = feed.consider(doc, el, [], baseSettings({ muteSloppy: false, muteCompany: true }));
+  assert.ok(flags && flags.some((f) => f.id === "company"), "company post flagged");
+  assert.ok(el.classList.contains("feedhacker-hidden"));
+});
+
 test("isHiring detects hiring language", () => {
   const doc = makeDoc(feedHtml(post("<div>We are hiring for a backend role. #hiring</div>")));
   const el = feed.findPostContainers(doc)[0];

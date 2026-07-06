@@ -13,36 +13,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
-### Added
-- **"Always show" (whitelist) button** on stubs — allowlists the author so their posts
-  are never filtered again (and reveals the current post). Whitelisted authors are
-  listed in a new collapsed **Whitelist** section on the options page, where they can
-  be removed.
-
-### Changed
-- **Stub buttons redesigned** — a compact, right-justified cluster: two-line
-  **Mute author** / **Always show** / **Show anyway** buttons, and the profile link is
-  now a small square "open in new tab" icon (hover: "Visit profile").
-- **Muted authors are now soft-blocked** — their posts are hidden outright (no
-  "Muted author" stub), so a muted author simply stops appearing in your feed.
-  Manage/unmute them from the options page.
-- **Confirming slop or muting an author retires that row** — after you click
-  **👍 slop** or **Mute author** on a stub, the row fades out and is removed from
-  the feed instead of lingering.
+_Nothing yet._
 
 ## [0.3.0] — 2026-07-06
 
+### Added
+- **Company / brand posts filter** — Mute (or Solo) posts authored by a LinkedIn
+  Company or School page (WSJ, brands, publishers, orgs): corporate content that
+  isn't a paid "Promoted" ad and isn't AI slop. Off by default.
+- **"Always show" (whitelist) button** on stubs — allowlists the author so their
+  posts are never filtered again (and reveals the current post). Whitelisted authors
+  get a new collapsed **Whitelist** section on the options page, where they can be
+  removed.
+
 ### Changed
-- The **👍 slop** confirm button on AI-slop stubs now starts with a sideways thumb
-  and swings it upright on click (as the label changes to "thanks"), for clearer
-  before/after feedback.
-- Refreshed the Chrome Web Store listing **screenshots** to a 0.2.0 set (the
+- **Stronger AI-slop detection for "broetry"** — a new "spaced one-liners" signal
+  catches posts that are almost entirely short lines separated by blank lines (the
+  airy LinkedIn format the old broetry tell under-scored). Applies to AI-slop
+  comments too.
+- **Stub buttons redesigned** — a compact, right-justified cluster: two-line
+  **Mute author** / **Always show** / **Show anyway** buttons, and the profile link
+  is now a small square "open in new tab" icon (hover: "Visit profile").
+- **Muted authors are now soft-blocked** — their posts are hidden outright (no
+  "Muted author" stub), so a muted author simply stops appearing. Unmute from the
+  options page.
+- **Confirming slop or muting an author retires that row** — after you click
+  **👍 slop** or **Mute author**, the row fades out and is removed from the feed.
+- The **👍 slop** confirm button starts with a sideways thumb and swings it upright
+  on click (as the label changes to "thanks").
+- Refreshed the Chrome Web Store listing **screenshots** to a 0.2.0/0.3.0 set (the
   Mute/Solo mixer, the AI-slop detection panel, and the hidden-post stub).
-- **Docs consistency pass** for 0.2.0: removed lingering references to the
-  now-deleted remote GitHub banlist from `README.md`, `INSTALL.md`, and
-  `store/README.md`; renamed the documented "Name names" option to "Names" and
-  documented the new "+ sample" option, the detection-transparency panel, and the
-  Actions legend; and aligned the privacy wording to "no network requests."
+- **Docs consistency pass**: removed lingering references to the now-deleted remote
+  GitHub banlist (`README.md`, `INSTALL.md`, `store/README.md`), renamed the
+  documented "Name names" option to "Names", documented the new "+ sample" option,
+  the detection-transparency panel, and the Actions legend, and aligned the privacy
+  wording to "no network requests."
 
 ## [0.2.0] — 2026-07-06
 

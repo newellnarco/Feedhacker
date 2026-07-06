@@ -140,6 +140,14 @@
     return { name: getActor(el), url: url };
   }
 
+  // A post authored by a LinkedIn Company or School page (WSJ, brands, publishers,
+  // orgs) — corporate content that isn't a paid "Promoted" ad and isn't AI slop. The
+  // actor's profile link is /company/… or /school/… instead of /in/… for a person.
+  function isCompanyAuthor(el) {
+    var url = authorInfo(el).url || "";
+    return /\/(?:company|school)\//i.test(url);
+  }
+
   // Text-based post-type filters.
   var CATEGORIES = [
     { id: "anniversary", label: "Work Anniversary",
@@ -251,6 +259,7 @@
       if (sf) flags.push(sf);
     }
     if (on("promoted") && isPromoted(el)) flags.push({ id: "promoted", label: "Promoted Post", detail: "" });
+    if (on("company") && isCompanyAuthor(el)) flags.push({ id: "company", label: "Company / Brand", detail: "" });
     if (on("newsletter") && isNewsletterSignup(el)) flags.push({ id: "newsletter", label: "Newsletter Signup", detail: "" });
     if (on("hiring") && isHiring(el, text)) flags.push({ id: "hiring", label: "Hiring", detail: "" });
     if (on("likes") && isReactionReshare(el)) flags.push({ id: "likes", label: "Reaction Reshare", detail: "" });
@@ -853,7 +862,7 @@
 
   var api = {
     getText: getText, isMarker: isMarker, isPromoted: isPromoted,
-    isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare,
+    isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare, isCompanyAuthor: isCompanyAuthor,
     getActor: getActor, findPostContainers: findPostContainers,
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
