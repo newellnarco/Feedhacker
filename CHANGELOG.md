@@ -14,6 +14,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [Unreleased]
 
 ### Changed
+- The **👍 slop** confirm button on AI-slop stubs now starts with a sideways thumb
+  and swings it upright on click (as the label changes to "thanks"), for clearer
+  before/after feedback.
 - Refreshed the Chrome Web Store listing **screenshots** to a 0.2.0 set (the
   Mute/Solo mixer, the AI-slop detection panel, and the hidden-post stub).
 - **Docs consistency pass** for 0.2.0: removed lingering references to the

@@ -453,12 +453,20 @@
     // overloading Show/Hide). Only when we have the scored features to learn from.
     if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
       var yes = doc.createElement("button");
-      yes.type = "button"; yes.className = "feedhacker-confirm"; yes.textContent = "👍 slop";
+      yes.type = "button"; yes.className = "feedhacker-confirm";
+      // The thumb starts sideways (undecided); one click confirms and swings it upright.
+      var thumb = doc.createElement("span");
+      thumb.className = "feedhacker-thumb"; thumb.textContent = "👍";
+      var lbl = doc.createElement("span");
+      lbl.className = "feedhacker-confirm-label"; lbl.textContent = "slop";
+      yes.appendChild(thumb); yes.appendChild(lbl);
       yes.title = "Confirm this is AI slop (teaches the filter)";
       yes.addEventListener("click", function (ev) {
         ev.preventDefault(); ev.stopPropagation();
         emitFeedback(el, flags, settings, 1);
-        yes.textContent = "thanks ✓"; yes.disabled = true;
+        lbl.textContent = "thanks";
+        yes.classList.add("feedhacker-confirmed");   // swings the thumb from sideways to upright
+        yes.disabled = true;
       });
       stub.appendChild(yes);
     }
