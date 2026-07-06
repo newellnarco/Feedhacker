@@ -140,6 +140,14 @@
     return { name: getActor(el), url: url };
   }
 
+  // A post authored by a LinkedIn Company or School page (WSJ, brands, publishers,
+  // orgs) — corporate content that isn't a paid "Promoted" ad and isn't AI slop. The
+  // actor's profile link is /company/… or /school/… instead of /in/… for a person.
+  function isCompanyAuthor(el) {
+    var url = authorInfo(el).url || "";
+    return /\/(?:company|school)\//i.test(url);
+  }
+
   // Text-based post-type filters.
   var CATEGORIES = [
     { id: "anniversary", label: "Work Anniversary",
@@ -251,6 +259,7 @@
       if (sf) flags.push(sf);
     }
     if (on("promoted") && isPromoted(el)) flags.push({ id: "promoted", label: "Promoted Post", detail: "" });
+    if (on("company") && isCompanyAuthor(el)) flags.push({ id: "company", label: "Company / Brand", detail: "" });
     if (on("newsletter") && isNewsletterSignup(el)) flags.push({ id: "newsletter", label: "Newsletter Signup", detail: "" });
     if (on("hiring") && isHiring(el, text)) flags.push({ id: "hiring", label: "Hiring", detail: "" });
     if (on("likes") && isReactionReshare(el)) flags.push({ id: "likes", label: "Reaction Reshare", detail: "" });
@@ -351,33 +360,81 @@
   }
   function clearEl(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 
-  // Author control on the stub: a "Profile ↗" quick-link that opens the author's
-  // profile in a new tab, where the user can unfollow/block/report in LinkedIn's own
-  // UI. FeedHacker never automates those actions. Posts only, not comments.
+  // After the user confirms slop or mutes the author, retire the whole row: fade/slide
+  // it out (feedhacker-dismissing), then drop it from layout (feedhacker-gone) so the feed
+  // closes up. Idempotent; degrades to an immediate hide where transitions/timers are
+  // unavailable (tests). The timer is unref'd so it never keeps a process alive.
+  function dismissRow(el) {
+    if (!el || el.dataset.feedhackerDismissing === "1") return;
+    el.dataset.feedhackerDismissing = "1";
+    el.classList.add("feedhacker-dismissing");
+    var gone = function () { el.classList.add("feedhacker-gone"); };
+    el.addEventListener("transitionend", function h(e) {
+      if (e && e.propertyName && e.propertyName !== "opacity") return;
+      el.removeEventListener("transitionend", h); gone();
+    });
+    try { var t: any = setTimeout(gone, 400); if (t && typeof t.unref === "function") t.unref(); }
+    catch (e) { gone(); }
+  }
+
+  // A compact two-line stub button (e.g. "Mute" / "author"), so the action cluster stays
+  // narrow and uniform. Two stacked spans guarantee the label always wraps to two rows.
+  function twoRowButton(doc, cls, top, bottom) {
+    var b = doc.createElement("button");
+    b.type = "button"; b.className = "feedhacker-btn2 " + cls;
+    var a = doc.createElement("span"); a.textContent = top;
+    var c = doc.createElement("span"); c.textContent = bottom;
+    b.appendChild(a); b.appendChild(c);
+    return b;
+  }
+
   function hasFlag(flags, id) {
     for (var i = 0; i < flags.length; i++) if (flags[i].id === id) return true;
     return false;
   }
 
-  function appendAuthorActions(doc, el, stub, settings) {
+  // Permanently show this author: allowlist them (don't ask again) and reveal the post now.
+  function revealAllowed(el, stub) {
+    el.dataset.feedhackerReveal = "1";
+    delete el.dataset.feedhackerHidden;
+    delete el.dataset.feedhackerDismissing;
+    el.classList.remove("feedhacker-hidden", "feedhacker-gone", "feedhacker-dismissing");
+    if (stub && stub.parentNode) stub.parentNode.removeChild(stub);
+  }
+
+  // Author controls, added to the right-justified action cluster: Mute author (soft-block),
+  // Always show (allowlist + reveal), and a compact "open profile" icon link. FeedHacker
+  // never automates block/unfollow — the profile link just opens LinkedIn's own UI. Posts
+  // only, not comments.
+  function appendAuthorActions(doc, el, stub, actions, settings) {
     if (markerCountWithin(el) < 1) return;          // comments have no post marker; skip
     var info = authorInfo(el);
     if (!info.url && !info.name) return;
     if (settings && typeof settings.onMuteAuthor === "function") {   // one-click mute author
-      var mute = doc.createElement("button");
-      mute.type = "button"; mute.className = "feedhacker-muteauthor"; mute.textContent = "Mute author";
+      var mute = twoRowButton(doc, "feedhacker-muteauthor", "Mute", "author");
       mute.title = info.name ? "Always hide posts from " + info.name : "Always hide this author";
-      mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); });
-      stub.appendChild(mute);
+      mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); dismissRow(el); });
+      actions.appendChild(mute);
+    }
+    if (settings && typeof settings.onAllowAuthor === "function") {   // one-click allowlist
+      var allow = twoRowButton(doc, "feedhacker-allow", "Always", "show");
+      allow.title = info.name ? "Always show " + info.name + " — don't ask again" : "Always show this author — don't ask again";
+      allow.addEventListener("click", function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        settings.onAllowAuthor(info);
+        revealAllowed(el, stub);
+      });
+      actions.appendChild(allow);
     }
     if (info.url) {
       var prof = doc.createElement("a");
       prof.className = "feedhacker-profile"; prof.href = info.url;
       prof.target = "_blank"; prof.rel = "noopener noreferrer";
-      prof.textContent = "Profile ↗";
-      prof.title = info.name ? "Open " + info.name + "'s profile (unfollow/block there)" : "Open profile (unfollow/block there)";
+      prof.textContent = "↗";   // a square (via CSS) with an up-right arrow — "open in new tab"
+      prof.title = "Visit profile";
+      prof.setAttribute("aria-label", info.name ? "Visit " + info.name + "'s profile" : "Visit profile");
       prof.addEventListener("click", function (ev) { ev.stopPropagation(); });
-      stub.appendChild(prof);
+      actions.appendChild(prof);
     }
   }
 
@@ -449,6 +506,10 @@
       appendSlopPreview(doc, el, stub, settings, flags);
     }
 
+    // Right-justified action cluster: 👍 slop, Mute author, Always show, Profile, Show anyway.
+    var actions = doc.createElement("span");
+    actions.className = "feedhacker-actions";
+
     // Explicit positive training for AI slop, without un-hiding (cleaner signal than
     // overloading Show/Hide). Only when we have the scored features to learn from.
     if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
@@ -467,19 +528,20 @@
         lbl.textContent = "thanks";
         yes.classList.add("feedhacker-confirmed");   // swings the thumb from sideways to upright
         yes.disabled = true;
+        dismissRow(el);                              // then retire the row from the feed
       });
-      stub.appendChild(yes);
+      actions.appendChild(yes);
     }
 
-    appendAuthorActions(doc, el, stub, settings);
+    appendAuthorActions(doc, el, stub, actions, settings);
 
-    var btn = doc.createElement("button");
-    btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Show anyway";
+    var btn = twoRowButton(doc, "feedhacker-show", "Show", "anyway");
     btn.addEventListener("click", function (ev) {
       ev.preventDefault(); ev.stopPropagation();
       revealWithExplainer(doc, el, stub, flags, settings);
     });
-    stub.appendChild(btn);
+    actions.appendChild(btn);
+    stub.appendChild(actions);
   }
   function revealWithExplainer(doc, el, stub, flags, settings) {
     emitFeedback(el, flags, settings, 0);   // user disagreed: false positive
@@ -508,7 +570,10 @@
     renderCollapsed(doc, el, stub, flags, settings);
   }
 
-  function collapse(doc, el, flags, settings) {
+  // forceGone: hide the post outright with no stub (a "soft block"), regardless of the
+  // hideCompletely setting — used for authors you've already muted, so they simply stop
+  // appearing rather than showing a "Muted author" placeholder every time.
+  function collapse(doc, el, flags, settings, forceGone?: boolean) {
     if (el.dataset.feedhackerReveal === "1") return;
     el.dataset.feedhackerHidden = "1";
     try {
@@ -521,7 +586,7 @@
       }
     } catch (e) {}
     if (settings && typeof settings.onHidden === "function") { try { settings.onHidden(flags); } catch (e) {} }
-    if (settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
+    if (forceGone || settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
     el.classList.add("feedhacker-hidden");
     if (directChildStub(el)) return;
     var stub = doc.createElement("div");
@@ -550,9 +615,10 @@
       if (key) {
         if (A.isAllowed(settings.authors, key)) return null;
         if (A.isMuted(settings.authors, key)) {
-          if (settings.nameNames || settings.nameSample) el.dataset.feedhackerActor = getActor(el);
+          // Soft block: an already-muted author's posts just don't appear — hidden
+          // outright, no stub. (Manage/unmute them from the options page.)
           recordOutcome(settings, author(), true);
-          collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings);
+          collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings, true);
           return ["author"];
         }
       }
@@ -775,12 +841,13 @@
     clearDigest(doc);
     var stubs = doc.querySelectorAll(".feedhacker-stub");
     for (var i = 0; i < stubs.length; i++) stubs[i].remove();
-    var hid = doc.querySelectorAll(".feedhacker-hidden, .feedhacker-gone");
+    var hid = doc.querySelectorAll(".feedhacker-hidden, .feedhacker-gone, .feedhacker-dismissing");
     for (var j = 0; j < hid.length; j++) {
       hid[j].classList.remove("feedhacker-hidden");
       hid[j].classList.remove("feedhacker-gone");
+      hid[j].classList.remove("feedhacker-dismissing");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       delete el.dataset.feedhackerScanned; delete el.dataset.feedhackerLen;
@@ -789,12 +856,13 @@
       delete el.dataset.feedhackerActor;
       delete el.dataset.feedhackerPreview;
       delete el.dataset.feedhackerFeatures;
+      delete el.dataset.feedhackerDismissing;
     }
   }
 
   var api = {
     getText: getText, isMarker: isMarker, isPromoted: isPromoted,
-    isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare,
+    isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare, isCompanyAuthor: isCompanyAuthor,
     getActor: getActor, findPostContainers: findPostContainers,
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,

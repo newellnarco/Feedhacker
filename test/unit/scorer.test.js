@@ -39,6 +39,15 @@ test("broetry tell fires on one-line-per-thought posts", () => {
   assert.strictEqual(scorer.extractFeatures("A normal flowing paragraph that keeps going on one line without breaks.").broetry, 0);
 });
 
+test("spaced tell fires on blank-line-separated one-liners, not normal prose", () => {
+  const airy = "In the 1960s.\n\nSugar got a pass.\n\nFat took the blame.\n\nFollow the money.\n\nThen read the label.\n\nWe found out in 2016.";
+  assert.ok(scorer.extractFeatures(airy).spaced > 0, "airy broetry trips the spaced tell");
+  // A single flowing paragraph (no blank lines) never trips it.
+  assert.strictEqual(scorer.extractFeatures("A normal paragraph that keeps flowing across a couple of sentences without any blank-line spacing.").spaced, 0);
+  // A couple of spaced lines is not enough (needs >= 4 short single-line blocks).
+  assert.strictEqual(scorer.extractFeatures("Back from vacation.\n\nInbox is a mess.\n\nCoffee first.").spaced, 0);
+});
+
 test("threshold option controls only the decision, not the probability", () => {
   const mild = "It's not about the destination, it's about the journey.";
   const strict = scorer.classify(mild, null, { threshold: 0.95 });

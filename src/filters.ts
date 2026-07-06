@@ -12,6 +12,7 @@
   var FILTERS = [
     { id: "sloppy",      key: "Sloppy",      label: "AI slop",                 defaultMute: true  },
     { id: "promoted",    key: "Promoted",    label: "Promoted posts",          defaultMute: false },
+    { id: "company",     key: "Company",     label: "Company / brand posts",   defaultMute: false },
     { id: "newsletter",  key: "Newsletter",  label: "Newsletter signups",      defaultMute: false },
     { id: "hiring",      key: "Hiring",      label: "Hiring posts",            defaultMute: false },
     { id: "likes",       key: "Likes",       label: "Reaction reshares",       defaultMute: false },

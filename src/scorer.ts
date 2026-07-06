@@ -90,6 +90,26 @@
         var ratio = short / lines.length;
         return clamp01((ratio - 0.5) / 0.5) * clamp01(short / 4);
       } },
+    // The airy "one short thought, blank line, one short thought" broetry rhythm. Unlike
+    // the broetry tell (which strips blank lines), this measures the SPACING itself:
+    // paragraphs separated by blank lines that are each a single short line. Very specific
+    // to LinkedIn broetry; normal prose uses multi-sentence paragraphs, lists use bullets.
+    { id: "spaced", label: "spaced one-liners", fn: function (t) {
+        var blocks = t.split(/\n\s*\n/).map(function (b) { return b.trim(); }).filter(Boolean);
+        if (blocks.length < 4) return 0;
+        var shortSingles = 0;
+        for (var i = 0; i < blocks.length; i++) {
+          var b = blocks[i];
+          if (/\n/.test(b)) continue;                          // a lone one-liner, not a multi-line block
+          var w = (b.match(/\b[\w'’]+\b/g) || []).length;
+          if (w >= 2 && w <= 14) shortSingles++;
+        }
+        if (shortSingles < 4) return 0;                        // needs real volume of them
+        var frac = shortSingles / blocks.length;               // ...and they must dominate the post
+        // Ramp slowly from 4: a handful of airy lines (a quip, short verse) stays weak;
+        // only a sustained wall of them (8+) saturates, which is the broetry tell.
+        return clamp01((frac - 0.5) / 0.4) * clamp01((shortSingles - 3) / 6);
+      } },
     // Sentence-length uniformity: AI prose has unusually even sentence lengths.
     // Only meaningful with >=4 sentences; returns 0 otherwise (not a penalty).
     { id: "uniformity", label: "uniform sentence length", fn: function (t) {
@@ -138,7 +158,7 @@
       bias: -1.6,
       banlist: 3.2,
       emdash: 1.3, antithesis: 1.6, ruleofthree: 1.1, rhetorical: 1.4,
-      emoji: 1.0, bullets: 0.9, connectives: 1.0, openers: 1.5, broetry: 1.4, uniformity: 0.8
+      emoji: 1.0, bullets: 0.9, connectives: 1.0, openers: 1.5, broetry: 1.4, spaced: 1.3, uniformity: 0.8
     };
   }
 
