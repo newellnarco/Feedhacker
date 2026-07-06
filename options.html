@@ -57,6 +57,17 @@
     .chiplist button:hover { background: #b42318; color: #fff; }
     .subhead { font-size: 12px; color: #8a94a3; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
     .subhead:first-child { margin-top: 0; }
+    /* Actions key — the M/S/A buttons from the popup, shown as a legend. */
+    .ms { display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
+      background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; }
+    .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
+    .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
+    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
+    .actions-key td { vertical-align: top; border-bottom: 1px solid #eef0f3; }
+    .actions-key tr:last-child td { border-bottom: 0; }
+    .actions-key td:first-child { width: 40px; text-align: center; padding-top: 9px; }
+    .actions-key .act-name { font-weight: 600; color: #1d2226; }
     /* Detection-signals weight bars */
     .wnum { font-variant-numeric: tabular-nums; font-weight: 600; }
     .wtrack { display: inline-block; width: 56px; height: 6px; border-radius: 3px; background: #eef0f3;
@@ -97,6 +108,35 @@
   <details class="panel" open>
     <summary><h2>Properties</h2></summary>
     <div class="panel-body"><dl class="kv" id="props"></dl></div>
+  </details>
+
+  <details class="panel" open>
+    <summary><h2>Actions</h2></summary>
+    <div class="panel-body">
+      <p class="muted" style="margin:0 0 12px;">The Mute / Solo / Aggressive buttons on each filter row in the
+        toolbar popup, and what they affect.</p>
+      <table class="actions-key">
+        <tbody>
+          <tr>
+            <td><span class="ms m-on">M</span></td>
+            <td><span class="act-name">Mute</span> — hides posts of that type (AI slop, promoted, newsletters,
+              hiring, reaction reshares, job / anniversary / certification announcements). The post collapses to a
+              small stub you can expand. Turn Mute on for any filters you want gone.</td>
+          </tr>
+          <tr>
+            <td><span class="ms s-on">S</span></td>
+            <td><span class="act-name">Solo</span> — shows <em>only</em> the soloed type(s) and hides everything
+              else in the feed. While any Solo is on it overrides the Mutes, so you see just what you soloed.</td>
+          </tr>
+          <tr>
+            <td><span class="ms a-on">A</span></td>
+            <td><span class="act-name">Aggressive</span> — AI slop only. Adds the broader, higher‑false‑positive
+              phrase rules (ones that match common words) on top of the curated banlist, catching more but with more
+              misfires.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </details>
 
   <details class="panel" open>

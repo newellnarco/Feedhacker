@@ -14,6 +14,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [Unreleased]
 
 ### Added
+- New **“Actions”** card on the options page (under Properties): a legend for the
+  Mute / Solo / Aggressive buttons — the M/S/A chips in one column and a short
+  description of what each affects in the other.
 - New **“Name + sample + category”** display option (popup → Display). Alongside
   the existing “Name names (who + category)”, this renders each hidden-post stub as
   three lines — author, a sample of the hidden text, then the filter category. The
