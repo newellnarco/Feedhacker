@@ -291,7 +291,12 @@ function loadSlopPhrases() {
       slopEntries = (data && Array.isArray(data.entries)) ? data.entries.slice() : [];
       renderPhrases();
     })
-    .catch(function (e) { box.innerHTML = "<li class='empty'>Couldn't load the phrase list: " + e.message + "</li>"; });
+    .catch(function (e) {
+      box.innerHTML = "";
+      var li = document.createElement("li"); li.className = "empty";
+      li.textContent = "Couldn't load the phrase list: " + ((e && e.message) || e);
+      box.appendChild(li);
+    });
 }
 var CAT_ORDER = ["confirmed", "aggressive", "manual"];
 function phraseWords(e) {
@@ -318,7 +323,13 @@ function renderPhrases() {
   if (countEl) countEl.textContent = "(" + matched.length +
     (q ? " of " + slopEntries.length : "") + ")";
   box.innerHTML = "";
-  if (!matched.length) { box.innerHTML = "<li class='empty'>No phrases match “" + q + "”.</li>"; return; }
+  if (!matched.length) {
+    var none = document.createElement("li");
+    none.className = "empty";
+    none.textContent = "No phrases match “" + q + "”.";   // textContent: never treat the query as HTML
+    box.appendChild(none);
+    return;
+  }
   // Group by category, confirmed first.
   var groups: any = {};
   matched.forEach(function (e) { var c = e.category || "other"; (groups[c] = groups[c] || []).push(e); });
