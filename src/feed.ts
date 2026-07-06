@@ -410,18 +410,24 @@
   // Green slime splat — AI slop. Built as a central blob plus radiating bulbous arms
   // (rotated ellipses) and a couple of flung droplets, so it reads clearly as a splat.
   function splatIcon(doc) {
-    var arms = [[12, 5.4, -90], [6.9, 7.9, -141], [5.6, 13.5, -193], [9.1, 17.9, -244],
-                [14.9, 17.9, -296], [18.4, 13.5, -347], [17.1, 7.9, -39]];
-    var kids = [svgEl(doc, "circle", { cx: "12", cy: "12", r: "5.4", fill: "currentColor" })];
+    // Irregular arms (uneven angles, varied length/width) + an off-centre blob and a few
+    // flung droplets, so it reads as an organic splat rather than a symmetric flower.
+    var arms = [   // [cx, cy, rotation, rx, ry]
+      [10.8, 5.3, -100, 5.2, 2.6], [6.6, 8.9, -150, 4.2, 2.2], [5.3, 13.9, -196, 5.1, 2.4],
+      [8.3, 16.7, -232, 3.9, 2.5], [12.0, 18.6, -270, 4.6, 2.6], [17.4, 16.8, -318, 5.4, 2.7],
+      [18.0, 9.8, -20, 4.3, 2.3]
+    ];
+    var kids = [svgEl(doc, "circle", { cx: "11.7", cy: "12.3", r: "5.3", fill: "currentColor" })];
     for (var i = 0; i < arms.length; i++) {
-      var a = arms[i], lng = i % 2 === 0;
+      var a = arms[i];
       kids.push(svgEl(doc, "ellipse", {
-        cx: String(a[0]), cy: String(a[1]), rx: lng ? "4.8" : "4.1", ry: lng ? "2.7" : "2.3",
+        cx: String(a[0]), cy: String(a[1]), rx: String(a[3]), ry: String(a[4]),
         fill: "currentColor", transform: "rotate(" + a[2] + " " + a[0] + " " + a[1] + ")"
       }));
     }
-    kids.push(svgEl(doc, "circle", { cx: "2.8", cy: "3.9", r: "1.5", fill: "currentColor" }));
-    kids.push(svgEl(doc, "circle", { cx: "21.2", cy: "20.4", r: "1.2", fill: "currentColor" }));
+    kids.push(svgEl(doc, "circle", { cx: "3.1", cy: "4.1", r: "1.4", fill: "currentColor" }));
+    kids.push(svgEl(doc, "circle", { cx: "20.9", cy: "20.4", r: "1.1", fill: "currentColor" }));
+    kids.push(svgEl(doc, "circle", { cx: "21.6", cy: "6.4", r: "0.85", fill: "currentColor" }));
     return iconSvg(doc, { fill: "currentColor" }, kids);
   }
   // Muted microphone in a red disc — Mute author.
