@@ -15,6 +15,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 _Nothing yet._
 
+## [0.3.0] — 2026-07-06
+
+### Changed
+- The **👍 slop** confirm button on AI-slop stubs now starts with a sideways thumb
+  and swings it upright on click (as the label changes to "thanks"), for clearer
+  before/after feedback.
+- Refreshed the Chrome Web Store listing **screenshots** to a 0.2.0 set (the
+  Mute/Solo mixer, the AI-slop detection panel, and the hidden-post stub).
+- **Docs consistency pass** for 0.2.0: removed lingering references to the
+  now-deleted remote GitHub banlist from `README.md`, `INSTALL.md`, and
+  `store/README.md`; renamed the documented "Name names" option to "Names" and
+  documented the new "+ sample" option, the detection-transparency panel, and the
+  Actions legend; and aligned the privacy wording to "no network requests."
+
 ## [0.2.0] — 2026-07-06
 
 ### Added
@@ -101,5 +115,6 @@ _Nothing yet._
 - Runs entirely in the browser (only the `storage` permission); optional remote
   banlist behind a per‑site permission prompt.
 
-[Unreleased]: https://github.com/newellnarco/Feedhacker/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/newellnarco/Feedhacker/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.3.0
 [0.2.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.2.0

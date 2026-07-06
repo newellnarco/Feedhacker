@@ -77,9 +77,9 @@ options page (custom filters, muted authors, insights, error log).
 
 ## Notes & troubleshooting
 
-- **Permissions:** FeedHacker requests only `storage`. It runs solely on
-  `www.linkedin.com`. The optional "remote banlist" feature (off by default) asks
-  for access to one site only, when you enable it.
+- **Permissions:** FeedHacker requests only `storage`, runs solely on
+  `www.linkedin.com`, and makes no network requests — its phrase list ships inside
+  the extension.
 - **"Manifest version 2 is deprecated" or load errors:** make sure you selected
   the built folder that contains `manifest.json` (`dist/feedhacker/`), not the
   repo root — the source is TypeScript and must be compiled first (`npm run build`).

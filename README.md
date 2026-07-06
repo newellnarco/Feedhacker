@@ -95,14 +95,20 @@ of the standard filters.
 - **Insights** — the options page keeps 30 days of daily hidden counts and your
   top sources.
 - **Export / import the learned model** — back it up or move it between browsers.
-- **Remote banlist** (opt‑in, off by default) — point at a URL to pull extra
-  banlist entries; fetching asks for permission for that one site only.
+- **How AI‑slop detection works** — an options‑page panel that shows every scoring
+  signal with its plain‑English description and your current learned weight, plus
+  the full curated phrase list (searchable) — so you can see exactly why a post is
+  flagged.
+- **Actions legend** — an options‑page card explaining what the Mute / Solo /
+  Aggressive buttons each affect.
 
 ### Extra options
 
 - **Enable / disable** — a master switch in the popup pauses all filtering
   without uninstalling.
-- **Name names** — stub shows *who* posted plus the category.
+- **Names** — stub shows *who* posted plus the category.
+- **+ sample** — adds a line of the hidden post's text to the *Names* stub (three
+  lines: author, sample, category); available only when *Names* is on.
 - **Hide Hidden Content** — remove matched posts entirely (no placeholder).
 - **Hide AI‑slop comments** — also collapse AI‑slop comments under posts.
 - **Toolbar badge** — shows how many posts are hidden on the page, or a red `!`
@@ -218,7 +224,8 @@ code instead of a synthetic scroll.
 
 ## Privacy
 
-- No network requests except fetching the bundled `claudisms.json`.
+- No network requests — the curated `claudisms.json` phrase list ships inside the
+  extension package and is read locally; nothing is sent or fetched from any server.
 - Learned weights, activity stats, and the error log stay in `chrome.storage`
   (local for large/learned data, sync for your toggle settings) — never sent
   anywhere.

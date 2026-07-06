@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FeedHacker",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mute the noise in your LinkedIn feed: AI slop, promoted posts, engagement bait, hiring, and more — with a Mute/Solo mixer.",
   "author": "MAX Research Collective",
   "permissions": [

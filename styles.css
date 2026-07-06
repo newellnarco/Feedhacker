@@ -46,8 +46,13 @@
   font-size: 12px; font-weight: 600;
 }
 .feedhacker-muteauthor:hover:not([disabled]) { background: #f0f2f5; color: #b42318; border-color: #e2b6b6; }
+.feedhacker-confirm { display: inline-flex; align-items: center; gap: 5px; }
 .feedhacker-confirm:hover:not([disabled]) { background: #eefaf3; color: #047857; border-color: #b7e2cd; }
-.feedhacker-confirm[disabled] { opacity: .7; cursor: default; }
+.feedhacker-confirm[disabled] { opacity: .85; cursor: default; }
+/* Thumb starts sideways (pointing right); confirming swings it upright. */
+.feedhacker-thumb { display: inline-block; transform: rotate(90deg); transform-origin: 50% 60%;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+.feedhacker-confirm.feedhacker-confirmed .feedhacker-thumb { transform: rotate(0deg); }
 
 .feedhacker-digested { display: none !important; }
 .feedhacker-digest-summary { background: #eef0f3; color: #5f6b7a; font-style: italic; }
