@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { customfilters: cf } = require("./helper");
+const { customfilters: cf } = require("../helper");
 
 test("anyConfigured reflects whether any list is set", () => {
   assert.strictEqual(cf.anyConfigured(cf.compile({})), false);

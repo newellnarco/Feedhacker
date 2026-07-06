@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { feed, filters, scorer, authors, customfilters, makeDoc } = require("./helper");
+const { feed, filters, scorer, authors, customfilters, makeDoc } = require("../helper");
 
 function baseSettings(over) {
   return Object.assign({}, filters.DEFAULTS, { slopWeights: scorer.defaultWeights() }, over || {});

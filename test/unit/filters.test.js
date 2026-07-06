@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { filters } = require("./helper");
+const { filters } = require("../helper");
 
 test("key === cap(id) invariant holds for every filter", () => {
   for (const f of filters.FILTERS) {

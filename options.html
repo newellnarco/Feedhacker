@@ -69,6 +69,16 @@
   </section>
 
   <section>
+    <h2>Updates</h2>
+    <p class="muted" id="update-status">Running version <span id="update-current"></span>.</p>
+    <div class="actions">
+      <button id="check-updates">Check for updates</button>
+      <a id="releases-link" href="https://github.com/newellnarco/Feedhacker/releases/latest" target="_blank" rel="noopener" style="align-self:center;">Releases ↗</a>
+    </div>
+    <p class="muted" style="margin:10px 0 0;">Windows installs auto-update daily from GitHub. For a manual load, download the latest release and reload FeedHacker on <code>chrome://extensions</code>.</p>
+  </section>
+
+  <section>
     <h2>Activity</h2>
     <div id="activity"></div>
   </section>
@@ -105,13 +115,9 @@
     <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
     <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
     <div style="margin-top:12px;">
-      <label class="rowline"><input type="checkbox" id="remoteBanlist"> Use a remote banlist update</label>
-      <div class="frow2">
-        <input type="url" id="remoteBanlistUrl" placeholder="https://example.com/claudisms.json" style="flex:1">
-        <button id="remote-fetch">Fetch &amp; save</button>
-      </div>
-      <span class="muted" id="remote-status"></span>
-      <p class="muted" style="margin:6px 0 0;">Off by default. Fetching asks for permission for that site only; nothing else is sent.</p>
+      <label class="rowline"><input type="checkbox" id="remoteBanlist"> Use the latest AI‑slop banlist from GitHub</label>
+      <div class="actions"><button id="remote-fetch">Update banlist now</button> <span class="muted" id="remote-status"></span></div>
+      <p class="muted" style="margin:6px 0 0;">Off by default. Updating asks for permission for <code>raw.githubusercontent.com</code> only, fetches the curated list, and stores it locally; nothing is sent.</p>
     </div>
   </section>
 
@@ -148,6 +154,7 @@
   <script src="filters.js"></script>
   <script src="logger.js"></script>
   <script src="authors.js"></script>
+  <script src="update.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

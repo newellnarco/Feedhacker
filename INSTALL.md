@@ -4,8 +4,10 @@ FeedHacker is an unsigned developer build, so it installs through Chrome's
 **Extensions** manager rather than the Web Store. Takes about a minute. The same
 steps work in any Chromium browser (Chrome, Edge, Brave, Arc, Opera).
 
-> **Windows shortcut:** double-click `installer\install.bat` to automate the
-> build and set up daily auto-updates from GitHub — you only do the one-time
+> **Windows shortcut:** download `feedhacker-<version>-win.zip` from the
+> [latest release](https://github.com/newellnarco/Feedhacker/releases/latest),
+> unzip, and double-click `installer\install.bat`. It installs the prebuilt
+> extension and sets up daily auto-updates from GitHub — you only do the one-time
 > "Load unpacked" click. See [installer/README.md](installer/README.md). The rest
 > of this page is the manual walkthrough.
 
@@ -13,16 +15,18 @@ steps work in any Chromium browser (Chrome, Edge, Brave, Arc, Opera).
 
 You need the built `feedhacker` folder (the one containing `manifest.json`).
 
-**From the prebuilt zip:**
-- Unzip `feedhacker-0.1.0.zip`. You'll get a `feedhacker/` folder.
+**From the prebuilt release (recommended — no build):**
+- Download `feedhacker-<version>.zip` from the
+  [latest release](https://github.com/newellnarco/Feedhacker/releases/latest) and
+  unzip it. You'll get a `feedhacker/` folder.
 
-**Or build it from source:**
+**Or build it from source (contributors):**
 ```bash
 npm install
 npm run build
 ```
 This produces `dist/feedhacker/` (the unpacked folder) and
-`dist/feedhacker-0.1.0.zip`.
+`dist/feedhacker-<version>.zip`.
 
 ## 2. Open the Extensions manager
 
@@ -64,8 +68,10 @@ options page (custom filters, muted authors, insights, error log).
 
 - **Pause without uninstalling:** toggle **Enabled** off in the FeedHacker popup.
 - **Disable / re-enable:** `chrome://extensions` → the toggle on the FeedHacker card.
-- **Update after a rebuild:** run `npm run build` again, then click the **↻ reload**
-  icon on the FeedHacker card in `chrome://extensions`.
+- **Update:** the Windows installer auto-updates daily from GitHub. To update
+  manually, download the latest release, replace your `feedhacker/` folder, and click
+  the **↻ reload** icon on the FeedHacker card in `chrome://extensions`. The options
+  page (**Details & activity → Updates**) has a **Check for updates** button.
 - **Uninstall:** `chrome://extensions` → FeedHacker → **Remove**, or right-click
   the toolbar icon → **Remove from Chrome**.
 

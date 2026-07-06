@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { logger } = require("./helper");
+const { logger } = require("../helper");
 
 test("sourceFromStack extracts the first file:line:col frame", () => {
   const stack = "Error: boom\n    at foo (chrome-extension://abc/content.js:145:12)\n    at bar (feed.js:10:1)";
