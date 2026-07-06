@@ -29,17 +29,13 @@ the extension (or clearing its storage) removes it.
 - It reads the content of posts on `www.linkedin.com` while you view your feed, in order
   to decide which posts to hide. This reading happens locally and in real time; post
   content is not stored or transmitted.
-- **Optional banlist update (off by default):** if you click "Update banlist now" on the
-  options page, FeedHacker asks for permission scoped to the project's own files on GitHub
-  (`https://raw.githubusercontent.com/newellnarco/Feedhacker/*`) and fetches its curated
-  AI-slop phrase list from there. Only then does it make a network request, and only to
-  that address. The fetched list is stored locally on your device; no personal data is
-  sent, and nothing about you is included in the request.
 
 ## What FeedHacker does NOT do
 
 - No analytics, tracking, or telemetry.
 - No accounts, no advertising, no selling or sharing of data.
+- No network requests — FeedHacker sends and fetches nothing; its AI-slop phrase list
+  ships inside the extension package.
 - No remotely-executed code — all logic ships inside the extension package.
 
 ## Contact
