@@ -190,8 +190,9 @@ const SUBMISSION_ASSETS = [
   ["store/privacy-policy.md", "privacy-policy.md"],
   ["store/promo-small-440x280.jpg", "promo-small-440x280.jpg"],
   ["store/promo-marquee-1400x560.jpg", "promo-marquee-1400x560.jpg"],
-  ["store/screenshot-1-feed.jpg", "screenshot-1-feed.jpg"],
-  ["store/screenshot-2-popup.jpg", "screenshot-2-popup.jpg"],
+  ["store/screenshot-1-mixer.png", "screenshot-1-mixer.png"],
+  ["store/screenshot-2-detection.png", "screenshot-2-detection.png"],
+  ["store/screenshot-3-stub.png", "screenshot-3-stub.png"],
   ["store/brand/store-icon-128.png", "store-icon-128.png"],
   ["store/brand/store-icon-120.png", "store-icon-120.png"],
   ["store/brand/logo-1024.png", "logo-1024.png"],
@@ -209,8 +210,9 @@ Then, in the Developer Dashboard, use the files here:
   privacy-policy.md            - privacy policy (host it and paste the URL)
   promo-small-440x280.jpg      - Small promo tile
   promo-marquee-1400x560.jpg   - Marquee promo tile
-  screenshot-1-feed.jpg        - Screenshot (1280x800)
-  screenshot-2-popup.jpg       - Screenshot (1280x800)
+  screenshot-1-mixer.png       - Screenshot: Mute/Solo mixer (1280x800)
+  screenshot-2-detection.png   - Screenshot: AI-slop detection panel (1280x800)
+  screenshot-3-stub.png        - Screenshot: hidden-post stub (1280x800)
   store-icon-128.png           - 128x128 store icon (white background)
   store-icon-120.png           - 120x120 store icon (white background)
   logo-1024.png                - brand logo

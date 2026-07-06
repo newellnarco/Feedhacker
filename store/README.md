@@ -33,8 +33,8 @@ tiles, and store icon. All you supply is your Google account.
    To enable it once: repo **Settings → Pages → Deploy from a branch → `main` / `/docs`**
    (the page source lives in [`docs/`](../docs/); [`privacy-policy.md`](privacy-policy.md)
    is the plain-text original).
-5. Upload the graphics from this folder: screenshots `store/screenshot-1-feed.jpg` and
-   `store/screenshot-2-popup.jpg` (1280×800), the promo tiles
+5. Upload the graphics from this folder: screenshots `store/screenshot-1-mixer.png`,
+   `store/screenshot-2-detection.png`, and `store/screenshot-3-stub.png` (1280×800), the promo tiles
    `store/promo-small-440x280.jpg` (440×280) and `store/promo-marquee-1400x560.jpg`
    (1400×560), and the store icon `store/brand/store-icon-128.png` (white background).
 6. **Submit for review.** Approval is usually hours to a few days.

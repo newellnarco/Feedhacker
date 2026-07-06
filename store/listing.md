@@ -63,8 +63,9 @@ network requests — its curated AI-slop phrase list ships inside the package.
 - [x] **Store icon 128×128** — `store/brand/store-icon-128.png` (white background). A
       120×120 variant is at `store/brand/store-icon-120.png`. The in-package toolbar icon
       is `icons/128.png`.
-- [x] **Screenshots 1280×800** — `store/screenshot-1-feed.jpg` (noise collapsed to stubs,
-      human posts kept) and `store/screenshot-2-popup.jpg` (the Mute/Solo popup).
+- [x] **Screenshots 1280×800** — `store/screenshot-1-mixer.png` (the Mute/Solo popup),
+      `store/screenshot-2-detection.png` (the AI-slop detection panel), and
+      `store/screenshot-3-stub.png` (a hidden post collapsed to its stub).
 - [x] **Small promo tile 440×280** — `store/promo-small-440x280.jpg`.
 - [x] **Marquee promo tile 1400×560** — `store/promo-marquee-1400x560.jpg`.
 
