@@ -1,8 +1,10 @@
 name: Release
 
 # Publish a ready-to-install build so end users never touch source or build tools.
-# Tag a version (e.g. `git tag v0.1.0 && git push --tags`) to cut a GitHub Release with
-# the prebuilt extension zip, the Windows one-click bundle, and a best-effort MSI.
+# Tag a version (e.g. `git tag v0.2.0 && git push --tags`) to cut a GitHub Release with
+# the prebuilt extension zip, the Windows one-click bundle, and a best-effort MSI, and —
+# when Chrome Web Store credentials are configured as secrets — to upload the same version
+# to the Web Store so Google auto-updates every store user. See store/README.md.
 # `workflow_dispatch` builds the same assets without publishing (for a dry run).
 on:
   push:
@@ -119,3 +121,50 @@ jobs:
               --notes "$NOTES" \
               "${ASSETS[@]}"
           fi
+
+  # Chrome Web Store upload — the path that actually updates end users: Google pushes the
+  # new version to every store install automatically (usually within hours-days of
+  # approval). Opt-in and best-effort: it runs only when the CWS_* secrets are set, and
+  # continue-on-error means a missing/rejected upload never fails the GitHub Release above.
+  # Requires (repo Settings → Secrets and variables → Actions):
+  #   secrets CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN  (Google OAuth creds)
+  #   variable CWS_AUTO_PUBLISH = "true" to submit for review automatically; otherwise the
+  #            new version is uploaded as a draft and you click "Publish" in the dashboard.
+  # The store rejects a version that isn't higher than the live one, so bump manifest.json
+  # every release (package.json is kept in lockstep).
+  webstore:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}       # job-level so the guard `if` can read it
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Locate the store package
+        id: zip
+        run: |
+          set -e
+          zip="$(ls dist/feedhacker-*-store.zip | head -1)"
+          test -n "$zip"
+          echo "path=$zip" >> "$GITHUB_OUTPUT"
+      - name: Upload to the Chrome Web Store
+        if: env.CWS_CLIENT_ID != ''   # skip cleanly (green) when store publishing isn't configured
+        env:
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_AUTO_PUBLISH: ${{ vars.CWS_AUTO_PUBLISH }}
+          EXTENSION_ID: djfbniehjjngpkimngegnjdeamfofnoa   # public id from the store URL
+        run: |
+          set -e
+          ARGS=(upload
+            --source "${{ steps.zip.outputs.path }}"
+            --extension-id "$EXTENSION_ID"
+            --client-id "$CWS_CLIENT_ID"
+            --client-secret "$CWS_CLIENT_SECRET"
+            --refresh-token "$CWS_REFRESH_TOKEN")
+          if [ "${CWS_AUTO_PUBLISH:-}" = "true" ]; then ARGS+=(--auto-publish); fi
+          npx --yes chrome-webstore-upload-cli@3 "${ARGS[@]}"
