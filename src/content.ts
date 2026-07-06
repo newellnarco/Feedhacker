@@ -110,6 +110,16 @@
     } catch (e) { logError(e, "mute-author"); }
   }
   settings.onMuteAuthor = onMuteAuthor;
+  function onAllowAuthor(info) {
+    try {
+      if (!Authors) return;
+      authorStore = Authors.allow(authorStore, Authors.keyFor(info), info && info.name);
+      refreshAuthorFlags();
+      authorsDirty = true; saveAuthorsSoon();
+      if (ready) { F.reset(document); scanNow(); reportBadge(); }   // reveal now + keep showing
+    } catch (e) { logError(e, "allow-author"); }
+  }
+  settings.onAllowAuthor = onAllowAuthor;
   function onAuthorOutcome(info, hidden) {
     try {
       if (!Authors) return;

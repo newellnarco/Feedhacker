@@ -241,6 +241,20 @@ test("Mute author button invokes the onMuteAuthor callback with the author info"
   assert.ok(el.classList.contains("feedhacker-dismissing"), "row is retired from the feed after muting");
 });
 
+test("Always show button allowlists the author and reveals the post", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  let allowed = null;
+  feed.consider(doc, el, [], baseSettings({ onAllowAuthor: (info) => { allowed = info; } }));
+  const btn = el.querySelector(".feedhacker-stub .feedhacker-allow");
+  assert.ok(btn, "always-show button present");
+  btn.click();
+  assert.ok(allowed && /jane/i.test(allowed.name || ""), "author passed to onAllowAuthor");
+  assert.strictEqual(el.dataset.feedhackerReveal, "1", "post marked revealed");
+  assert.ok(!el.classList.contains("feedhacker-hidden"), "post no longer hidden");
+  assert.strictEqual(el.querySelector(".feedhacker-stub"), null, "stub removed after allowing");
+});
+
 test("👍 confirm trains a positive without un-hiding", () => {
   const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];

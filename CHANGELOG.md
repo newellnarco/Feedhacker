@@ -13,7 +13,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
+### Added
+- **"Always show" (whitelist) button** on stubs — allowlists the author so their posts
+  are never filtered again (and reveals the current post). Whitelisted authors are
+  listed in a new collapsed **Whitelist** section on the options page, where they can
+  be removed.
+
 ### Changed
+- **Stub buttons redesigned** — a compact, right-justified cluster: two-line
+  **Mute author** / **Always show** / **Show anyway** buttons, and the profile link is
+  now a small square "open in new tab" icon (hover: "Visit profile").
 - **Muted authors are now soft-blocked** — their posts are hidden outright (no
   "Muted author" stub), so a muted author simply stops appearing in your feed.
   Manage/unmute them from the options page.
