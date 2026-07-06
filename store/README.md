@@ -26,9 +26,13 @@ tiles, and store icon. All you supply is your Google account.
 3. Fill in the listing from [`listing.md`](listing.md): name, summary, description,
    category, and the **permission justifications**.
 4. **Privacy practices** tab: answer the disclosures in `listing.md` and paste your
-   **privacy policy URL**. Host [`privacy-policy.md`](privacy-policy.md) somewhere public
-   — e.g. enable GitHub Pages, or use the raw file URL:
-   `https://raw.githubusercontent.com/newellnarco/Feedhacker/main/store/privacy-policy.md`
+   **privacy policy URL**, then **Save draft** (the publish check reads the saved value).
+   Use the hosted **GitHub Pages** copy — Google's checker reliably reaches it, unlike a
+   `raw.githubusercontent.com` link (served as `text/plain`, often flagged "not reachable"):
+   `https://newellnarco.github.io/Feedhacker/privacy-policy.html`
+   To enable it once: repo **Settings → Pages → Deploy from a branch → `main` / `/docs`**
+   (the page source lives in [`docs/`](../docs/); [`privacy-policy.md`](privacy-policy.md)
+   is the plain-text original).
 5. Upload the graphics from this folder: screenshots `store/screenshot-1-feed.jpg` and
    `store/screenshot-2-popup.jpg` (1280×800), the promo tiles
    `store/promo-small-440x280.jpg` (440×280) and `store/promo-marquee-1400x560.jpg`

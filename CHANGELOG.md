@@ -13,6 +13,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
+### Added
+- Hosted **GitHub Pages** site under [`docs/`](docs/): a standalone HTML privacy
+  policy (`privacy-policy.html`) plus a small landing page. Google's Web Store
+  reviewer verifies this reliably, unlike a `raw.githubusercontent.com` link.
+
 ### Changed
 - Options page "Updates" text now explains updating per install method (Chrome Web
   Store auto-updates; the Windows installer's daily task needs a Chrome restart to
