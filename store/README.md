@@ -1,8 +1,9 @@
 # Publishing FeedHacker to the Chrome Web Store
 
 The store is the cleanest install for end users: one click, no dev mode, no admin, and
-Google auto-updates everyone when you upload a new version. This folder has everything
-except the screenshots (which need real captures) and your Google account.
+Google auto-updates everyone when you upload a new version. This folder has **everything
+you need** — the extension package, listing copy, privacy policy, screenshots, promo
+tiles, and store icon. All you supply is your Google account.
 
 ## One-time
 
@@ -25,9 +26,14 @@ except the screenshots (which need real captures) and your Google account.
    **privacy policy URL**. Host [`privacy-policy.md`](privacy-policy.md) somewhere public
    — e.g. enable GitHub Pages, or use the raw file URL:
    `https://raw.githubusercontent.com/newellnarco/Feedhacker/main/store/privacy-policy.md`
-5. Upload **1–5 screenshots** (1280×800 or 640×400) and the 128×128 icon (already in the
-   package).
+5. Upload the graphics from this folder: screenshots `store/screenshot-1-feed.jpg` and
+   `store/screenshot-2-popup.jpg` (1280×800), the promo tiles
+   `store/promo-small-440x280.jpg` (440×280) and `store/promo-marquee-1400x560.jpg`
+   (1400×560), and the store icon `store/brand/store-icon-128.png` (white background).
 6. **Submit for review.** Approval is usually hours to a few days.
+
+> Tip: `npm run build` also produces `dist/feedhacker-<version>-store-submission.zip` — a
+> single archive of all listing assets above (no manifest, not the package) for handoff.
 
 ## Before you submit — review-risk checklist
 

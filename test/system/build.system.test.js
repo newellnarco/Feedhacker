@@ -29,6 +29,21 @@ test("every file the manifest references is present in dist/feedhacker", () => {
   assert.deepStrictEqual(missing, [], `dist/feedhacker is missing: ${missing.join(", ")}`);
 });
 
+test("each packaged icon PNG's pixel size matches its manifest key (128x128 required by the store)", () => {
+  const sizes = Object.entries(manifest.icons || {});
+  assert.ok(sizes.some(([s]) => s === "128"), "manifest must declare a 128x128 icon for the Web Store");
+  for (const [size, rel] of sizes) {
+    const p = path.join(EXT, rel);
+    assert.ok(fs.existsSync(p), `missing icon ${rel} — run \`npm run build\``);
+    const buf = fs.readFileSync(p);
+    // PNG IHDR: 8-byte signature, then width @ byte 16 and height @ byte 20 (big-endian).
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    assert.strictEqual(w, Number(size), `${rel} is ${w}px wide, expected ${size}`);
+    assert.strictEqual(h, Number(size), `${rel} is ${h}px tall, expected ${size}`);
+  }
+});
+
 test("every script referenced by the packaged HTML pages ships in dist/feedhacker", () => {
   // The manifest doesn't list page scripts (popup.js, options.js, update.js) — they're
   // pulled in by <script src> in the HTML. Guard those too, so dropping one from the
@@ -60,6 +75,28 @@ function assertPkZip(zip) {
 
 test("the distribution zip exists and has a valid ZIP signature", () => {
   assertPkZip(path.join(ROOT, "dist", `feedhacker-${manifest.version}.zip`));
+});
+
+function zipEntryNames(zip) {
+  const buf = fs.readFileSync(zip);
+  const names = [];
+  const sig = Buffer.from("PK\x01\x02"); // central directory header
+  for (let i = 0; (i = buf.indexOf(sig, i)) !== -1; i += 4) {
+    const nameLen = buf.readUInt16LE(i + 28);
+    names.push(buf.toString("utf8", i + 46, i + 46 + nameLen));
+  }
+  return names;
+}
+
+test("the store listing-assets bundle has the 128x128 icon and contains NO manifest.json", () => {
+  const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}-store-submission.zip`);
+  assert.ok(fs.existsSync(zip), `expected ${zip} — run \`npm run build\``);
+  const names = zipEntryNames(zip);
+  assert.ok(names.includes("store-icon-128.png"), "listing bundle must include the 128x128 store icon");
+  assert.ok(
+    !names.some((n) => n === "manifest.json" || n.endsWith("/manifest.json") || n.endsWith(".zip")),
+    `listing bundle must not contain a manifest.json or the extension package; saw: ${names.join(", ")}`
+  );
 });
 
 test("the Chrome Web Store zip exists and has manifest.json at its root (no wrapper folder)", () => {

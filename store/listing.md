@@ -60,9 +60,16 @@ according to filters the user configures.
 - **Privacy policy URL:** host `store/privacy-policy.md` (e.g. via GitHub Pages or the
   raw file URL) and paste that link.
 
-## Graphics checklist (you supply screenshots)
+## Graphics — all provided in this repo
 
-- [x] Store icon 128×128 (icons/128.png)
-- [ ] 1–5 screenshots, 1280×800 or 640×400 (e.g. the popup mixer over a LinkedIn feed,
-      a collapsed slop stub, the options/insights page)
-- [ ] Optional: small promo tile 440×280
+- [x] **Store icon 128×128** — `store/brand/store-icon-128.png` (white background). A
+      120×120 variant is at `store/brand/store-icon-120.png`. The in-package toolbar icon
+      is `icons/128.png`.
+- [x] **Screenshots 1280×800** — `store/screenshot-1-feed.jpg` (noise collapsed to stubs,
+      human posts kept) and `store/screenshot-2-popup.jpg` (the Mute/Solo popup).
+- [x] **Small promo tile 440×280** — `store/promo-small-440x280.jpg`.
+- [x] **Marquee promo tile 1400×560** — `store/promo-marquee-1400x560.jpg`.
+
+All graphics are opaque JPEG/PNG (no alpha), as the store requires. `npm run build` also
+bundles this listing text, the privacy policy, and every graphic above into
+`dist/feedhacker-<version>-store-submission.zip` (listing assets only — no manifest).
