@@ -192,8 +192,9 @@ const SUBMISSION_ASSETS = [
   ["store/promo-marquee-1400x560.jpg", "promo-marquee-1400x560.jpg"],
   ["store/screenshot-1-feed.jpg", "screenshot-1-feed.jpg"],
   ["store/screenshot-2-popup.jpg", "screenshot-2-popup.jpg"],
+  ["store/brand/store-icon-128.png", "store-icon-128.png"],
+  ["store/brand/store-icon-120.png", "store-icon-120.png"],
   ["store/brand/logo-1024.png", "logo-1024.png"],
-  ["icons/128.png", "icon-128.png"],
 ];
 for (const [src, dest] of SUBMISSION_ASSETS) if (fs.existsSync(src)) copyFile(src, path.join(SUB_STAGE, dest));
 fs.writeFileSync(path.join(SUB_STAGE, "README.txt"), `FeedHacker — Chrome Web Store listing assets
@@ -210,7 +211,8 @@ Then, in the Developer Dashboard, use the files here:
   promo-marquee-1400x560.jpg   - Marquee promo tile
   screenshot-1-feed.jpg        - Screenshot (1280x800)
   screenshot-2-popup.jpg       - Screenshot (1280x800)
-  icon-128.png                 - 128x128 store icon
+  store-icon-128.png           - 128x128 store icon (white background)
+  store-icon-120.png           - 120x120 store icon (white background)
   logo-1024.png                - brand logo
 `);
 zipDir(SUB_STAGE, subZip);
@@ -219,5 +221,5 @@ console.log("Built:");
 console.log(`  unpacked:  ${STAGE}/   (Load unpacked)`);
 console.log(`  zip:       ${zipPath}`);
 console.log(`  store:     ${storeZip}   (Chrome Web Store upload)`);
-console.log(`  submission:${subZip}   (upload zip + docs + graphics)`);
+console.log(`  submission:${subZip}   (listing assets: docs + graphics, no manifest)`);
 console.log(`  windows:   ${winZip}   (extension + installer)`);

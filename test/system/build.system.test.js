@@ -92,7 +92,7 @@ test("the store listing-assets bundle has the 128x128 icon and contains NO manif
   const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}-store-submission.zip`);
   assert.ok(fs.existsSync(zip), `expected ${zip} — run \`npm run build\``);
   const names = zipEntryNames(zip);
-  assert.ok(names.includes("icon-128.png"), "listing bundle must include the 128x128 icon");
+  assert.ok(names.includes("store-icon-128.png"), "listing bundle must include the 128x128 store icon");
   assert.ok(
     !names.some((n) => n === "manifest.json" || n.endsWith("/manifest.json") || n.endsWith(".zip")),
     `listing bundle must not contain a manifest.json or the extension package; saw: ${names.join(", ")}`
