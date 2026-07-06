@@ -250,6 +250,62 @@ test("👍 confirm trains a positive without un-hiding", () => {
   assert.ok(el.classList.contains("feedhacker-hidden"), "still hidden after confirm");
 });
 
+test("firstBodyLine strips the actor name and returns a trimmed opening line", () => {
+  const line = feed.firstBodyLine("Feed post Jane Doe" + SLOP_BODY, "Jane Doe");
+  assert.ok(!/^Jane Doe/.test(line), "author name stripped from the preview");
+  assert.ok(/^Let’s be honest/.test(line), "starts at the post body");
+  assert.ok(line.length <= 141, "capped to a single short line");
+});
+
+test("firstBodyLine keeps the body when there is no clean author name", () => {
+  // getActor falls back to body text (with a colon) when no author link exists; that
+  // must NOT be stripped, so the preview still shows the opening line.
+  const junkName = "Let’s be honest: this isn’t just a job —";
+  const line = feed.firstBodyLine("Feed post " + SLOP_BODY, junkName);
+  assert.ok(/^Let’s be honest/.test(line), "body preserved when name is not a real name");
+});
+
+test("AI-slop stub shows the author name and first line for an informed decision", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());
+  const stub = el.querySelector(".feedhacker-stub");
+  const preview = stub.querySelector(".feedhacker-preview");
+  assert.ok(preview, "preview present on a slop stub");
+  assert.ok(/jane doe/i.test(preview.querySelector(".feedhacker-preview-author").textContent), "author named");
+  assert.ok(/Let’s be honest/.test(preview.textContent), "first line shown");
+  assert.ok(stub.classList.contains("feedhacker-has-preview"));
+});
+
+test("non-slop stubs (e.g. Promoted) get no author/first-line preview", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/acme">Acme</a><span>Promoted</span><div>buy things now</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ muteSloppy: false, mutePromoted: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.ok(stub, "promoted post collapsed");
+  assert.strictEqual(stub.querySelector(".feedhacker-preview"), null, "no preview for a deterministic filter");
+});
+
+test("with Name names on, the preview drops the duplicate author prefix", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ nameNames: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.ok(/Jane Doe \(AI Slop\)/.test(stub.querySelector(".feedhacker-stub-label").textContent), "label names them");
+  const preview = stub.querySelector(".feedhacker-preview");
+  assert.strictEqual(preview.querySelector(".feedhacker-preview-author"), null, "name not repeated in preview");
+  assert.ok(/Let’s be honest/.test(preview.textContent), "first line still shown");
+});
+
+test("reset() clears the stashed preview", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());
+  assert.ok(el.dataset.feedhackerPreview, "preview stashed");
+  feed.reset(doc);
+  assert.strictEqual(el.dataset.feedhackerPreview, undefined);
+});
+
 test("digest groups consecutive hidden posts into one summary bar", () => {
   const list = post(`<div>${SLOP_BODY}</div>`) + post(`<div>${SLOP_BODY}</div>`) + post("<div>a normal human post</div>");
   const doc = makeDoc(feedHtml(list));
