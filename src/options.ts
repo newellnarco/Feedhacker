@@ -272,7 +272,7 @@ function saveAuthors(store) {
 // justify for the Web Store) and the entries are stored ONLY in chrome.storage.local —
 // on this user's machine, never synced or sent anywhere.
 var BANLIST_URL = "https://raw.githubusercontent.com/newellnarco/Feedhacker/main/claudisms.json";
-var BANLIST_ORIGIN = "https://raw.githubusercontent.com/*";
+var BANLIST_ORIGIN = "https://raw.githubusercontent.com/newellnarco/Feedhacker/*";
 
 byId("remote-fetch").addEventListener("click", function () {
   var status = byId("remote-status");

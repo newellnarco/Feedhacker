@@ -32,9 +32,10 @@ except the screenshots (which need real captures) and your Google account.
 ## Before you submit — review-risk checklist
 
 - **Host permission is already narrowed.** `optional_host_permissions` is scoped to
-  `https://raw.githubusercontent.com/*` (not `https://*/*`) and is requested only at
-  runtime when the user clicks "Update banlist now". Use the justification in
-  `listing.md`. The fetched banlist is stored only in the user's local storage.
+  `https://raw.githubusercontent.com/newellnarco/Feedhacker/*` (not `https://*/*`, and not
+  all of raw.githubusercontent.com) and is requested only at runtime when the user clicks
+  "Update banlist now". Use the justification in `listing.md`. The fetched banlist is
+  stored only in the user's local storage.
 - Do **not** add a self-hosted `update_url` to the manifest — the store manages updates.
   Our store zip has none; keep it that way.
 - Keep the "unofficial, not affiliated with LinkedIn" note and don't use LinkedIn's logo.

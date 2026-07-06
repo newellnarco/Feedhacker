@@ -4,6 +4,7 @@
 // linkedin.com origin (so the manifest's content-script matches fire), and drive it.
 const path = require("node:path");
 const fs = require("node:fs");
+const os = require("node:os");
 const { chromium } = require("playwright");
 
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -41,7 +42,10 @@ async function launchFeed({ fixtureHtml, sync }) {
     `--load-extension=${EXT}`,
     "--no-sandbox",
   ];
-  const ctx = await chromium.launchPersistentContext("", { headless: true, executablePath, args });
+  // Explicit per-run profile dir (in the OS temp dir) so each launch is hermetic and
+  // leaves nothing behind — removed best-effort on close.
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "feedhacker-pw-"));
+  const ctx = await chromium.launchPersistentContext(userDataDir, { headless: true, executablePath, args });
   const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent("serviceworker"));
   if (sync) {
     await sw.evaluate((s) => new Promise((r) => chrome.storage.sync.set(s, r)), sync);
@@ -51,7 +55,11 @@ async function launchFeed({ fixtureHtml, sync }) {
   );
   const page = await ctx.newPage();
   await page.goto("https://www.linkedin.com/feed/", { waitUntil: "domcontentloaded" });
-  return { ctx, page, close: () => ctx.close() };
+  const close = async () => {
+    await ctx.close();
+    try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch { /* best-effort */ }
+  };
+  return { ctx, page, close };
 }
 
 module.exports = { resolveChrome, extensionBuilt, launchFeed, EXT, ROOT };

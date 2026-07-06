@@ -29,9 +29,11 @@ the extension (or clearing its storage) removes it.
 - It reads the content of posts on `www.linkedin.com` while you view your feed, in order
   to decide which posts to hide. This reading happens locally and in real time; post
   content is not stored or transmitted.
-- **Optional remote banlist (off by default):** if you explicitly enable it and provide
-  a URL, FeedHacker fetches an updated phrase list from that URL. Only then does it make
-  a network request, and only to the address you chose. No personal data is sent.
+- **Optional banlist update (off by default):** if you click "Update banlist now" on the
+  options page, FeedHacker asks for permission to access `raw.githubusercontent.com` and
+  fetches the project's curated phrase list from its GitHub-hosted file. Only then does it
+  make a network request, and only to that address. The fetched list is stored locally on
+  your device; no personal data is sent.
 
 ## What FeedHacker does NOT do
 

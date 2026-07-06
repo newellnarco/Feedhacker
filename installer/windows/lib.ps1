@@ -45,10 +45,6 @@ function Sync-LatestRelease {
 
   $tag = ("" + $rel.tag_name).TrimStart("v")
   $installed = Get-InstalledVersion -ExtDir $ExtDir
-  if (-not $Force -and $installed -and $tag -and ($installed -eq $tag)) {
-    & $Log "Already up to date (v$installed)."
-    return $null
-  }
 
   # The unpacked-extension asset is feedhacker-<version>.zip (NOT the -win bundle).
   $asset = $rel.assets | Where-Object { $_.name -like "feedhacker-*.zip" -and $_.name -notlike "*-win.zip" } | Select-Object -First 1
@@ -65,9 +61,19 @@ function Sync-LatestRelease {
     # The zip nests the extension under feedhacker/; find manifest.json wherever it is.
     $mani = Get-ChildItem -Path $unzipped -Recurse -Filter manifest.json -File | Select-Object -First 1
     if (-not $mani) { throw "Downloaded archive did not contain manifest.json." }
+
+    # Use the version INSIDE the downloaded package as the single source of truth (the
+    # release tag may lag/differ from manifest.json). Compare against the installed one.
+    $latest = ("" + (Get-Content $mani.FullName -Raw | ConvertFrom-Json).version)
+    if ($tag -and $latest -and ($tag -ne $latest)) { & $Log "Note: release tag v$tag != packaged version v$latest; using v$latest." }
+    if (-not $Force -and $installed -and $latest -and ($installed -eq $latest)) {
+      & $Log "Already up to date (v$installed)."
+      return $null
+    }
+
     Copy-ExtensionInto -Src $mani.DirectoryName -ExtDir $ExtDir
-    & $Log "Installed FeedHacker v$tag into $ExtDir"
-    return $tag
+    & $Log "Installed FeedHacker v$latest into $ExtDir"
+    return $latest
   } finally {
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
   }
