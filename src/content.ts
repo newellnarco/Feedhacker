@@ -217,8 +217,19 @@
   // DOM-break heartbeat: if we're on a feed but repeatedly find zero post markers,
   // LinkedIn's markup probably changed — surface it once instead of silently doing nothing.
   var noMarkerRuns = 0, heartbeatLogged = false;
+  function tabActive() {
+    // Only trust "no markers" when the user is actually looking at the feed. A backgrounded
+    // tab, a minimized window, or switching to another app pauses LinkedIn's feed rendering,
+    // so zero markers there is expected — not a broken selector.
+    try {
+      if (document.hidden) return false;
+      if (typeof document.hasFocus === "function" && !document.hasFocus()) return false;
+    } catch (e) {}
+    return true;
+  }
   function heartbeat() {
     if (!SEL) return;
+    if (!tabActive()) { noMarkerRuns = 0; return; }   // tab hidden/unfocused — don't count it
     var n = SEL.markerCount(document);
     if (n > 0) { noMarkerRuns = 0; heartbeatLogged = false; return; }
     if (++noMarkerRuns >= 3 && !heartbeatLogged) {
