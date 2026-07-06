@@ -388,6 +388,65 @@
     return b;
   }
 
+  // --- inline SVG icons for the stub action buttons (crisp, colorable, no assets) ---
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function svgEl(doc, tag, attrs, kids?: any[]) {
+    var e = doc.createElementNS(SVG_NS, tag);
+    for (var k in attrs) if (Object.prototype.hasOwnProperty.call(attrs, k)) e.setAttribute(k, attrs[k]);
+    if (kids) for (var i = 0; i < kids.length; i++) e.appendChild(kids[i]);
+    return e;
+  }
+  function iconSvg(doc, opts, kids?: any[]) {
+    return svgEl(doc, "svg", {
+      viewBox: "0 0 24 24", width: "16", height: "16",
+      fill: opts.fill || "none", stroke: opts.stroke || "none",
+      "stroke-width": opts.sw || "0", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true"
+    }, kids);
+  }
+  // Green slime splat — AI slop.
+  function splatIcon(doc) {
+    return iconSvg(doc, { fill: "currentColor" }, [
+      svgEl(doc, "path", { d: "M12 2.2C13.2 4 12.8 6.2 14.6 6.4 15.4 4.8 18.2 5.6 17.4 7.6 19.4 7 20.8 9.4 18.8 10.6 21.2 11 21.6 14 19.2 14.6 21 16.2 19.4 18.6 17.4 17.4 17.2 19.6 14.4 20.4 13.4 18.4 12.6 20.8 9.4 20.8 9 18.4 7 19.6 4.8 17.8 6.4 16 4.2 15.8 3.4 12.8 5.6 11.8 3.8 10.4 4.8 7.6 7 8.2 7 6 9.6 5.2 10.8 7 10.6 4.8 10.6 3.4 12 2.2Z" }),
+      svgEl(doc, "circle", { cx: "4.3", cy: "5", r: "1.5" }),
+      svgEl(doc, "circle", { cx: "20", cy: "19.4", r: "1.2" })
+    ]);
+  }
+  // Muted microphone in a red disc — Mute author.
+  function micOffIcon(doc) {
+    return iconSvg(doc, {}, [
+      svgEl(doc, "circle", { cx: "12", cy: "12", r: "11", fill: "#d93a2f" }),
+      svgEl(doc, "rect", { x: "9.4", y: "5", width: "5.2", height: "8", rx: "2.6", fill: "#fff" }),
+      svgEl(doc, "path", { d: "M7.5 11.4a4.5 4.5 0 0 0 9 0", fill: "none", stroke: "#fff", "stroke-width": "1.6", "stroke-linecap": "round" }),
+      svgEl(doc, "line", { x1: "12", y1: "15.9", x2: "12", y2: "18.4", stroke: "#fff", "stroke-width": "1.6", "stroke-linecap": "round" }),
+      svgEl(doc, "line", { x1: "9", y1: "18.6", x2: "15", y2: "18.6", stroke: "#fff", "stroke-width": "1.6", "stroke-linecap": "round" }),
+      svgEl(doc, "line", { x1: "6.2", y1: "5.6", x2: "18", y2: "18.2", stroke: "#fff", "stroke-width": "2.1", "stroke-linecap": "round" })
+    ]);
+  }
+  // Eye with a blue iris — Always show (whitelist).
+  function eyeIcon(doc) {
+    return iconSvg(doc, {}, [
+      svgEl(doc, "path", { d: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z", fill: "#fff", stroke: "#141414", "stroke-width": "1.7", "stroke-linejoin": "round" }),
+      svgEl(doc, "circle", { cx: "12", cy: "12", r: "4.4", fill: "#3e5f8a", stroke: "#141414", "stroke-width": "1.1" }),
+      svgEl(doc, "circle", { cx: "12", cy: "12", r: "2.1", fill: "#15233b" }),
+      svgEl(doc, "circle", { cx: "13.2", cy: "10.9", r: "0.85", fill: "#fff" })
+    ]);
+  }
+  // Square with an up-right arrow — open profile in a new tab.
+  function extLinkIcon(doc) {
+    return iconSvg(doc, { stroke: "currentColor", sw: "2" }, [
+      svgEl(doc, "path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" }),
+      svgEl(doc, "path", { d: "M15 3h6v6" }),
+      svgEl(doc, "path", { d: "M10 14 21 3" })
+    ]);
+  }
+  function iconButton(doc, cls, iconNode, title) {
+    var b = doc.createElement("button");
+    b.type = "button"; b.className = "feedhacker-iconbtn " + cls;
+    b.title = title; b.setAttribute("aria-label", title);
+    b.appendChild(iconNode);
+    return b;
+  }
+
   function hasFlag(flags, id) {
     for (var i = 0; i < flags.length; i++) if (flags[i].id === id) return true;
     return false;
@@ -410,15 +469,13 @@
     if (markerCountWithin(el) < 1) return;          // comments have no post marker; skip
     var info = authorInfo(el);
     if (!info.url && !info.name) return;
-    if (settings && typeof settings.onMuteAuthor === "function") {   // one-click mute author
-      var mute = twoRowButton(doc, "feedhacker-muteauthor", "Mute", "author");
-      mute.title = info.name ? "Always hide posts from " + info.name : "Always hide this author";
+    if (settings && typeof settings.onMuteAuthor === "function") {   // one-click mute author (mic-off)
+      var mute = iconButton(doc, "feedhacker-muteauthor", micOffIcon(doc), "Mute");
       mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); dismissRow(el); });
       actions.appendChild(mute);
     }
-    if (settings && typeof settings.onAllowAuthor === "function") {   // one-click allowlist
-      var allow = twoRowButton(doc, "feedhacker-allow", "Always", "show");
-      allow.title = info.name ? "Always show " + info.name + " — don't ask again" : "Always show this author — don't ask again";
+    if (settings && typeof settings.onAllowAuthor === "function") {   // one-click allowlist (eye)
+      var allow = iconButton(doc, "feedhacker-allow", eyeIcon(doc), "Always show");
       allow.addEventListener("click", function (ev) {
         ev.preventDefault(); ev.stopPropagation();
         settings.onAllowAuthor(info);
@@ -428,9 +485,9 @@
     }
     if (info.url) {
       var prof = doc.createElement("a");
-      prof.className = "feedhacker-profile"; prof.href = info.url;
+      prof.className = "feedhacker-iconbtn feedhacker-profile"; prof.href = info.url;
       prof.target = "_blank"; prof.rel = "noopener noreferrer";
-      prof.textContent = "↗";   // a square (via CSS) with an up-right arrow — "open in new tab"
+      prof.appendChild(extLinkIcon(doc));
       prof.title = "Visit profile";
       prof.setAttribute("aria-label", info.name ? "Visit " + info.name + "'s profile" : "Visit profile");
       prof.addEventListener("click", function (ev) { ev.stopPropagation(); });
@@ -513,22 +570,11 @@
     // Explicit positive training for AI slop, without un-hiding (cleaner signal than
     // overloading Show/Hide). Only when we have the scored features to learn from.
     if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
-      var yes = doc.createElement("button");
-      yes.type = "button"; yes.className = "feedhacker-confirm";
-      // The thumb starts sideways (undecided); one click confirms and swings it upright.
-      var thumb = doc.createElement("span");
-      thumb.className = "feedhacker-thumb"; thumb.textContent = "👍";
-      var lbl = doc.createElement("span");
-      lbl.className = "feedhacker-confirm-label"; lbl.textContent = "slop";
-      yes.appendChild(thumb); yes.appendChild(lbl);
-      yes.title = "Confirm this is AI slop (teaches the filter)";
+      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc), "AI slop");
       yes.addEventListener("click", function (ev) {
         ev.preventDefault(); ev.stopPropagation();
-        emitFeedback(el, flags, settings, 1);
-        lbl.textContent = "thanks";
-        yes.classList.add("feedhacker-confirmed");   // swings the thumb from sideways to upright
-        yes.disabled = true;
-        dismissRow(el);                              // then retire the row from the feed
+        emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter)
+        dismissRow(el);                          // then retire the row from the feed
       });
       actions.appendChild(yes);
     }

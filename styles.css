@@ -30,36 +30,28 @@
 /* Right-justified, tightened action cluster on the stub. */
 .feedhacker-actions { display: inline-flex; align-items: stretch; gap: 6px; margin-left: auto; flex: none; }
 
-/* Shared base for every stub action control (compact). */
-.feedhacker-muteauthor, .feedhacker-allow, .feedhacker-show, .feedhacker-confirm, .feedhacker-profile {
+/* Square icon buttons — AI slop (splat), Mute (mic-off), Always show (eye), Profile (open ↗). */
+.feedhacker-iconbtn { display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; border: 1px solid #c7ccd4; background: #fff; color: #5f6b7a;
-  border-radius: 8px; padding: 4px 10px; font-size: 11.5px; font-weight: 600;
-  line-height: 1.12; text-decoration: none;
-}
-/* Two-line stacked buttons (Mute/author, Always/show, Show/anyway) — always two rows. */
-.feedhacker-btn2 { display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 3px 9px; text-align: center; white-space: nowrap; }
+  border-radius: 8px; padding: 0; aspect-ratio: 1; min-width: 30px; text-decoration: none; }
+.feedhacker-iconbtn svg { display: block; }
+.feedhacker-iconbtn:hover:not([disabled]) { background: #f0f2f5; }
+.feedhacker-iconbtn[disabled] { opacity: .85; cursor: default; }
 
-.feedhacker-muteauthor:hover:not([disabled]) { background: #fdecec; color: #b42318; border-color: #e2b6b6; }
-.feedhacker-allow { color: #047857; }
-.feedhacker-allow:hover:not([disabled]) { background: #eefaf3; border-color: #b7e2cd; }
-.feedhacker-show { color: #0a66c2; }
+.feedhacker-confirm { color: #2f9e1e; }                                  /* green splat */
+.feedhacker-confirm:hover:not([disabled]) { background: #eefaf3; border-color: #b7e2cd; }
+.feedhacker-muteauthor:hover:not([disabled]) { color: #b42318; background: #fdecec; border-color: #e2b6b6; }
+.feedhacker-allow { color: #0a66c2; }                                     /* eye */
+.feedhacker-allow:hover:not([disabled]) { background: #e6eefb; border-color: #a8c6ee; }
+.feedhacker-profile:hover { color: #0a66c2; background: #e6eefb; border-color: #a8c6ee; }
+
+/* "Show anyway" stays a labelled two-line button (the escape hatch). */
+.feedhacker-show { cursor: pointer; border: 1px solid #c7ccd4; background: #fff; color: #0a66c2;
+  border-radius: 8px; padding: 3px 9px; font-size: 11.5px; font-weight: 600; line-height: 1.12; }
+.feedhacker-btn2 { display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; white-space: nowrap; }
 .feedhacker-show:hover:not([disabled]) { background: #e6eefb; border-color: #a8c6ee; }
 .feedhacker-explainer .feedhacker-show { margin-left: auto; }
-
-/* Confirm (👍 slop) — a single row: thumb + label. */
-.feedhacker-confirm { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; }
-.feedhacker-confirm:hover:not([disabled]) { background: #eefaf3; color: #047857; border-color: #b7e2cd; }
-.feedhacker-confirm[disabled] { opacity: .85; cursor: default; }
-/* Thumb starts sideways (pointing right); confirming swings it upright. */
-.feedhacker-thumb { display: inline-block; transform: rotate(90deg); transform-origin: 50% 60%;
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
-.feedhacker-confirm.feedhacker-confirmed .feedhacker-thumb { transform: rotate(0deg); }
-
-/* Profile — a square with an up-right arrow ("open in a new tab"), no text. */
-.feedhacker-profile { display: inline-flex; align-items: center; justify-content: center;
-  padding: 0; aspect-ratio: 1; min-width: 30px; color: #0a66c2; font-size: 15px; font-weight: 400; }
-.feedhacker-profile:hover { background: #e6eefb; border-color: #a8c6ee; }
 
 /* Confirmed slop / muted author: fade + slide the stub out, then feedhacker-gone removes it. */
 .feedhacker-dismissing { opacity: 0; transform: translateX(16px); pointer-events: none;
