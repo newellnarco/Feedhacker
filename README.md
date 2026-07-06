@@ -8,6 +8,9 @@ your LinkedIn home feed — driven by a per‑filter **Mute / Solo** mixer.
 > Unofficial, unaffiliated with LinkedIn. Runs entirely in your browser; nothing
 > is sent to any server.
 
+**[Install from the Chrome Web Store ↗](https://chromewebstore.google.com/detail/feedhacker/djfbniehjjngpkimngegnjdeamfofnoa)**
+· [Changelog](CHANGELOG.md) · [Releases](https://github.com/newellnarco/Feedhacker/releases/latest)
+
 ---
 
 ## What it does
@@ -114,14 +117,15 @@ of the standard filters.
 
 ## Install
 
-The intended install is the **Chrome Web Store** — one click, no dev mode, and
-automatic updates. Publishing materials (listing copy, permission justifications,
-privacy policy, and a store‑ready `-store.zip` build target) live in
-[`store/`](store/README.md); once the listing is live this section links to it.
+**[➡ Install from the Chrome Web Store](https://chromewebstore.google.com/detail/feedhacker/djfbniehjjngpkimngegnjdeamfofnoa)** —
+one click, no dev mode, and Google auto‑updates you. This is the recommended way
+to install. (Publishing materials and the release process live in
+[`store/`](store/README.md).)
 
-Until then, grab a prebuilt release — no build, no source, no account. See
-**[INSTALL.md](INSTALL.md)** for the full walkthrough (managing, updating,
-troubleshooting).
+Prefer not to use the store? Grab a prebuilt release — no build, no source, no
+account. See **[INSTALL.md](INSTALL.md)** for the full walkthrough (managing,
+updating, troubleshooting), and **[CHANGELOG.md](CHANGELOG.md)** for what's new in
+each version.
 
 > Off the Web Store, Chrome requires one manual "Load unpacked" step. The options
 > below are the closest no‑account path: a prebuilt download plus that single click.

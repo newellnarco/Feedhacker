@@ -16,6 +16,9 @@ tiles, and store icon. All you supply is your Google account.
 
 ## Each release
 
+0. Bump the version in `manifest.json` (and `package.json`) and add a
+   [`CHANGELOG.md`](../CHANGELOG.md) entry for the new version (move items out of
+   **Unreleased**). The store rejects an upload whose version isn't higher than the live one.
 1. `npm run build` — produces **`dist/feedhacker-<version>-store.zip`** (manifest.json at
    the zip root, which the store requires).
 2. In the dashboard: **New item** (first time) or your existing item → **Upload new
