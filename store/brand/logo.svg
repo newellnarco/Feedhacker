@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 128 128">
+  <!-- MAX Research Collective "M" mark on white (for light backgrounds / store use). -->
+  <rect width="128" height="128" fill="#ffffff"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="15">
+    <path d="M34 99 V43 L64 73" stroke="#2e3a5a"/>
+    <path d="M64 73 L94 43 V99" stroke="#35c6ee"/>
+  </g>
+  <path d="M92 45 L101 15 L110 44 Z" fill="#f2543b"/>
+  <rect x="55" y="28" width="12" height="12" rx="2" fill="#2e3a5a"/>
+  <circle cx="75" cy="90" r="5" fill="#f2543b"/>
+</svg>
