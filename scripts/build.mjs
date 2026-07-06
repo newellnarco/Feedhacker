@@ -5,7 +5,7 @@
 // dist/feedhacker-<version>.zip. Load unpacked from dist/feedhacker/, or drag the zip
 // onto chrome://extensions.
 import { execFileSync } from "node:child_process";
-import { deflateRawSync, crc32 } from "node:zlib";
+import { deflateRawSync } from "node:zlib";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,10 +34,29 @@ function copyFile(src, dest) {
 // --- minimal, dependency-free ZIP writer (deflate) -----------------------------
 // Node ships no archive-creation API; hand-rolling the container keeps the build
 // dependency-free and identical on every OS. Uses a fixed DOS timestamp so builds
-// are reproducible. crc32() is provided by node:zlib (Node >= 18).
+// are reproducible.
 const DOS_TIME = 0, DOS_DATE = 0x21; // 1980-01-01 00:00:00
 
-function zipDir(srcDir, zipPath) {
+// CRC-32 (IEEE). Implemented here rather than via node:zlib.crc32 so the build runs
+// on any Node LTS (zlib.crc32 only landed in Node 20.15 / 22.2).
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+// `prefix` nests every entry under a top-level folder (e.g. "feedhacker/manifest.json")
+// so unzipping yields the folder name the Load-unpacked docs tell users to select.
+function zipDir(srcDir, zipPath, prefix = "") {
   const files = [];
   (function walk(dir, rel) {
     for (const name of fs.readdirSync(dir).sort()) {
@@ -46,7 +65,7 @@ function zipDir(srcDir, zipPath) {
       if (fs.statSync(abs).isDirectory()) walk(abs, relPath);
       else files.push({ abs, name: relPath });
     }
-  })(srcDir, "");
+  })(srcDir, prefix);
 
   const chunks = [];
   const central = [];
@@ -129,7 +148,7 @@ for (const f of STATIC_FILES) {
   copyFile(f, path.join(STAGE, f));
 }
 fs.cpSync("icons", path.join(STAGE, "icons"), { recursive: true });
-zipDir(STAGE, zipPath);
+zipDir(STAGE, zipPath, "feedhacker"); // unzips to a feedhacker/ folder
 
 // --- Windows one-click bundle: extension + installer scripts + docs ---
 rmrf(WIN_STAGE); rmrf(winZip);
@@ -140,7 +159,8 @@ if (fs.existsSync("INSTALL.md")) copyFile("INSTALL.md", path.join(WIN_STAGE, "IN
 fs.writeFileSync(path.join(WIN_STAGE, "START-HERE.txt"), `FeedHacker for Windows
 ======================
 Double-click  installer\\install.bat  to install and set up auto-updates.
-(No admin needed. It builds from GitHub, then guides a one-time "Load unpacked".)
+(No admin needed. It installs the prebuilt extension, sets up daily auto-updates
+from GitHub, then guides a one-time "Load unpacked".)
 
 Other scripts:
   installer\\update.bat     - pull the latest green build from GitHub now

@@ -9,13 +9,15 @@ const { chromium } = require("playwright");
 const ROOT = path.resolve(__dirname, "..", "..");
 const EXT = path.join(ROOT, "dist", "feedhacker");
 
-// Resolve a usable Chromium. In CI `playwright install` provides its own (use the
-// default). In sandboxes without it, fall back to any pre-installed browser under
-// PLAYWRIGHT_BROWSERS_PATH. Returns { ok, executablePath } — ok:false => skip.
+// Resolve the FULL Chromium binary. Returning an explicit executablePath is critical:
+// MV3 extensions need a service worker, which `chrome-headless-shell` (what Playwright
+// picks for headless:true when executablePath is undefined) cannot host. Point at the
+// full chromium so the extension actually loads. In sandboxes without Playwright's own
+// download, fall back to any pre-installed browser. Returns { ok, executablePath }.
 function resolveChrome() {
   try {
     const p = chromium.executablePath();
-    if (p && fs.existsSync(p)) return { ok: true, executablePath: undefined };
+    if (p && fs.existsSync(p)) return { ok: true, executablePath: p };
   } catch { /* not installed */ }
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH || "/opt/pw-browsers";
   for (const d of fs.existsSync(root) ? fs.readdirSync(root) : []) {

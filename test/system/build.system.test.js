@@ -29,6 +29,25 @@ test("every file the manifest references is present in dist/feedhacker", () => {
   assert.deepStrictEqual(missing, [], `dist/feedhacker is missing: ${missing.join(", ")}`);
 });
 
+test("every script referenced by the packaged HTML pages ships in dist/feedhacker", () => {
+  // The manifest doesn't list page scripts (popup.js, options.js, update.js) — they're
+  // pulled in by <script src> in the HTML. Guard those too, so dropping one from the
+  // build's file list is caught instead of shipping a 404 at runtime.
+  const missing = [];
+  for (const page of ["popup.html", "options.html"]) {
+    const p = path.join(EXT, page);
+    if (!fs.existsSync(p)) { missing.push(page); continue; }
+    const html = fs.readFileSync(p, "utf8");
+    const re = /<script[^>]+src=["']([^"']+)["']/g;
+    let m;
+    while ((m = re.exec(html))) {
+      const src = m[1];
+      if (!/^https?:/i.test(src) && !fs.existsSync(path.join(EXT, src))) missing.push(`${page} -> ${src}`);
+    }
+  }
+  assert.deepStrictEqual(missing, [], `packaged HTML references missing files: ${missing.join(", ")}`);
+});
+
 test("the distribution zip exists and has a valid ZIP signature", () => {
   const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}.zip`);
   assert.ok(fs.existsSync(zip), `expected ${zip} — run \`npm run build\``);

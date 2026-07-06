@@ -9,6 +9,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: CI only reads the repo and uploads a build artifact.
+permissions:
+  contents: read
+
 jobs:
   # --- Level 1: unit — pure per-module logic (fast, no DOM host, no browser) ---
   unit:

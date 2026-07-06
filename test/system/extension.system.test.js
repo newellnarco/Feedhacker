@@ -8,7 +8,12 @@ const assert = require("node:assert");
 const { resolveChrome, extensionBuilt, launchFeed } = require("./helper");
 
 const browser = resolveChrome();
-const skip = !browser.ok
+// In CI we must never silently skip — a missing browser or unbuilt extension should
+// fail the `system` job loudly, not publish an untested build. Skipping is only for
+// local sandboxes without a browser.
+const skip = process.env.CI
+  ? false
+  : !browser.ok
   ? "no Chromium available (run `npx playwright install chromium`)"
   : !extensionBuilt()
   ? "extension not built (run `npm run build`)"
@@ -35,8 +40,10 @@ test("hides a Promoted post end-to-end when Promoted muting is on", { skip, time
 test("leaves the Promoted post visible under default settings (Promoted muting off)", { skip, timeout: 60000 }, async () => {
   const { page, close } = await launchFeed({ fixtureHtml: FIXTURE, sync: {} });
   try {
-    // Give the content script time to boot and scan; with Promoted muting off it must not hide it.
-    await page.waitForTimeout(4000);
+    // Positive control: wait until the content script has actually scanned the post
+    // (data-feedhacker-scanned), so this can't pass vacuously if the extension never
+    // booted. THEN assert that, with Promoted muting off, it was not hidden.
+    await page.waitForSelector("#p-ad[data-feedhacker-scanned]", { timeout: 20000 });
     const adHidden = await page.locator("#p-ad").evaluate((el) => el.classList.contains("feedhacker-hidden"));
     assert.strictEqual(adHidden, false, "Promoted post must remain visible when the filter is off");
   } finally {

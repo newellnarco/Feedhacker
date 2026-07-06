@@ -48,7 +48,11 @@ if (Test-Path (Join-Path $bundled "manifest.json")) {
 if (-not (Test-Path (Join-Path $Ext "manifest.json"))) { Die "Install did not produce $Ext" }
 
 # Keep the installer scripts at a stable path so the scheduled task can call them.
-Copy-Item -Path (Join-Path $PSScriptRoot "*") -Destination $Inst -Recurse -Force
+# Skip when already running from that path (e.g. the MSI-installed layout) to avoid
+# a copy-onto-itself error.
+if ((Resolve-Path $PSScriptRoot).Path -ne (Resolve-Path $Inst).Path) {
+  Copy-Item -Path (Join-Path $PSScriptRoot "*") -Destination $Inst -Recurse -Force
+}
 
 # --- 2. Per-user daily auto-update task (no admin) ---
 if (-not $NoSchedule) {

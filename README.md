@@ -177,7 +177,7 @@ popup.html/.js    Mute/Solo mixer + master switch + sensitivity slider + links
 options.html/.js  details, activity, insights, custom filters, authors, model I/O
 styles.css        stub + load-more styling
 claudisms.json    the AI-slop phrase banlist (one signal feeding the scorer)
-scripts/build.sh  packages the runtime files into dist/ + a zip
+scripts/build.mjs packages the runtime files into dist/ + a zip (cross-platform Node)
 ```
 
 **Content‑script pipeline**
@@ -223,11 +223,16 @@ UMD/IIFE modules load as plain scripts). Shared types live in
 uses dynamic property access in a few places.
 
 ```bash
-npm install     # dev-only: typescript + jsdom
+npm install         # dev-only: typescript, jsdom, playwright
 npm run typecheck   # tsc --noEmit
-npm test        # compiles (pretest), then node:test + jsdom, 71 tests
-npm run build   # tsc + package dist/feedhacker/ and a versioned zip
+npm test            # unit + integration (node:test + jsdom)
+npm run test:system # builds, then drives the extension in real headless Chromium
+npm run build       # tsc + package dist/feedhacker/ and a versioned zip (Node)
 ```
+
+Tests are split by level: `test/unit/` (pure modules), `test/integration/`
+(modules wired via jsdom + a mock `chrome`), and `test/system/` (the packaged
+extension in a real browser). CI runs each as its own job.
 
 - Pure logic (`filters`, `selectors`, `matcher`, `scorer`, `authors`,
   `customfilters`, `feed`, `logger`) attaches a typed API to the shared global

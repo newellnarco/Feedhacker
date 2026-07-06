@@ -13,6 +13,9 @@
     "test:system": "npm run build && node --test \"test/system/*.test.js\"",
     "build": "node scripts/build.mjs"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "jsdom": "^24.1.0",
     "playwright": "^1.61.1",

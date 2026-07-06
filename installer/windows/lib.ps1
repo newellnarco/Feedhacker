@@ -62,10 +62,10 @@ function Sync-LatestRelease {
     Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip -Headers @{ "User-Agent" = "FeedHacker-Updater" } -UseBasicParsing
     $unzipped = Join-Path $tmp "unzipped"
     Expand-Archive -Path $zip -DestinationPath $unzipped -Force
-    if (-not (Test-Path (Join-Path $unzipped "manifest.json"))) {
-      throw "Downloaded archive did not contain manifest.json."
-    }
-    Copy-ExtensionInto -Src $unzipped -ExtDir $ExtDir
+    # The zip nests the extension under feedhacker/; find manifest.json wherever it is.
+    $mani = Get-ChildItem -Path $unzipped -Recurse -Filter manifest.json -File | Select-Object -First 1
+    if (-not $mani) { throw "Downloaded archive did not contain manifest.json." }
+    Copy-ExtensionInto -Src $mani.DirectoryName -ExtDir $ExtDir
     & $Log "Installed FeedHacker v$tag into $ExtDir"
     return $tag
   } finally {
