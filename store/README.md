@@ -44,11 +44,10 @@ tiles, and store icon. All you supply is your Google account.
 
 ## Before you submit — review-risk checklist
 
-- **Host permission is already narrowed.** `optional_host_permissions` is scoped to
-  `https://raw.githubusercontent.com/newellnarco/Feedhacker/*` (not `https://*/*`, and not
-  all of raw.githubusercontent.com) and is requested only at runtime when the user clicks
-  "Update banlist now". Use the justification in `listing.md`. The fetched banlist is
-  stored only in the user's local storage.
+- **Minimal permissions.** The only declared permission is `storage`; host access is
+  limited to the `www.linkedin.com` content script, and there are **no**
+  `optional_host_permissions` and **no** network requests (the curated banlist ships
+  inside the package). Use the justification in `listing.md`.
 - Do **not** add a self-hosted `update_url` to the manifest — the store manages updates.
   Our store zip has none; keep it that way.
 - Keep the "unofficial, not affiliated with LinkedIn" note and don't use LinkedIn's logo.

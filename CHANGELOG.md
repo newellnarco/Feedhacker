@@ -13,7 +13,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- Refreshed the Chrome Web Store listing **screenshots** to a 0.2.0 set (the
+  Mute/Solo mixer, the AI-slop detection panel, and the hidden-post stub).
+- **Docs consistency pass** for 0.2.0: removed lingering references to the
+  now-deleted remote GitHub banlist from `README.md`, `INSTALL.md`, and
+  `store/README.md`; renamed the documented "Name names" option to "Names" and
+  documented the new "+ sample" option, the detection-transparency panel, and the
+  Actions legend; and aligned the privacy wording to "no network requests."
 
 ## [0.2.0] — 2026-07-06
 
