@@ -51,3 +51,35 @@ tiles, and store icon. All you supply is your Google account.
 - Users install with one click and Google auto-updates them.
 - To ship an update: bump `version` in `manifest.json`, `npm run build`, upload the new
   `-store.zip`, and submit. No CRX, `updates.xml`, or installer needed.
+
+## Automated publishing (CI) — optional
+
+The [Release workflow](../.github/workflows/release.yml) can upload the store package for
+you on every version tag, so you never touch the dashboard for a routine update. It's
+**opt-in and best-effort**: the `webstore` job runs only when the credentials below are
+set, and it can never fail the GitHub Release.
+
+1. **Get Google API credentials once.** Follow the
+   [chrome-webstore-upload-keys guide](https://github.com/fregante/chrome-webstore-upload-keys)
+   to create an OAuth **client ID**, **client secret**, and **refresh token** with the
+   Chrome Web Store API enabled for your developer account.
+2. **Add them under repo Settings → Secrets and variables → Actions:**
+   - Secrets: `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`.
+   - Variable (optional): `CWS_AUTO_PUBLISH = true` to auto-submit for review. Leave it
+     unset to upload the new version as a **draft** — then click **Publish** in the
+     dashboard when you're ready (the "update on a click" flow).
+3. **Release as usual:** bump `manifest.json`/`package.json`, then
+   `git tag vX.Y.Z && git push origin vX.Y.Z`. CI builds `feedhacker-<version>-store.zip`
+   and uploads it to item `djfbniehjjngpkimngegnjdeamfofnoa`. Once the new version is
+   published and approved, **Chrome auto-updates every store user** within hours to a day —
+   no action on their part.
+
+> The store requires each upload to have a **higher** `manifest.json` version than the live
+> one, which is why the version bump is step one. `manifest.json` and `package.json` are
+> kept in lockstep, and a test guards the store-review limits (name/description length,
+> narrowed host permission, no self-hosted `update_url`).
+
+> Note: the extension's own **Details & activity → Check for updates** button checks the
+> GitHub *releases* feed (for the Developer-mode/sideload builds). Store installs don't
+> need it — Chrome updates them automatically — so for a store user that button is just
+> informational.
