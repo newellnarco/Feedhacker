@@ -22,6 +22,7 @@
       color: #8a94a3; margin: 12px 0 3px; }
     label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
     label.row input { margin-top: 2px; }
+    label.row.row-dim { opacity: .45; cursor: default; }   /* "+ sample" is grayed until Names is on */
     .muted { color: #8a94a3; }
     .hint { margin: 11px 0 0; font-size: 11.5px; color: #6a7686; }
     #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
@@ -60,8 +61,8 @@
   </div>
 
   <div class="group-label">Display</div>
-  <label class="row"><input type="checkbox" id="nameNames"> Name names <span class="muted">(who + category)</span></label>
-  <label class="row"><input type="checkbox" id="nameSample"> Name + sample + category <span class="muted">(three lines: who, sample text, category)</span></label>
+  <label class="row"><input type="checkbox" id="nameNames"> Names <span class="muted">(who + category)</span></label>
+  <label class="row"><input type="checkbox" id="nameSample"> + sample <span class="muted">(adds a line of the hidden text; needs Names)</span></label>
   <label class="row"><input type="checkbox" id="hideCompletely"> Hide Hidden Content <span class="muted">(no placeholder)</span></label>
   <label class="row"><input type="checkbox" id="digest"> Digest runs of hidden posts <span class="muted">(one summary bar)</span></label>
 

@@ -437,7 +437,9 @@
   function renderCollapsed(doc, el, stub, flags, settings) {
     clearEl(stub);
     stub.className = "feedhacker-stub";
-    if (settings.nameSample) {
+    // "+ sample" is an add-on to "Names" — the three-line stub only applies when both
+    // are on. (nameNames alone stays the one-line "Name (category)" label.)
+    if (settings.nameSample && settings.nameNames) {
       appendNameSampleStub(doc, el, stub, flags);
     } else {
       var label = doc.createElement("span");

@@ -300,7 +300,8 @@ test("with Name names on, the preview drops the duplicate author prefix", () => 
 test("nameSample renders a three-line stub: name, sample, category", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
-  feed.consider(doc, el, [], baseSettings({ nameSample: true }));
+  // "+ sample" is an add-on to "Names", so both are on for the three-line stub.
+  feed.consider(doc, el, [], baseSettings({ nameNames: true, nameSample: true }));
   const stub = el.querySelector(".feedhacker-stub");
   assert.ok(stub.classList.contains("feedhacker-has-namesample"), "three-line layout class set");
   const block = stub.querySelector(".feedhacker-namesample");
@@ -311,6 +312,15 @@ test("nameSample renders a three-line stub: name, sample, category", () => {
   // The richer mode supersedes the single-line label + inline preview (no echo).
   assert.strictEqual(stub.querySelector(".feedhacker-stub-label"), null, "no single-line label");
   assert.strictEqual(stub.querySelector(".feedhacker-preview"), null, "no inline preview");
+});
+
+test("nameSample without nameNames falls back to the one-line stub", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ nameNames: false, nameSample: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.ok(!stub.classList.contains("feedhacker-has-namesample"), "no three-line layout without Names");
+  assert.ok(stub.querySelector(".feedhacker-stub-label"), "one-line label present");
 });
 
 test("reset() clears the stashed preview", () => {

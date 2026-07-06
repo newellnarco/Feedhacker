@@ -17,10 +17,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - New **“Actions”** card on the options page (under Properties): a legend for the
   Mute / Solo / Aggressive buttons — the M/S/A chips in one column and a short
   description of what each affects in the other.
-- New **“Name + sample + category”** display option (popup → Display). Alongside
-  the existing “Name names (who + category)”, this renders each hidden-post stub as
-  three lines — author, a sample of the hidden text, then the filter category. The
-  richer mode takes precedence over the one-line label when both are on.
+- New **“+ sample”** display option (popup → Display). It adds a line of the hidden
+  post's text to the **“Names”** stub, giving a three-line stub — author, sample,
+  category. It only applies on top of Names: it's disabled and grayed while Names is
+  off, and turning Names off clears it.
 - **“How AI-slop detection works”** panel on the options page — a read-only,
   transparency view over the scorer. Shows the structural “tells” it looks for
   (each with a plain-English description and your current learned weight) and the
@@ -36,6 +36,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   reviewer verifies this reliably, unlike a `raw.githubusercontent.com` link.
 
 ### Changed
+- Popup Display: renamed **“Name names” → “Names”**, and the sample toggle to
+  **“+ sample”**, which now reads as an add-on to Names (grayed/disabled until Names
+  is on) rather than a standalone three-line mode.
 - Popup: **Aggressive (A) is now coupled to the AI-slop Mute (M)** — clicking A also
   turns Mute on, turning Mute off clears Aggressive, and A is dimmed with a hint
   while AI slop isn't muted. Removes the old dead state where A did nothing on its own.

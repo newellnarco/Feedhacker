@@ -43,6 +43,20 @@ function paintAggAvailability(muteOn) {
     : "Turn on Mute (M) for AI slop to use Aggressive";
 }
 
+// "+ sample" only adds to "Names" — it does nothing on its own. Couple them: the
+// sample box is disabled + grayed while Names is off, and turning Names off clears it.
+var namesBox = byId("nameNames");
+var sampleBox = byId("nameSample");
+function paintSampleAvailability(namesOn) {
+  sampleBox.disabled = !namesOn;
+  var row = sampleBox.closest(".row"); if (row) row.classList.toggle("row-dim", !namesOn);
+  if (!namesOn) sampleBox.checked = false;
+}
+namesBox.addEventListener("change", function () {
+  if (!namesBox.checked && sampleBox.checked) chrome.storage.sync.set({ nameSample: false });
+  paintSampleAvailability(namesBox.checked);
+});
+
 // Master enable/disable — pauses all filtering without uninstalling.
 var enabledBox = byId("enabled");
 var masterEl = byId("master");
@@ -62,6 +76,8 @@ chrome.storage.sync.get(DEFAULTS, function (st) {
   document.querySelectorAll(".ms").forEach(function (b) { paint(b, st[b.dataset.key]); });
   DISPLAY.forEach(function (id) { byId(id).checked = !!st[id]; });
   paintAggAvailability(st.muteSloppy);
+  if (st.nameSample && !st.nameNames) chrome.storage.sync.set({ nameSample: false });   // heal stale state
+  paintSampleAvailability(st.nameNames);
 });
 
 byId("open-options").addEventListener("click", function () {
