@@ -6,6 +6,9 @@ at the zip root, as the store requires).
 
 ## Product details
 
+- **Publisher:** MAX Research Collective — set this as your **publisher display name** in
+  the Developer Dashboard (Account → Publisher / group publisher). It is an account
+  setting, not a manifest field; the manifest carries it as `author` for reference.
 - **Name:** FeedHacker
 - **Summary** (≤132 chars): Mute the noise in your LinkedIn feed — AI slop, promoted posts, engagement-bait reshares, and more, with a Mute/Solo mixer.
 - **Category:** Productivity
@@ -42,10 +45,11 @@ according to filters the user configures.
 - **Host access to `www.linkedin.com`** (content script) — Read the posts on the
   LinkedIn feed the user is actively viewing so matching posts can be hidden. The
   extension runs only on `www.linkedin.com`.
-- **`optional_host_permissions: https://*/*`** — Requested **only at runtime, only if**
-  the user opts into the "remote banlist update" feature, to fetch an updated phrase
-  list from a URL the user enters. Not requested on install. (Review note: this is
-  broad; see store/README.md for the option to narrow or drop it before submitting.)
+- **`optional_host_permissions: https://raw.githubusercontent.com/*`** — Requested
+  **only at runtime, only if** the user clicks "Update banlist now", to fetch the
+  curated AI-slop phrase list from the project's own GitHub-hosted file. Scoped to that
+  single host, not requested on install, and the fetched list is stored only in the
+  user's local browser storage.
 
 ## Data usage disclosures (Privacy practices tab)
 

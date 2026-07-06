@@ -41,6 +41,7 @@ the extension (or clearing its storage) removes it.
 
 ## Contact
 
+FeedHacker is published by **MAX Research Collective**.
 Questions: open an issue at https://github.com/newellnarco/Feedhacker/issues
 
 FeedHacker is unofficial and not affiliated with, endorsed by, or sponsored by LinkedIn.

@@ -9,6 +9,9 @@ except the screenshots (which need real captures) and your Google account.
 1. Go to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
    and pay the **$5 one-time** developer registration fee. Complete any email/identity
    verification.
+2. Set your **publisher display name** to **MAX Research Collective** (Account →
+   Publisher, or create/join a group publisher with that name). This is what users see
+   as the publisher on the listing.
 
 ## Each release
 
@@ -28,12 +31,10 @@ except the screenshots (which need real captures) and your Google account.
 
 ## Before you submit — review-risk checklist
 
-- **`optional_host_permissions: https://*/*`** (in `manifest.json`) is the item most
-  likely to slow review. It exists only for the opt-in "remote banlist update" feature.
-  Options, easiest first:
-  - Drop the feature and remove the line (cleanest for review), or
-  - Narrow it to the specific host(s) you'll actually serve the banlist from, or
-  - Keep it and use the justification in `listing.md` (expect extra scrutiny).
+- **Host permission is already narrowed.** `optional_host_permissions` is scoped to
+  `https://raw.githubusercontent.com/*` (not `https://*/*`) and is requested only at
+  runtime when the user clicks "Update banlist now". Use the justification in
+  `listing.md`. The fetched banlist is stored only in the user's local storage.
 - Do **not** add a self-hosted `update_url` to the manifest — the store manages updates.
   Our store zip has none; keep it that way.
 - Keep the "unofficial, not affiliated with LinkedIn" note and don't use LinkedIn's logo.
