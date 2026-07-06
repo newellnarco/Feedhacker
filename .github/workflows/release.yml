@@ -102,11 +102,18 @@ jobs:
           # filenames even if the git tag and manifest.json ever disagree.
           VERSION="$(jq -r .version dist/feedhacker/manifest.json)"
           # Tag from the pushed ref, or — on a manual publish run — from the manifest
-          # version, repointed at the built commit (drop any stale tag first so the
-          # release attaches to THIS commit, not an old one).
+          # version.
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             TAG="v${VERSION}"
-            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TAG}" >/dev/null 2>&1 || true
+            # Manual publish: create the tag ourselves (the runner's token can push tags,
+            # unlike a scoped sandbox) so `gh release create` publishes a REAL release
+            # rather than a draft. Clear any prior release/tag for this version first —
+            # including a leftover draft — so we end up with exactly one published release
+            # pinned to the built commit. A tag pushed with GITHUB_TOKEN does not re-trigger
+            # this workflow, so there is no loop.
+            gh release delete "$TAG" --yes --cleanup-tag >/dev/null 2>&1 || true
+            git tag -f "$TAG" "$GITHUB_SHA"
+            git push -f origin "refs/tags/${TAG}"
           else
             TAG="$GITHUB_REF_NAME"
           fi
@@ -124,10 +131,11 @@ jobs:
           )
           shopt -s nullglob
           ASSETS=(dist/feedhacker-*.zip dist/*.msi)
-          # Idempotent: a release may already exist for this tag (e.g. it was drafted in
-          # the GitHub UI, which is what created the tag that triggered us). In that case
-          # update it in place instead of erroring on "already exists"; otherwise create it,
-          # pinning the tag to the commit we built (matters for the manual-publish path).
+          # Idempotent: a release may already exist for this tag (e.g. a tag push whose
+          # release was drafted in the GitHub UI). Update it in place instead of erroring
+          # on "already exists"; otherwise create it. The tag already exists by now (pushed
+          # above on a manual run, or the trigger ref on a tag push), so `gh release create`
+          # publishes a normal release — no --target, which would draft it.
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" \
               --title "FeedHacker $TAG" \
@@ -135,7 +143,6 @@ jobs:
             [ ${#ASSETS[@]} -gt 0 ] && gh release upload "$TAG" "${ASSETS[@]}" --clobber
           else
             gh release create "$TAG" \
-              --target "$GITHUB_SHA" \
               --title "FeedHacker $TAG" \
               --notes "$NOTES" \
               "${ASSETS[@]}"
