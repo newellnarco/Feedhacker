@@ -13,41 +13,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.2.0] — 2026-07-06
+
 ### Added
-- New **“Actions”** card on the options page (under Properties): a legend for the
-  Mute / Solo / Aggressive buttons — the M/S/A chips in one column and a short
-  description of what each affects in the other.
-- New **“+ sample”** display option (popup → Display). It adds a line of the hidden
-  post's text to the **“Names”** stub, giving a three-line stub — author, sample,
-  category. It only applies on top of Names: it's disabled and grayed while Names is
-  off, and turning Names off clears it.
-- **“How AI-slop detection works”** panel on the options page — a read-only,
-  transparency view over the scorer. Shows the structural “tells” it looks for
-  (each with a plain-English description and your current learned weight) and the
-  full curated phrase banlist, grouped by category and filterable with a search
-  box. No new data or permissions; it surfaces what the extension already computes.
-- **Profile link** next to each entry under Insights → Top sources, so you can
-  jump to the author's LinkedIn profile to block, mute, or report them there.
+- **“How AI-slop detection works” panel** on the options page — a read-only
+  transparency view over the scorer: the structural “tells” it looks for (each with a
+  plain-English description and your current learned weight) and the full curated
+  phrase banlist, grouped by category and filterable with a search box. No new data
+  or permissions; it surfaces what the extension already computes.
+- **“Actions” card** on the options page (under Properties): a legend for the
+  Mute / Solo / Aggressive buttons — the M/S/A chips and a short description of what
+  each affects.
+- **“+ sample” display option** (popup → Display): adds a line of the hidden post's
+  text to the **“Names”** stub, giving a three-line stub — author, sample, category.
+  It only applies on top of Names (disabled/grayed while Names is off; cleared when
+  Names is turned off).
+- **Author + first line on AI‑slop stubs.** Because the AI‑slop filter is a judgment
+  call, its collapsed placeholder shows the post author's name and the opening line,
+  so you can decide without clicking **Show anyway**. The deterministic filters
+  (Promoted, Hiring, etc.) show no preview.
+- **Profile link** next to each entry under Insights → Top sources, so you can jump
+  to the author's LinkedIn profile to block, mute, or report them there.
+- **First-run welcome page** with instructions to pin FeedHacker to the toolbar
+  (Chrome doesn't let an extension pin itself). Opens once on install; pinning stays
+  optional.
 - Options-page sections are now **collapsible panels**; Activity, Insights, the
   detection panel, Custom filters, and Advanced default to collapsed.
-
 - Hosted **GitHub Pages** site under [`docs/`](docs/): a standalone HTML privacy
-  policy (`privacy-policy.html`) plus a small landing page. Google's Web Store
-  reviewer verifies this reliably, unlike a `raw.githubusercontent.com` link.
+  policy (`privacy-policy.html`) plus a small landing page.
 
 ### Changed
 - Popup Display: renamed **“Name names” → “Names”**, and the sample toggle to
   **“+ sample”**, which now reads as an add-on to Names (grayed/disabled until Names
   is on) rather than a standalone three-line mode.
 - Popup: **Aggressive (A) is now coupled to the AI-slop Mute (M)** — clicking A also
-  turns Mute on, turning Mute off clears Aggressive, and A is dimmed with a hint
-  while AI slop isn't muted. Removes the old dead state where A did nothing on its own.
-- Clearer wording for the **Solo** action in the new Actions card ("show me just
-  this" mode, with a concrete example).
+  turns Mute on, turning Mute off clears Aggressive, and A is dimmed with a hint while
+  AI slop isn't muted. Removes the old dead state where A did nothing on its own.
+- Clearer wording for the **Solo** action in the Actions card ("show me just this"
+  mode, with a concrete example).
 - Options page "Updates" text now explains updating per install method (Chrome Web
   Store auto-updates; the Windows installer's daily task needs a Chrome restart to
-  apply; Load-unpacked needs a manual download + reload), instead of telling
-  everyone to download manually.
+  apply; Load-unpacked needs a manual download + reload).
 
 ### Removed
 - The **remote AI-slop banlist** feature: the "Use the latest AI-slop banlist from
@@ -56,23 +64,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   only its bundled `claudisms.json`.
 
 ### Fixed
-- Release workflow: the `CWS_AUTO_PUBLISH` variable is now matched
-  case-insensitively (`true`/`True`/`TRUE`), so store auto-submit isn't silently
-  skipped by capitalization.
-
-## [0.2.0] — 2026-07-06
-
-### Added
-- **Author + first line on AI‑slop stubs.** Because the AI‑slop filter is a
-  judgment call, its collapsed placeholder now shows the post author's name and
-  the opening line of the post, so you can decide whether it's really slop without
-  clicking **Show anyway**. The deterministic filters (Promoted, Hiring, etc.) are
-  unchanged and show no preview.
-
-### Fixed
+- **Cross-site-scripting hardening.** The phrase-list search renders its text with
+  `textContent` instead of `innerHTML`, so a search query is never parsed as HTML
+  (flagged by CodeQL).
 - **Options page column alignment.** The numeric headers (**Hidden** / **Shown**)
   in the Activity, Insights, and Top‑sources tables now right‑align over their
   values instead of floating to the left of them.
+- Release workflow: the `CWS_AUTO_PUBLISH` variable is now matched
+  case-insensitively (`true`/`True`/`TRUE`), so store auto-submit isn't silently
+  skipped by capitalization.
 
 ### Tooling / release
 - Automated **Chrome Web Store** publishing on release (opt‑in via `CWS_*` secrets),

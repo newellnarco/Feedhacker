@@ -19,7 +19,7 @@ const JS_FILES = [
   "scorer.js", "authors.js", "customfilters.js", "feed.js", "content.js", "popup.js", "options.js", "update.js",
 ];
 // Static assets that ship as-is from the repo root.
-const STATIC_FILES = ["manifest.json", "popup.html", "options.html", "styles.css", "claudisms.json"];
+const STATIC_FILES = ["manifest.json", "popup.html", "options.html", "welcome.html", "styles.css", "claudisms.json"];
 
 const OUT = "dist";
 const STAGE = path.join(OUT, "feedhacker");
