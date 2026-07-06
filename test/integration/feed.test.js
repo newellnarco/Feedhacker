@@ -324,10 +324,22 @@ test("with Name names on, the preview drops the duplicate author prefix", () => 
   const el = feed.findPostContainers(doc)[0];
   feed.consider(doc, el, [], baseSettings({ nameNames: true }));
   const stub = el.querySelector(".feedhacker-stub");
-  assert.ok(/Jane Doe \(AI Slop\)/.test(stub.querySelector(".feedhacker-stub-label").textContent), "label names them");
+  const labelText = stub.querySelector(".feedhacker-stub-label").textContent;
+  assert.ok(/Jane Doe/.test(labelText), "label names them");
+  assert.ok(!/AI Slop/.test(labelText), "AI-slop reason isn't printed as text");
+  assert.strictEqual(stub.title, "AI slop", "AI-slop reason is on hover instead");
   const preview = stub.querySelector(".feedhacker-preview");
   assert.strictEqual(preview.querySelector(".feedhacker-preview-author"), null, "name not repeated in preview");
   assert.ok(/Let’s be honest/.test(preview.textContent), "first line still shown");
+});
+
+test("AI-slop reason is shown on hover, not printed next to the icons", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());   // names off, slop-only
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.strictEqual(stub.title, "AI slop", "reason on hover");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-label"), null, "no 'AI Slop' text label");
 });
 
 test("nameSample renders a three-line stub: name, sample, category", () => {
@@ -353,7 +365,7 @@ test("nameSample without nameNames falls back to the one-line stub", () => {
   feed.consider(doc, el, [], baseSettings({ nameNames: false, nameSample: true }));
   const stub = el.querySelector(".feedhacker-stub");
   assert.ok(!stub.classList.contains("feedhacker-has-namesample"), "no three-line layout without Names");
-  assert.ok(stub.querySelector(".feedhacker-stub-label"), "one-line label present");
+  assert.ok(stub.querySelector(".feedhacker-preview"), "falls back to the one-line slop preview");
 });
 
 test("reset() clears the stashed preview", () => {

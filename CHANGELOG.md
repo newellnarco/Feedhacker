@@ -36,6 +36,8 @@ _Nothing yet._
   **blue eye** (Always show), and a **box‑arrow** (Visit profile), each with a hover
   tooltip. Clicking AI slop / Mute / Always show also tidies the row away to keep the
   list short. A new **Post controls** legend on the options page explains all four.
+  The stub no longer prints the "AI Slop" category as text — the reason shows on
+  hover (the stub tooltip and the splat icon).
 - **Muted authors are now soft-blocked** — their posts are hidden outright (no
   "Muted author" stub), so a muted author simply stops appearing. Unmute from the
   options page.
