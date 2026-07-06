@@ -1,6 +1,6 @@
 {
   "name": "feedhacker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mute the noise in your LinkedIn feed — AI slop, promoted posts, and more.",
   "private": true,
   "scripts": {
