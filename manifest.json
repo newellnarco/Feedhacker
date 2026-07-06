@@ -7,9 +7,6 @@
   "permissions": [
     "storage"
   ],
-  "optional_host_permissions": [
-    "https://raw.githubusercontent.com/newellnarco/Feedhacker/*"
-  ],
   "content_scripts": [
     {
       "matches": [

@@ -36,10 +36,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   reviewer verifies this reliably, unlike a `raw.githubusercontent.com` link.
 
 ### Changed
+- Clearer wording for the **Solo** action in the new Actions card ("show me just
+  this" mode, with a concrete example).
 - Options page "Updates" text now explains updating per install method (Chrome Web
   Store auto-updates; the Windows installer's daily task needs a Chrome restart to
   apply; Load-unpacked needs a manual download + reload), instead of telling
   everyone to download manually.
+
+### Removed
+- The **remote AI-slop banlist** feature: the "Use the latest AI-slop banlist from
+  GitHub" toggle, the "Update banlist now" button, the `remoteBanlist` setting, and
+  the `raw.githubusercontent.com` optional host permission. The extension now uses
+  only its bundled `claudisms.json`.
 
 ### Fixed
 - Release workflow: the `CWS_AUTO_PUBLISH` variable is now matched

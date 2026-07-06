@@ -14,7 +14,6 @@ var STATS_KEY = "feedhacker:stats";
 var CUSTOM_KEY = "feedhacker:custom";
 var AUTHORS_KEY = "feedhacker:authors";
 var HISTORY_KEY = "feedhacker:history";
-var REMOTE_KEY = "feedhacker:remotebanlist";
 
 var LABELS = {};
 Filters.FILTERS.forEach(function (f) { LABELS[f.id] = f.label; });
@@ -57,7 +56,6 @@ function renderStatus(st) {
 
   byId("scanEverywhere").checked = !!st.scanEverywhere;
   byId("implicitLearning").checked = !!st.implicitLearning;
-  byId("remoteBanlist").checked = !!st.remoteBanlist;
 
   var thr = byId("slop-threshold");
   if (thr) thr.textContent = String(typeof st.slopThreshold === "number" ? st.slopThreshold : 0.5);
@@ -282,33 +280,16 @@ function renderSlopSignals(stored) {
     ". A higher weight means that signal pushes harder toward hiding; evidence has to add up past the threshold before a post is hidden.";
 }
 
-// The curated banlist is loaded once (from the bundled claudisms.json, plus the
-// opt-in remote entries when that setting is on) and cached for live filtering.
+// The curated banlist (bundled claudisms.json) is loaded once and cached for live filtering.
 var slopEntries: any[] = [];
-function mergeEntries(base, extra) {
-  var seen = {}; var out: any[] = [];
-  base.concat(extra).forEach(function (e) {
-    if (!e || !e.id || seen[e.id]) return;
-    seen[e.id] = 1; out.push(e);
-  });
-  return out;
-}
 function loadSlopPhrases() {
   var box = byId("slop-phrase-list");
   if (!box) return;
   fetch(chrome.runtime.getURL("claudisms.json"))
     .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(function (data) {
-      var entries = (data && Array.isArray(data.entries)) ? data.entries.slice() : [];
-      chrome.storage.sync.get({ remoteBanlist: false }, function (s) {
-        if (s.remoteBanlist) {
-          chrome.storage.local.get([REMOTE_KEY], function (o) {
-            var rem = o && o[REMOTE_KEY];
-            slopEntries = (rem && Array.isArray(rem.entries)) ? mergeEntries(entries, rem.entries) : entries;
-            renderPhrases();
-          });
-        } else { slopEntries = entries; renderPhrases(); }
-      });
+      slopEntries = (data && Array.isArray(data.entries)) ? data.entries.slice() : [];
+      renderPhrases();
     })
     .catch(function (e) { box.innerHTML = "<li class='empty'>Couldn't load the phrase list: " + e.message + "</li>"; });
 }
@@ -420,34 +401,9 @@ function saveAuthors(store) {
 }
 
 // --- Advanced toggles (sync) ---
-["scanEverywhere", "implicitLearning", "remoteBanlist"].forEach(function (id) {
+["scanEverywhere", "implicitLearning"].forEach(function (id) {
   var el = byId(id);
   el.addEventListener("change", function () { var p = {}; p[id] = el.checked; chrome.storage.sync.set(p); });
-});
-// The curated banlist is fetched from a single fixed host we control (narrow, easy to
-// justify for the Web Store) and the entries are stored ONLY in chrome.storage.local —
-// on this user's machine, never synced or sent anywhere.
-var BANLIST_URL = "https://raw.githubusercontent.com/newellnarco/Feedhacker/main/claudisms.json";
-var BANLIST_ORIGIN = "https://raw.githubusercontent.com/newellnarco/Feedhacker/*";
-
-byId("remote-fetch").addEventListener("click", function () {
-  var status = byId("remote-status");
-  status.textContent = "Requesting permission…";
-  chrome.permissions.request({ origins: [BANLIST_ORIGIN] }, function (granted) {
-    if (!granted) { status.textContent = "Permission denied."; return; }
-    status.textContent = "Updating…";
-    fetch(BANLIST_URL).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then(function (data) {
-        if (!data || !Array.isArray(data.entries)) throw new Error("no 'entries' array");
-        var patch = {}; patch[REMOTE_KEY] = { entries: data.entries };
-        chrome.storage.local.set(patch, function () {   // device-local, this user only
-          chrome.storage.sync.set({ remoteBanlist: true });
-          byId("remoteBanlist").checked = true;
-          status.textContent = "Updated — " + data.entries.length + " entries stored locally ✓";
-        });
-      })
-      .catch(function (e) { status.textContent = "Failed: " + e.message; });
-  });
 });
 
 // --- Export / import learned model ---
@@ -488,7 +444,6 @@ chrome.storage.onChanged.addListener(function (changes, area) {
     if (changes[AUTHORS_KEY]) { renderAuthors(changes[AUTHORS_KEY].newValue); renderTopSources(changes[AUTHORS_KEY].newValue); }
     if (changes[HISTORY_KEY]) renderInsights(changes[HISTORY_KEY].newValue);
     if (changes[WEIGHTS_KEY]) renderSlopSignals(changes[WEIGHTS_KEY].newValue);
-    if (changes[REMOTE_KEY]) loadSlopPhrases();
   }
 });
 

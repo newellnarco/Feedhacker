@@ -125,8 +125,9 @@
           </tr>
           <tr>
             <td><span class="ms s-on">S</span></td>
-            <td><span class="act-name">Solo</span> — shows <em>only</em> the soloed type(s) and hides everything
-              else in the feed. While any Solo is on it overrides the Mutes, so you see just what you soloed.</td>
+            <td><span class="act-name">Solo</span> — the “show me just this” mode: shows only that type and hides
+              everything else, so you can audit what a filter is catching. While any Solo is on it overrides the
+              Mutes. <span class="muted">Example: Solo “Hiring posts” → your feed shows only hiring posts.</span></td>
           </tr>
           <tr>
             <td><span class="ms a-on">A</span></td>
@@ -221,11 +222,6 @@
     <div class="panel-body">
       <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
       <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
-      <div style="margin-top:12px;">
-        <label class="rowline"><input type="checkbox" id="remoteBanlist"> Use the latest AI‑slop banlist from GitHub</label>
-        <div class="actions"><button id="remote-fetch">Update banlist now</button> <span class="muted" id="remote-status"></span></div>
-        <p class="muted" style="margin:6px 0 0;">Off by default. Updating asks for permission for <code>raw.githubusercontent.com</code> only, fetches the curated list, and stores it locally; nothing is sent.</p>
-      </div>
     </div>
   </details>
 
