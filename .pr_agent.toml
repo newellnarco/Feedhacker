@@ -1,0 +1,45 @@
+# Qodo Merge (PR-Agent) configuration for FeedHacker.
+# Read by the hosted Qodo Merge GitHub App on each PR. To activate reviews you
+# only need the app installed on this repo (free for public repos) — no API key
+# and no CI workflow. This file just tunes what the app does by default; every
+# setting can still be overridden per-PR with a command comment, e.g.
+#   /review          – full review (summary, effort, security, tests)
+#   /describe        – regenerate the PR title/description/labels
+#   /improve         – inline code-suggestion review
+#   /ask <question>  – ask about the diff
+# Full option reference: https://qodo-merge-docs.qodo.ai/usage-guide/configuration_options/
+
+# Commands the app runs automatically when a PR is opened or marked ready.
+[github_app]
+pr_commands = [
+    "/describe",
+    "/review",
+    "/improve",
+]
+
+[pr_reviewer]
+# One persistent review comment that updates in place, instead of a new comment
+# per push — keeps the thread readable across the many small pushes we do here.
+persistent_comment = true
+final_update_message = true
+# This is a Manifest V3 extension that runs on linkedin.com and handles user
+# data, so surface security and test-coverage concerns explicitly.
+require_security_review = true
+require_tests_review = true
+require_can_be_split_review = false
+# Effort/security labels help triage at a glance in the PR list.
+enable_review_labels_effort = true
+enable_review_labels_security = true
+
+[pr_description]
+# Keep the author's own description; add Qodo's structured summary + labels
+# beneath it rather than overwriting what a human wrote.
+add_original_user_description = true
+publish_labels = true
+generate_ai_title = false
+
+[pr_code_suggestions]
+# A focused set of high-signal suggestions rather than a long list.
+num_code_suggestions = 4
+# Skip trivially-scored suggestions (0–10 scale); only surface meaningful ones.
+suggestions_score_threshold = 3

@@ -244,5 +244,10 @@ extension in a real browser). CI runs each as its own job.
   `build/*.js`).
 - CI (`.github/workflows/ci.yml`) runs typecheck, the test suite, and the build
   on every push and PR.
+- **Automated code review** — [Qodo Merge](https://qodo-merge-docs.qodo.ai/) reviews
+  each PR (summary, security/test notes, inline suggestions), tuned via
+  [`.pr_agent.toml`](.pr_agent.toml). It runs through the hosted Qodo Merge GitHub
+  App (free for public repos — no API key). Comment `/review`, `/describe`,
+  `/improve`, or `/ask` on a PR to trigger it manually.
 - To update the slop banlist, edit `claudisms.json` (see the `matchTypes` and
   `fields` docs inside the file).
