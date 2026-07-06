@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome to FeedHacker</title>
+  <style>
+    :root { color-scheme: light; }
+    body { max-width: 560px; margin: 0 auto; padding: 56px 22px 60px;
+      font: 15px/1.55 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; background: #f6f7f9; }
+    h1 { font-size: 26px; margin: 0 0 6px; }
+    h1 .logo { height: 30px; width: 30px; vertical-align: -6px; border-radius: 7px; margin-left: 4px; }
+    .sub { color: #6a7686; margin: 0 0 28px; font-size: 15px; }
+    section { background: #fff; border: 1px solid #e2e4e8; border-radius: 14px; padding: 22px 24px; margin: 0 0 18px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #6a7686; margin: 0 0 14px; }
+    ol { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    ol li { counter-increment: step; position: relative; padding: 0 0 16px 44px; }
+    ol li:last-child { padding-bottom: 0; }
+    ol li::before { content: counter(step); position: absolute; left: 0; top: -1px;
+      width: 28px; height: 28px; border-radius: 50%; background: #0a66c2; color: #fff;
+      font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+    .big { font-size: 19px; vertical-align: -2px; }
+    .muted { color: #8a94a3; }
+    .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+    a.btn { display: inline-block; text-decoration: none; background: #0a66c2; color: #fff;
+      border-radius: 20px; padding: 9px 20px; font-size: 14px; font-weight: 600; }
+    a.btn:hover { background: #0954a0; }
+    a.link { color: #0a66c2; font-weight: 600; text-decoration: none; }
+    a.link:hover { text-decoration: underline; }
+    code { background: #f0f2f5; padding: 1px 6px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Welcome to FeedHacker <img class="logo" src="icons/128.png" alt="FeedHacker logo"></h1>
+  <p class="sub">Mute the noise in your LinkedIn feed — AI slop, promoted posts, engagement bait, hiring, and more.</p>
+
+  <section>
+    <h2>Pin FeedHacker for one-click access</h2>
+    <ol>
+      <li>Click the <span class="big">🧩</span> <b>puzzle-piece</b> icon at the top-right of your browser toolbar.</li>
+      <li>Find <b>FeedHacker</b> in the list and click the <span class="big">📌</span> <b>pin</b> next to it.</li>
+      <li>The FeedHacker icon now stays in your toolbar — click it any time to open the Mute/Solo mixer.</li>
+    </ol>
+    <p class="muted" style="margin:16px 0 0;">Pinning is optional — you can unpin it the same way whenever you like.</p>
+  </section>
+
+  <section>
+    <h2>Next</h2>
+    <p style="margin:0 0 16px;">FeedHacker starts with <b>AI slop</b> filtering on. Open the popup (the toolbar icon)
+      to mute or solo other post types, or head to the settings for details, activity, and how detection works.</p>
+    <div class="actions">
+      <a class="btn" href="options.html" target="_blank" rel="noopener">Open FeedHacker settings</a>
+      <span class="muted">You can close this tab when you're done.</span>
+    </div>
+  </section>
+
+  <p class="muted" style="text-align:center; margin-top:26px;">
+    Questions? <a class="link" href="https://github.com/newellnarco/Feedhacker/issues" target="_blank" rel="noopener">Open an issue on GitHub ↗</a>
+  </p>
+  <p class="muted" style="text-align:center; margin-top:8px; font-size:13px;">MAX Research Collective</p>
+</body>
+</html>

@@ -70,7 +70,6 @@ interface FhSettings {
   slopWeights?: FhWeights | null;
   implicitLearning?: boolean;
   scanEverywhere?: boolean;
-  remoteBanlist?: boolean;
   authors?: FhAuthorStore;
   authorMutesActive?: boolean;
   customCompiled?: FhCompiledCustom | null;

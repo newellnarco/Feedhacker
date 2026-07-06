@@ -56,4 +56,12 @@ chrome.runtime.onMessage.addListener(function (msg, sender) {
 chrome.tabs && chrome.tabs.onRemoved && chrome.tabs.onRemoved.addListener(function (tabId) {
   delete errored[tabId];
 });
+
+// First-run welcome: Chrome doesn't let an extension pin itself to the toolbar, so on
+// a fresh install we open a one-time page that shows the user how to pin it. Fires only
+// on "install" (not on updates or browser restarts), and never forces anything.
+chrome.runtime.onInstalled && chrome.runtime.onInstalled.addListener(function (details) {
+  if (!details || details.reason !== "install") return;
+  try { chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") }); } catch (e) {}
+});
 })();

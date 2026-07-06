@@ -10,8 +10,16 @@
       font: 14px/1.5 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; background: #f6f7f9; }
     h1 { font-size: 22px; margin: 0 0 2px; }
     .sub { color: #8a94a3; margin: 0 0 22px; font-size: 13px; }
-    section { background: #fff; border: 1px solid #e2e4e8; border-radius: 12px; padding: 18px 20px; margin: 0 0 16px; }
-    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: #6a7686; margin: 0 0 12px; }
+    /* Collapsible panels — every section is a <details class="panel">. */
+    details.panel { background: #fff; border: 1px solid #e2e4e8; border-radius: 12px; margin: 0 0 16px; }
+    details.panel > summary { list-style: none; cursor: pointer; padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    details.panel > summary::-webkit-details-marker { display: none; }
+    details.panel > summary::after { content: "\25B8"; color: #8a94a3; font-size: 13px; transition: transform .15s ease; }
+    details.panel[open] > summary::after { transform: rotate(90deg); }
+    details.panel > summary h2 { margin: 0; }
+    details.panel > .panel-body { padding: 2px 20px 18px; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: #6a7686; margin: 0; }
     .kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; font-size: 13.5px; }
     .kv dt { color: #8a94a3; }
     .kv dd { margin: 0; word-break: break-word; }
@@ -20,7 +28,7 @@
     .switch .state { font-weight: 700; }
     .on { color: #047857; } .off { color: #b42318; }
     table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eef0f3; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
     th { color: #8a94a3; font-weight: 600; }
     th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
     .muted { color: #8a94a3; }
@@ -47,6 +55,38 @@
     .chiplist button { border: 0; background: #d9dde3; color: #444; border-radius: 50%;
       width: 18px; height: 18px; line-height: 1; padding: 0; cursor: pointer; font-weight: 700; }
     .chiplist button:hover { background: #b42318; color: #fff; }
+    .subhead { font-size: 12px; color: #8a94a3; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+    .subhead:first-child { margin-top: 0; }
+    /* Actions key — the M/S/A buttons from the popup, shown as a legend. */
+    .ms { display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
+      background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; }
+    .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
+    .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
+    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
+    .actions-key td { vertical-align: top; border-bottom: 1px solid #eef0f3; }
+    .actions-key tr:last-child td { border-bottom: 0; }
+    .actions-key td:first-child { width: 40px; text-align: center; padding-top: 9px; }
+    .actions-key .act-name { font-weight: 600; color: #1d2226; }
+    /* Detection-signals weight bars */
+    .wnum { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .wtrack { display: inline-block; width: 56px; height: 6px; border-radius: 3px; background: #eef0f3;
+      margin-left: 8px; vertical-align: middle; overflow: hidden; }
+    .wbar { display: block; height: 6px; border-radius: 3px; background: #0a66c2; }
+    /* Flagged-phrase list */
+    .badge { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .03em; padding: 1px 6px; border-radius: 10px; }
+    .badge.confirmed { background: #e7f4ee; color: #047857; }
+    .badge.aggressive { background: #fdecd8; color: #a15c00; }
+    .badge.manual { background: #eceef2; color: #6a7686; }
+    input[type=search] { width: 100%; box-sizing: border-box; font: 13px -apple-system, system-ui, sans-serif;
+      border: 1px solid #c7ccd4; border-radius: 6px; padding: 7px 9px; margin: 0 0 10px; }
+    .phrases { list-style: none; margin: 0; padding: 0; max-height: 340px; overflow: auto; }
+    .phrases li { padding: 8px 2px; border-bottom: 1px solid #eef0f3; }
+    .phrases .pwords { font-weight: 600; word-break: break-word; }
+    .phrases .pnote { color: #6a7686; font-size: 12.5px; margin-top: 1px; }
+    .phrases .pmeta { font-size: 12px; margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .phrases .prep { color: #0a66c2; }
     @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -54,108 +94,177 @@
   <h1>FeedHacker</h1>
   <p class="sub">Details, activity, and diagnostics. The Mute/Solo mixer lives in the toolbar popup.</p>
 
-  <section>
-    <h2>Status</h2>
-    <div class="switch">
-      <input type="checkbox" id="enabled">
-      <label for="enabled">Extension enabled — <span class="state" id="enabled-state"></span></label>
+  <details class="panel" open>
+    <summary><h2>Status</h2></summary>
+    <div class="panel-body">
+      <div class="switch">
+        <input type="checkbox" id="enabled">
+        <label for="enabled">Extension enabled — <span class="state" id="enabled-state"></span></label>
+      </div>
+      <p class="muted" id="active-summary" style="margin:10px 0 0;"></p>
     </div>
-    <p class="muted" id="active-summary" style="margin:10px 0 0;"></p>
-  </section>
+  </details>
 
-  <section>
-    <h2>Properties</h2>
-    <dl class="kv" id="props"></dl>
-  </section>
+  <details class="panel" open>
+    <summary><h2>Properties</h2></summary>
+    <div class="panel-body"><dl class="kv" id="props"></dl></div>
+  </details>
 
-  <section>
-    <h2>Updates</h2>
-    <p class="muted" id="update-status">Running version <span id="update-current"></span>.</p>
-    <div class="actions">
-      <button id="check-updates">Check for updates</button>
-      <a id="releases-link" href="https://github.com/newellnarco/Feedhacker/releases/latest" target="_blank" rel="noopener" style="align-self:center;">Releases ↗</a>
+  <details class="panel" open>
+    <summary><h2>Actions</h2></summary>
+    <div class="panel-body">
+      <p class="muted" style="margin:0 0 12px;">The Mute / Solo / Aggressive buttons on each filter row in the
+        toolbar popup, and what they affect.</p>
+      <table class="actions-key">
+        <tbody>
+          <tr>
+            <td><span class="ms m-on">M</span></td>
+            <td><span class="act-name">Mute</span> — hides posts of that type (AI slop, promoted, newsletters,
+              hiring, reaction reshares, job / anniversary / certification announcements). The post collapses to a
+              small stub you can expand. Turn Mute on for any filters you want gone.</td>
+          </tr>
+          <tr>
+            <td><span class="ms s-on">S</span></td>
+            <td><span class="act-name">Solo</span> — the “show me just this” mode: shows only that type and hides
+              everything else, so you can audit what a filter is catching. While any Solo is on it overrides the
+              Mutes. <span class="muted">Example: Solo “Hiring posts” → your feed shows only hiring posts.</span></td>
+          </tr>
+          <tr>
+            <td><span class="ms a-on">A</span></td>
+            <td><span class="act-name">Aggressive</span> — AI slop only. Adds the broader, higher‑false‑positive
+              phrase rules (ones that match common words) on top of the curated banlist, catching more but with more
+              misfires.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <p class="muted" style="margin:10px 0 0;">How updates arrive depends on how you installed:
-      <b>Chrome Web Store</b> installs update automatically.
-      The <b>Windows</b> installer runs a daily task that downloads new releases from GitHub — you still need to <b>restart Chrome</b> (or run <code>installer\update.bat</code>) to apply them, since Chrome doesn't hot‑reload unpacked extensions.
-      A manual <b>Load unpacked</b> install: download the latest release and reload FeedHacker on <code>chrome://extensions</code>.</p>
-  </section>
+  </details>
 
-  <section>
-    <h2>Activity</h2>
-    <div id="activity"></div>
-  </section>
-
-  <section>
-    <h2>Insights (last 30 days)</h2>
-    <div id="insights"></div>
-    <h3 style="font-size:12px;color:#8a94a3;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;">Top sources</h3>
-    <div id="top-sources"></div>
-  </section>
-
-  <section>
-    <h2>Custom filters</h2>
-    <p class="muted" style="margin:0 0 10px;">Hide posts matching any of these (one per line). Applies on top of the built-in filters.</p>
-    <div class="grid2">
-      <label>Words / phrases<textarea id="cf-words" rows="4" placeholder="crypto&#10;hustle culture"></textarea></label>
-      <label>Regexes<textarea id="cf-regexes" rows="4" placeholder="\bweb3\b"></textarea></label>
-      <label>Hashtags<textarea id="cf-hashtags" rows="4" placeholder="#hustle&#10;grindset"></textarea></label>
-      <label>Companies / authors<textarea id="cf-companies" rows="4" placeholder="Acme Corp&#10;Jane Doe"></textarea></label>
+  <details class="panel" open>
+    <summary><h2>Updates</h2></summary>
+    <div class="panel-body">
+      <p class="muted" id="update-status">Running version <span id="update-current"></span>.</p>
+      <div class="actions">
+        <button id="check-updates">Check for updates</button>
+        <a id="releases-link" href="https://github.com/newellnarco/Feedhacker/releases/latest" target="_blank" rel="noopener" style="align-self:center;">Releases ↗</a>
+      </div>
+      <p class="muted" style="margin:10px 0 0;">How updates arrive depends on how you installed:
+        <b>Chrome Web Store</b> installs update automatically.
+        The <b>Windows</b> installer runs a daily task that downloads new releases from GitHub — you still need to <b>restart Chrome</b> (or run <code>installer\update.bat</code>) to apply them, since Chrome doesn't hot‑reload unpacked extensions.
+        A manual <b>Load unpacked</b> install: download the latest release and reload FeedHacker on <code>chrome://extensions</code>.</p>
     </div>
-    <div class="actions"><button id="cf-save">Save custom filters</button> <span class="muted" id="cf-status"></span></div>
-  </section>
+  </details>
 
-  <section>
-    <h2>Authors</h2>
-    <h3 style="font-size:12px;color:#8a94a3;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em;">Muted (always hidden)</h3>
-    <ul class="chiplist" id="muted-list"></ul>
-    <h3 style="font-size:12px;color:#8a94a3;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;">Always shown</h3>
-    <ul class="chiplist" id="allowed-list"></ul>
-  </section>
+  <details class="panel">
+    <summary><h2>Activity</h2></summary>
+    <div class="panel-body"><div id="activity"></div></div>
+  </details>
 
-  <section>
-    <h2>Advanced</h2>
-    <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
-    <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
-    <div style="margin-top:12px;">
-      <label class="rowline"><input type="checkbox" id="remoteBanlist"> Use the latest AI‑slop banlist from GitHub</label>
-      <div class="actions"><button id="remote-fetch">Update banlist now</button> <span class="muted" id="remote-status"></span></div>
-      <p class="muted" style="margin:6px 0 0;">Off by default. Updating asks for permission for <code>raw.githubusercontent.com</code> only, fetches the curated list, and stores it locally; nothing is sent.</p>
+  <details class="panel">
+    <summary><h2>Insights (last 30 days)</h2></summary>
+    <div class="panel-body">
+      <div id="insights"></div>
+      <h3 class="subhead" style="margin-top:14px;">Top sources</h3>
+      <div id="top-sources"></div>
     </div>
-  </section>
+  </details>
 
-  <section>
-    <h2>Learned model</h2>
-    <p class="muted" style="margin:0 0 8px;">Your on-device AI-slop weights. Export to back up or move to another browser.</p>
-    <div class="actions">
-      <button id="export-model">Export</button>
-      <button id="import-model">Import</button>
-      <input type="file" id="import-file" accept="application/json" style="display:none">
-      <span class="muted" id="model-status"></span>
+  <details class="panel">
+    <summary><h2>How AI-slop detection works</h2></summary>
+    <div class="panel-body">
+      <p class="muted" style="margin:0 0 12px;">FeedHacker doesn't hide a post for a single word. It scores each post
+        across the structural “tells” below plus a curated phrase list, weighs the evidence with an on‑device model,
+        and only hides once the combined score reaches the threshold (<b id="slop-threshold">0.5</b>). The weights
+        shown are your current learned values — they nudge each time you hit “Show anyway” or re‑hide a post.</p>
+
+      <h3 class="subhead">Detection signals</h3>
+      <table>
+        <thead><tr><th>Signal</th><th>What it looks for</th><th class="num">Weight</th></tr></thead>
+        <tbody id="slop-signals"></tbody>
+      </table>
+      <p class="muted" id="slop-model-note" style="margin:8px 0 0; font-size:12.5px;"></p>
+
+      <h3 class="subhead">Flagged phrases <span class="muted" id="slop-phrase-count"></span></h3>
+      <p class="muted" style="margin:0 0 10px; font-size:12.5px;">The curated banlist of words and phrases that read as
+        AI‑written. <b>Confirmed</b> phrases count strongly. <b>Aggressive</b> ones match common words and only apply
+        when you turn on “aggressive slop”. <b>Manual</b> entries are guidance only and are not auto‑matched.</p>
+      <input type="search" id="slop-phrase-search" placeholder="Filter phrases…" autocomplete="off">
+      <ul class="phrases" id="slop-phrase-list"></ul>
     </div>
-  </section>
+  </details>
 
-  <section>
-    <h2>Error log</h2>
-    <ul class="errs" id="errs"></ul>
-    <p class="empty" id="errs-empty">No errors logged. 🎉</p>
-    <div class="actions">
-      <button id="clear-errors" class="danger">Clear error log</button>
-      <button id="reset-learning">Reset AI-slop learning</button>
-      <button id="refresh">Refresh</button>
+  <details class="panel">
+    <summary><h2>Custom filters</h2></summary>
+    <div class="panel-body">
+      <p class="muted" style="margin:0 0 10px;">Hide posts matching any of these (one per line). Applies on top of the built-in filters.</p>
+      <div class="grid2">
+        <label>Words / phrases<textarea id="cf-words" rows="4" placeholder="crypto&#10;hustle culture"></textarea></label>
+        <label>Regexes<textarea id="cf-regexes" rows="4" placeholder="\bweb3\b"></textarea></label>
+        <label>Hashtags<textarea id="cf-hashtags" rows="4" placeholder="#hustle&#10;grindset"></textarea></label>
+        <label>Companies / authors<textarea id="cf-companies" rows="4" placeholder="Acme Corp&#10;Jane Doe"></textarea></label>
+      </div>
+      <div class="actions"><button id="cf-save">Save custom filters</button> <span class="muted" id="cf-status"></span></div>
     </div>
-  </section>
+  </details>
 
-  <section>
-    <h2>Manage</h2>
-    <p style="margin:0 0 6px;">Disable or remove FeedHacker any time from Chrome's extensions page:
-      open <code>chrome://extensions</code>, find <b>FeedHacker</b>, then use the toggle to
-      disable or <b>Remove</b> to uninstall.</p>
-    <p class="muted" style="margin:0;">The master switch above pauses filtering without uninstalling.</p>
-  </section>
+  <details class="panel" open>
+    <summary><h2>Authors</h2></summary>
+    <div class="panel-body">
+      <h3 class="subhead">Muted (always hidden)</h3>
+      <ul class="chiplist" id="muted-list"></ul>
+      <h3 class="subhead" style="margin-top:14px;">Always shown</h3>
+      <ul class="chiplist" id="allowed-list"></ul>
+    </div>
+  </details>
+
+  <details class="panel">
+    <summary><h2>Advanced</h2></summary>
+    <div class="panel-body">
+      <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
+      <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
+    </div>
+  </details>
+
+  <details class="panel" open>
+    <summary><h2>Learned model</h2></summary>
+    <div class="panel-body">
+      <p class="muted" style="margin:0 0 8px;">Your on-device AI-slop weights. Export to back up or move to another browser.</p>
+      <div class="actions">
+        <button id="export-model">Export</button>
+        <button id="import-model">Import</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none">
+        <span class="muted" id="model-status"></span>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel" open>
+    <summary><h2>Error log</h2></summary>
+    <div class="panel-body">
+      <ul class="errs" id="errs"></ul>
+      <p class="empty" id="errs-empty">No errors logged. 🎉</p>
+      <div class="actions">
+        <button id="clear-errors" class="danger">Clear error log</button>
+        <button id="reset-learning">Reset AI-slop learning</button>
+        <button id="refresh">Refresh</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel" open>
+    <summary><h2>Manage</h2></summary>
+    <div class="panel-body">
+      <p style="margin:0 0 6px;">Disable or remove FeedHacker any time from Chrome's extensions page:
+        open <code>chrome://extensions</code>, find <b>FeedHacker</b>, then use the toggle to
+        disable or <b>Remove</b> to uninstall.</p>
+      <p class="muted" style="margin:0;">The master switch above pauses filtering without uninstalling.</p>
+    </div>
+  </details>
 
   <script src="filters.js"></script>
   <script src="logger.js"></script>
+  <script src="matcher.js"></script>
+  <script src="scorer.js"></script>
   <script src="authors.js"></script>
   <script src="update.js"></script>
   <script src="options.js"></script>

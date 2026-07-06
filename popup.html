@@ -14,6 +14,7 @@
     .ms { width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; cursor: pointer; }
     .ms:hover { background: #f3f4f6; }
+    .ms.ms-dim { opacity: .4; }   /* Aggressive rides on Mute — dimmed while AI slop isn't muted */
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
     .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
     .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
@@ -21,6 +22,7 @@
       color: #8a94a3; margin: 12px 0 3px; }
     label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
     label.row input { margin-top: 2px; }
+    label.row.row-dim { opacity: .45; cursor: default; }   /* "+ sample" is grayed until Names is on */
     .muted { color: #8a94a3; }
     .hint { margin: 11px 0 0; font-size: 11.5px; color: #6a7686; }
     #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
@@ -59,7 +61,8 @@
   </div>
 
   <div class="group-label">Display</div>
-  <label class="row"><input type="checkbox" id="nameNames"> Name names <span class="muted">(who + category)</span></label>
+  <label class="row"><input type="checkbox" id="nameNames"> Names <span class="muted">(who + category)</span></label>
+  <label class="row"><input type="checkbox" id="nameSample"> + sample <span class="muted">(adds a line of the hidden text; needs Names)</span></label>
   <label class="row"><input type="checkbox" id="hideCompletely"> Hide Hidden Content <span class="muted">(no placeholder)</span></label>
   <label class="row"><input type="checkbox" id="digest"> Digest runs of hidden posts <span class="muted">(one summary bar)</span></label>
 

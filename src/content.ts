@@ -349,12 +349,6 @@
     window.addEventListener("scroll", onScrollRaf, { passive: true });   // load as you scroll near bottom
   }
 
-  var REMOTE_KEY = "feedhacker:remotebanlist";
-  function buildAllMatchers(bundled, remote) {
-    var entries = (bundled && bundled.entries) ? bundled.entries.slice() : [];
-    if (remote && Array.isArray(remote.entries)) entries = entries.concat(remote.entries);
-    return self.FeedHackerMatcher.buildMatchers({ entries: entries });
-  }
   function init() {
     fetch(chrome.runtime.getURL("claudisms.json"))
       .then(function (r) {
@@ -362,12 +356,10 @@
         return r.json();
       })
       .then(function (data) {
-        chrome.storage.local.get([REMOTE_KEY], function (o) {
-          var remote = settings.remoteBanlist ? (o && o[REMOTE_KEY]) : null;   // opt-in extra entries
-          matchers = buildAllMatchers(data, remote);
-          ready = true;
-          start();
-        });
+        var entries = (data && data.entries) ? data.entries : [];
+        matchers = self.FeedHackerMatcher.buildMatchers({ entries: entries });
+        ready = true;
+        start();
       })
       .catch(function (err) { logError(err, "banlist-fetch"); });
   }

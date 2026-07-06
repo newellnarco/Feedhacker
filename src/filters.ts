@@ -21,7 +21,7 @@
   ];
 
   // Non-per-filter boolean settings (checkboxes in the popup).
-  var DISPLAY_KEYS = ["nameNames", "hideCompletely", "hideSlopComments", "digest"];
+  var DISPLAY_KEYS = ["nameNames", "nameSample", "hideCompletely", "hideSlopComments", "digest"];
 
   function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 
@@ -41,7 +41,6 @@
     d.slopThreshold = 0.5;       // AI-slop confidence cutoff (0.2 lax .. 0.8 strict)
     d.implicitLearning = true;   // learn weak "confirmed" from posts scrolled past
     d.scanEverywhere = false;    // beyond the home feed (permalinks, search, profiles)
-    d.remoteBanlist = false;     // opt-in: use the curated banlist update fetched from GitHub
     return d;
   }
   var DEFAULTS = buildDefaults();
