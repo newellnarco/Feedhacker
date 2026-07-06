@@ -178,14 +178,13 @@ See INSTALL.md for details.
 `);
 zipDir(WIN_STAGE, winZip);
 
-// --- Chrome Web Store submission bundle: the upload zip + listing/privacy docs + all
-// graphics, so everything needed to submit is in one archive. (The extension zip you
-// actually upload to the Dashboard is the lean `-store.zip`; this just collects the rest.)
+// --- Chrome Web Store LISTING ASSETS bundle: listing/privacy docs + all graphics.
+// Deliberately contains NO manifest.json and NOT the extension package — the extension
+// `-store.zip` is uploaded separately as the package; this is just the listing material.
 const SUB_STAGE = path.join(OUT, "feedhacker-store-submission");
 const subZip = path.join(OUT, `feedhacker-${version}-store-submission.zip`);
 rmrf(SUB_STAGE); rmrf(subZip);
 fs.mkdirSync(SUB_STAGE, { recursive: true });
-copyFile(storeZip, path.join(SUB_STAGE, path.basename(storeZip))); // the exact CWS upload zip
 const SUBMISSION_ASSETS = [
   ["store/listing.md", "listing.md"],
   ["store/privacy-policy.md", "privacy-policy.md"],
@@ -197,21 +196,22 @@ const SUBMISSION_ASSETS = [
   ["icons/128.png", "icon-128.png"],
 ];
 for (const [src, dest] of SUBMISSION_ASSETS) if (fs.existsSync(src)) copyFile(src, path.join(SUB_STAGE, dest));
-fs.writeFileSync(path.join(SUB_STAGE, "README.txt"), `FeedHacker — Chrome Web Store submission bundle
-================================================
-Upload  feedhacker-${version}-store.zip  to the Developer Dashboard (Upload new package).
-Then fill the listing from  listing.md , add the screenshots + promo tiles, and paste a
-link to a hosted copy of  privacy-policy.md  as the Privacy policy URL.
+fs.writeFileSync(path.join(SUB_STAGE, "README.txt"), `FeedHacker — Chrome Web Store listing assets
+=============================================
+These are the LISTING materials only. This archive contains no manifest.json and is NOT
+the extension package. Upload the extension package separately:
 
-Contents:
-  feedhacker-${version}-store.zip  - the extension package to upload (manifest at root)
-  listing.md                       - name, description, permission justifications
-  privacy-policy.md                - privacy policy (host it and paste the URL)
-  promo-small-440x280.jpg          - Small promo tile
-  promo-marquee-1400x560.jpg       - Marquee promo tile
-  screenshot-1-feed.jpg            - Screenshot (1280x800)
-  screenshot-2-popup.jpg           - Screenshot (1280x800)
-  logo-1024.png / icon-128.png     - brand logo / store icon
+  Package to upload:  feedhacker-${version}-store.zip  (built alongside this; manifest at root)
+
+Then, in the Developer Dashboard, use the files here:
+  listing.md                   - name, description, permission justifications
+  privacy-policy.md            - privacy policy (host it and paste the URL)
+  promo-small-440x280.jpg      - Small promo tile
+  promo-marquee-1400x560.jpg   - Marquee promo tile
+  screenshot-1-feed.jpg        - Screenshot (1280x800)
+  screenshot-2-popup.jpg       - Screenshot (1280x800)
+  icon-128.png                 - 128x128 store icon
+  logo-1024.png                - brand logo
 `);
 zipDir(SUB_STAGE, subZip);
 
