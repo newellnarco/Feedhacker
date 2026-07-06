@@ -351,6 +351,23 @@
   }
   function clearEl(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 
+  // After the user confirms slop or mutes the author, retire the whole row: fade/slide
+  // it out (feedhacker-dismissing), then drop it from layout (feedhacker-gone) so the feed
+  // closes up. Idempotent; degrades to an immediate hide where transitions/timers are
+  // unavailable (tests). The timer is unref'd so it never keeps a process alive.
+  function dismissRow(el) {
+    if (!el || el.dataset.feedhackerDismissing === "1") return;
+    el.dataset.feedhackerDismissing = "1";
+    el.classList.add("feedhacker-dismissing");
+    var gone = function () { el.classList.add("feedhacker-gone"); };
+    el.addEventListener("transitionend", function h(e) {
+      if (e && e.propertyName && e.propertyName !== "opacity") return;
+      el.removeEventListener("transitionend", h); gone();
+    });
+    try { var t: any = setTimeout(gone, 400); if (t && typeof t.unref === "function") t.unref(); }
+    catch (e) { gone(); }
+  }
+
   // Author control on the stub: a "Profile ↗" quick-link that opens the author's
   // profile in a new tab, where the user can unfollow/block/report in LinkedIn's own
   // UI. FeedHacker never automates those actions. Posts only, not comments.
@@ -367,7 +384,7 @@
       var mute = doc.createElement("button");
       mute.type = "button"; mute.className = "feedhacker-muteauthor"; mute.textContent = "Mute author";
       mute.title = info.name ? "Always hide posts from " + info.name : "Always hide this author";
-      mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); });
+      mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); dismissRow(el); });
       stub.appendChild(mute);
     }
     if (info.url) {
@@ -467,6 +484,7 @@
         lbl.textContent = "thanks";
         yes.classList.add("feedhacker-confirmed");   // swings the thumb from sideways to upright
         yes.disabled = true;
+        dismissRow(el);                              // then retire the row from the feed
       });
       stub.appendChild(yes);
     }
@@ -508,7 +526,10 @@
     renderCollapsed(doc, el, stub, flags, settings);
   }
 
-  function collapse(doc, el, flags, settings) {
+  // forceGone: hide the post outright with no stub (a "soft block"), regardless of the
+  // hideCompletely setting — used for authors you've already muted, so they simply stop
+  // appearing rather than showing a "Muted author" placeholder every time.
+  function collapse(doc, el, flags, settings, forceGone?: boolean) {
     if (el.dataset.feedhackerReveal === "1") return;
     el.dataset.feedhackerHidden = "1";
     try {
@@ -521,7 +542,7 @@
       }
     } catch (e) {}
     if (settings && typeof settings.onHidden === "function") { try { settings.onHidden(flags); } catch (e) {} }
-    if (settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
+    if (forceGone || settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
     el.classList.add("feedhacker-hidden");
     if (directChildStub(el)) return;
     var stub = doc.createElement("div");
@@ -550,9 +571,10 @@
       if (key) {
         if (A.isAllowed(settings.authors, key)) return null;
         if (A.isMuted(settings.authors, key)) {
-          if (settings.nameNames || settings.nameSample) el.dataset.feedhackerActor = getActor(el);
+          // Soft block: an already-muted author's posts just don't appear — hidden
+          // outright, no stub. (Manage/unmute them from the options page.)
           recordOutcome(settings, author(), true);
-          collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings);
+          collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings, true);
           return ["author"];
         }
       }

@@ -13,7 +13,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- **Muted authors are now soft-blocked** — their posts are hidden outright (no
+  "Muted author" stub), so a muted author simply stops appearing in your feed.
+  Manage/unmute them from the options page.
+- **Confirming slop or muting an author retires that row** — after you click
+  **👍 slop** or **Mute author** on a stub, the row fades out and is removed from
+  the feed instead of lingering.
 
 ## [0.3.0] — 2026-07-06
 

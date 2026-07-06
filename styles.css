@@ -54,6 +54,10 @@
   transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
 .feedhacker-confirm.feedhacker-confirmed .feedhacker-thumb { transform: rotate(0deg); }
 
+/* Confirmed slop / muted author: fade + slide the stub out, then feedhacker-gone removes it. */
+.feedhacker-dismissing { opacity: 0; transform: translateX(16px); pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease; }
+
 .feedhacker-digested { display: none !important; }
 .feedhacker-digest-summary { background: #eef0f3; color: #5f6b7a; font-style: italic; }
 

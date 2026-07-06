@@ -208,7 +208,9 @@ test("muted author is hidden regardless of content; allowed author always shows"
   let store = authors.mute({}, "/in/jane", "Jane Doe");
   const r = feed.consider(doc, el, [], baseSettings({ muteSloppy: false, authors: store }));
   assert.deepStrictEqual(r, ["author"]);
-  assert.ok(el.classList.contains("feedhacker-hidden"));
+  // Soft block: a muted author's post is removed outright, with no stub shown.
+  assert.ok(el.classList.contains("feedhacker-gone"), "muted author's post is hidden outright");
+  assert.strictEqual(el.querySelector(".feedhacker-stub"), null, "no stub for a muted author");
   // allowed beats slop
   doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   el = feed.findPostContainers(doc)[0];
@@ -236,6 +238,7 @@ test("Mute author button invokes the onMuteAuthor callback with the author info"
   btn.click();
   assert.ok(muted && /jane/i.test(muted.name || ""));
   assert.ok(/\/in\/jane$/.test(muted.url));
+  assert.ok(el.classList.contains("feedhacker-dismissing"), "row is retired from the feed after muting");
 });
 
 test("👍 confirm trains a positive without un-hiding", () => {
@@ -247,7 +250,8 @@ test("👍 confirm trains a positive without un-hiding", () => {
   assert.ok(yes, "confirm button present");
   yes.click();
   assert.deepStrictEqual(seen, [1]);
-  assert.ok(el.classList.contains("feedhacker-hidden"), "still hidden after confirm");
+  assert.ok(el.classList.contains("feedhacker-hidden"), "not un-hidden by confirming");
+  assert.ok(el.classList.contains("feedhacker-dismissing"), "row is retired from the feed after confirming slop");
 });
 
 test("firstBodyLine strips the actor name and returns a trimmed opening line", () => {
