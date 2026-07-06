@@ -402,18 +402,33 @@
   }
   function iconSvg(doc, opts, kids?: any[]) {
     return svgEl(doc, "svg", {
-      viewBox: "0 0 24 24", width: "16", height: "16",
+      viewBox: "0 0 24 24", width: "25", height: "25",
       fill: opts.fill || "none", stroke: opts.stroke || "none",
       "stroke-width": opts.sw || "0", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true"
     }, kids);
   }
-  // Green slime splat — AI slop.
+  // Green slime splat — AI slop. Built as a central blob plus radiating bulbous arms
+  // (rotated ellipses) and a couple of flung droplets, so it reads clearly as a splat.
   function splatIcon(doc) {
-    return iconSvg(doc, { fill: "currentColor" }, [
-      svgEl(doc, "path", { d: "M12 2.2C13.2 4 12.8 6.2 14.6 6.4 15.4 4.8 18.2 5.6 17.4 7.6 19.4 7 20.8 9.4 18.8 10.6 21.2 11 21.6 14 19.2 14.6 21 16.2 19.4 18.6 17.4 17.4 17.2 19.6 14.4 20.4 13.4 18.4 12.6 20.8 9.4 20.8 9 18.4 7 19.6 4.8 17.8 6.4 16 4.2 15.8 3.4 12.8 5.6 11.8 3.8 10.4 4.8 7.6 7 8.2 7 6 9.6 5.2 10.8 7 10.6 4.8 10.6 3.4 12 2.2Z" }),
-      svgEl(doc, "circle", { cx: "4.3", cy: "5", r: "1.5" }),
-      svgEl(doc, "circle", { cx: "20", cy: "19.4", r: "1.2" })
-    ]);
+    // Irregular arms (uneven angles, varied length/width) + an off-centre blob and a few
+    // flung droplets, so it reads as an organic splat rather than a symmetric flower.
+    var arms = [   // [cx, cy, rotation, rx, ry]
+      [10.8, 5.3, -100, 5.2, 2.6], [6.6, 8.9, -150, 4.2, 2.2], [5.3, 13.9, -196, 5.1, 2.4],
+      [8.3, 16.7, -232, 3.9, 2.5], [12.0, 18.6, -270, 4.6, 2.6], [17.4, 16.8, -318, 5.4, 2.7],
+      [18.0, 9.8, -20, 4.3, 2.3]
+    ];
+    var kids = [svgEl(doc, "circle", { cx: "11.7", cy: "12.3", r: "5.3", fill: "currentColor" })];
+    for (var i = 0; i < arms.length; i++) {
+      var a = arms[i];
+      kids.push(svgEl(doc, "ellipse", {
+        cx: String(a[0]), cy: String(a[1]), rx: String(a[3]), ry: String(a[4]),
+        fill: "currentColor", transform: "rotate(" + a[2] + " " + a[0] + " " + a[1] + ")"
+      }));
+    }
+    kids.push(svgEl(doc, "circle", { cx: "3.1", cy: "4.1", r: "1.4", fill: "currentColor" }));
+    kids.push(svgEl(doc, "circle", { cx: "20.9", cy: "20.4", r: "1.1", fill: "currentColor" }));
+    kids.push(svgEl(doc, "circle", { cx: "21.6", cy: "6.4", r: "0.85", fill: "currentColor" }));
+    return iconSvg(doc, { fill: "currentColor" }, kids);
   }
   // Muted microphone in a red disc — Mute author.
   function micOffIcon(doc) {
