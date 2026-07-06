@@ -29,6 +29,21 @@ test("every file the manifest references is present in dist/feedhacker", () => {
   assert.deepStrictEqual(missing, [], `dist/feedhacker is missing: ${missing.join(", ")}`);
 });
 
+test("each packaged icon PNG's pixel size matches its manifest key (128x128 required by the store)", () => {
+  const sizes = Object.entries(manifest.icons || {});
+  assert.ok(sizes.some(([s]) => s === "128"), "manifest must declare a 128x128 icon for the Web Store");
+  for (const [size, rel] of sizes) {
+    const p = path.join(EXT, rel);
+    assert.ok(fs.existsSync(p), `missing icon ${rel} — run \`npm run build\``);
+    const buf = fs.readFileSync(p);
+    // PNG IHDR: 8-byte signature, then width @ byte 16 and height @ byte 20 (big-endian).
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    assert.strictEqual(w, Number(size), `${rel} is ${w}px wide, expected ${size}`);
+    assert.strictEqual(h, Number(size), `${rel} is ${h}px tall, expected ${size}`);
+  }
+});
+
 test("every script referenced by the packaged HTML pages ships in dist/feedhacker", () => {
   // The manifest doesn't list page scripts (popup.js, options.js, update.js) — they're
   // pulled in by <script src> in the HTML. Guard those too, so dropping one from the
