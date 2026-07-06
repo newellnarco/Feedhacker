@@ -31,16 +31,14 @@ _Nothing yet._
   catches posts that are almost entirely short lines separated by blank lines (the
   airy LinkedIn format the old broetry tell under-scored). Applies to AI-slop
   comments too.
-- **Stub buttons redesigned** — a compact, right-justified cluster: two-line
-  **Mute author** / **Always show** / **Show anyway** buttons, and the profile link
-  is now a small square "open in new tab" icon (hover: "Visit profile").
+- **Stub controls are now icon buttons** — a compact, right-justified cluster:
+  a **green splat** (AI slop — confirm + train), a **red mic‑slash** (Mute), a
+  **blue eye** (Always show), and a **box‑arrow** (Visit profile), each with a hover
+  tooltip. Clicking AI slop / Mute / Always show also tidies the row away to keep the
+  list short. A new **Post controls** legend on the options page explains all four.
 - **Muted authors are now soft-blocked** — their posts are hidden outright (no
   "Muted author" stub), so a muted author simply stops appearing. Unmute from the
   options page.
-- **Confirming slop or muting an author retires that row** — after you click
-  **👍 slop** or **Mute author**, the row fades out and is removed from the feed.
-- The **👍 slop** confirm button starts with a sideways thumb and swings it upright
-  on click (as the label changes to "thanks").
 - Refreshed the Chrome Web Store listing **screenshots** to a 0.2.0/0.3.0 set (the
   Mute/Solo mixer, the AI-slop detection panel, and the hidden-post stub).
 - **Docs consistency pass**: removed lingering references to the now-deleted remote
