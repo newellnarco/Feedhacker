@@ -134,6 +134,7 @@ execFileSync(process.execPath, [path.join("node_modules", "typescript", "bin", "
 const version = JSON.parse(fs.readFileSync("manifest.json", "utf8")).version;
 const zipPath = path.join(OUT, `feedhacker-${version}.zip`);
 const winZip = path.join(OUT, `feedhacker-${version}-win.zip`);
+const storeZip = path.join(OUT, `feedhacker-${version}-store.zip`);
 
 rmrf(STAGE); rmrf(zipPath);
 fs.mkdirSync(STAGE, { recursive: true });
@@ -148,7 +149,12 @@ for (const f of STATIC_FILES) {
   copyFile(f, path.join(STAGE, f));
 }
 fs.cpSync("icons", path.join(STAGE, "icons"), { recursive: true });
-zipDir(STAGE, zipPath, "feedhacker"); // unzips to a feedhacker/ folder
+zipDir(STAGE, zipPath, "feedhacker"); // unzips to a feedhacker/ folder (Load unpacked)
+
+// Chrome Web Store upload package: same runtime files, but manifest.json at the ZIP
+// ROOT (no wrapping folder), which is what the Developer Dashboard requires.
+rmrf(storeZip);
+zipDir(STAGE, storeZip);
 
 // --- Windows one-click bundle: extension + installer scripts + docs ---
 rmrf(WIN_STAGE); rmrf(winZip);
@@ -175,4 +181,5 @@ zipDir(WIN_STAGE, winZip);
 console.log("Built:");
 console.log(`  unpacked:  ${STAGE}/   (Load unpacked)`);
 console.log(`  zip:       ${zipPath}`);
+console.log(`  store:     ${storeZip}   (Chrome Web Store upload)`);
 console.log(`  windows:   ${winZip}   (extension + installer)`);

@@ -109,13 +109,17 @@ of the standard filters.
 
 ## Install
 
-No build, no source, no account — grab a prebuilt release. See
+The intended install is the **Chrome Web Store** — one click, no dev mode, and
+automatic updates. Publishing materials (listing copy, permission justifications,
+privacy policy, and a store‑ready `-store.zip` build target) live in
+[`store/`](store/README.md); once the listing is live this section links to it.
+
+Until then, grab a prebuilt release — no build, no source, no account. See
 **[INSTALL.md](INSTALL.md)** for the full walkthrough (managing, updating,
 troubleshooting).
 
-> Chrome only allows fully silent, one‑click installs from the Chrome Web Store.
-> Until FeedHacker is listed there, the steps below are the closest no‑account
-> path: a prebuilt download plus a single "Load unpacked" click.
+> Off the Web Store, Chrome requires one manual "Load unpacked" step. The options
+> below are the closest no‑account path: a prebuilt download plus that single click.
 
 ### Option A — Windows one‑click bundle (recommended)
 

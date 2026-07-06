@@ -48,8 +48,7 @@ test("every script referenced by the packaged HTML pages ships in dist/feedhacke
   assert.deepStrictEqual(missing, [], `packaged HTML references missing files: ${missing.join(", ")}`);
 });
 
-test("the distribution zip exists and has a valid ZIP signature", () => {
-  const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}.zip`);
+function assertPkZip(zip) {
   assert.ok(fs.existsSync(zip), `expected ${zip} — run \`npm run build\``);
   const head = Buffer.alloc(4);
   const fd = fs.openSync(zip, "r");
@@ -57,4 +56,23 @@ test("the distribution zip exists and has a valid ZIP signature", () => {
   assert.strictEqual(head.toString("latin1", 0, 2), "PK", "zip must start with the PK local-file signature");
   assert.strictEqual(head[2], 0x03);
   assert.strictEqual(head[3], 0x04);
+}
+
+test("the distribution zip exists and has a valid ZIP signature", () => {
+  assertPkZip(path.join(ROOT, "dist", `feedhacker-${manifest.version}.zip`));
+});
+
+test("the Chrome Web Store zip exists and has manifest.json at its root (no wrapper folder)", () => {
+  const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}-store.zip`);
+  assertPkZip(zip);
+  // Central-directory filenames must include a bare "manifest.json", not "feedhacker/manifest.json".
+  const buf = fs.readFileSync(zip);
+  const names = [];
+  const re = Buffer.from("PK\x01\x02"); // central directory header signature
+  for (let i = 0; (i = buf.indexOf(re, i)) !== -1; i += 4) {
+    const nameLen = buf.readUInt16LE(i + 28);
+    names.push(buf.toString("utf8", i + 46, i + 46 + nameLen));
+  }
+  assert.ok(names.includes("manifest.json"), `store zip must have manifest.json at root; saw: ${names.slice(0, 3).join(", ")}…`);
+  assert.ok(!names.some((n) => n.startsWith("feedhacker/")), "store zip must not nest under a feedhacker/ folder");
 });
