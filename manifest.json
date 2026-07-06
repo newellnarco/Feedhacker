@@ -2,12 +2,13 @@
   "manifest_version": 3,
   "name": "FeedHacker",
   "version": "0.1.0",
-  "description": "Mute the noise in your LinkedIn feed — AI slop, promoted posts, engagement-bait reshares, newsletter funnels, hiring, and more — with a Mute/Solo mixer.",
+  "description": "Mute the noise in your LinkedIn feed: AI slop, promoted posts, engagement bait, hiring, and more — with a Mute/Solo mixer.",
+  "author": "MAX Research Collective",
   "permissions": [
     "storage"
   ],
   "optional_host_permissions": [
-    "https://*/*"
+    "https://raw.githubusercontent.com/newellnarco/Feedhacker/*"
   ],
   "content_scripts": [
     {

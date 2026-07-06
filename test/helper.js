@@ -13,6 +13,7 @@ const matcher = require("../build/matcher.js");
 const scorer = require("../build/scorer.js");
 const authors = require("../build/authors.js");
 const customfilters = require("../build/customfilters.js");
+const update = require("../build/update.js");
 const feed = require("../build/feed.js");
 
 const { JSDOM } = require("jsdom");
@@ -24,4 +25,4 @@ function makeDoc(html) {
   return dom.window.document;
 }
 
-module.exports = { filters, logger, selectors, matcher, scorer, authors, customfilters, feed, makeDoc, JSDOM };
+module.exports = { filters, logger, selectors, matcher, scorer, authors, customfilters, update, feed, makeDoc, JSDOM };

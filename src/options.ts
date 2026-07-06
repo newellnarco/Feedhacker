@@ -6,6 +6,7 @@ var byId = function (id) { return document.getElementById(id) as any; };
 var Filters = self.FeedHackerFilters;
 var Log = self.FeedHackerLog;
 var Authors = self.FeedHackerAuthors;
+var Update = self.FeedHackerUpdate;
 var DEFAULTS = Filters.DEFAULTS;
 var WEIGHTS_KEY = "feedhacker:slopWeights";
 var STATS_KEY = "feedhacker:stats";
@@ -55,7 +56,6 @@ function renderStatus(st) {
   byId("scanEverywhere").checked = !!st.scanEverywhere;
   byId("implicitLearning").checked = !!st.implicitLearning;
   byId("remoteBanlist").checked = !!st.remoteBanlist;
-  byId("remoteBanlistUrl").value = st.remoteBanlistUrl || "";
 }
 
 // --- Properties from the manifest ---
@@ -153,6 +153,31 @@ byId("reset-learning").addEventListener("click", function () {
 });
 byId("refresh").addEventListener("click", loadAll);
 
+// --- update check: compare the running version against the latest GitHub release ---
+function currentVersion() { try { return chrome.runtime.getManifest().version; } catch (e) { return ""; } }
+(function initUpdates() {
+  var cur = byId("update-current");
+  if (cur) cur.textContent = currentVersion();
+  var btn = byId("check-updates"), status = byId("update-status");
+  if (!btn || !status || !Update) return;
+  btn.addEventListener("click", function () {
+    btn.disabled = true;
+    var label = btn.textContent;
+    btn.textContent = "Checking…";
+    Update.checkForUpdate(null, currentVersion()).then(function (res) {
+      status.textContent = res.updateAvailable
+        ? "Update available: v" + res.current + " → v" + res.latest +
+          ". Download the latest release, then reload FeedHacker on chrome://extensions."
+        : "You're on the latest version (v" + res.current + ").";
+    }).catch(function (e) {
+      status.textContent = "Couldn't check for updates: " + ((e && e.message) || e);
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = label;
+    });
+  });
+})();
+
 // --- Insights (daily history + top sources) ---
 function renderInsights(history) {
   var box = byId("insights");
@@ -243,27 +268,26 @@ function saveAuthors(store) {
   var el = byId(id);
   el.addEventListener("change", function () { var p = {}; p[id] = el.checked; chrome.storage.sync.set(p); });
 });
-var remoteUrl = byId("remoteBanlistUrl");
-remoteUrl.addEventListener("change", function () { chrome.storage.sync.set({ remoteBanlistUrl: remoteUrl.value.trim() }); });
+// The curated banlist is fetched from a single fixed host we control (narrow, easy to
+// justify for the Web Store) and the entries are stored ONLY in chrome.storage.local —
+// on this user's machine, never synced or sent anywhere.
+var BANLIST_URL = "https://raw.githubusercontent.com/newellnarco/Feedhacker/main/claudisms.json";
+var BANLIST_ORIGIN = "https://raw.githubusercontent.com/newellnarco/Feedhacker/*";
 
 byId("remote-fetch").addEventListener("click", function () {
   var status = byId("remote-status");
-  var url = remoteUrl.value.trim();
-  if (!url) { status.textContent = "Enter a URL first."; return; }
-  var origin;
-  try { origin = new URL(url).origin + "/*"; } catch (e) { status.textContent = "Invalid URL."; return; }
   status.textContent = "Requesting permission…";
-  chrome.permissions.request({ origins: [origin] }, function (granted) {
+  chrome.permissions.request({ origins: [BANLIST_ORIGIN] }, function (granted) {
     if (!granted) { status.textContent = "Permission denied."; return; }
-    status.textContent = "Fetching…";
-    fetch(url).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    status.textContent = "Updating…";
+    fetch(BANLIST_URL).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function (data) {
         if (!data || !Array.isArray(data.entries)) throw new Error("no 'entries' array");
         var patch = {}; patch[REMOTE_KEY] = { entries: data.entries };
-        chrome.storage.local.set(patch, function () {
-          chrome.storage.sync.set({ remoteBanlist: true, remoteBanlistUrl: url });
+        chrome.storage.local.set(patch, function () {   // device-local, this user only
+          chrome.storage.sync.set({ remoteBanlist: true });
           byId("remoteBanlist").checked = true;
-          status.textContent = "Saved " + data.entries.length + " entries ✓";
+          status.textContent = "Updated — " + data.entries.length + " entries stored locally ✓";
         });
       })
       .catch(function (e) { status.textContent = "Failed: " + e.message; });

@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { scorer, matcher } = require("./helper");
+const { scorer, matcher } = require("../helper");
 
 const CLEAN = "Fixed a caching bug this morning. It took about two hours. Tests pass now, shipping later today.";
 const SLOP = [
