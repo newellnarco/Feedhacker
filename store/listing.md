@@ -10,7 +10,7 @@ at the zip root, as the store requires).
   the Developer Dashboard (Account → Publisher / group publisher). It is an account
   setting, not a manifest field; the manifest carries it as `author` for reference.
 - **Name:** FeedHacker
-- **Summary** (≤132 chars): Mute the noise in your LinkedIn feed — AI slop, promoted posts, engagement-bait reshares, and more, with a Mute/Solo mixer.
+- **Summary** (≤132 chars; matches the manifest description): Mute the noise in your LinkedIn feed: AI slop, promoted posts, engagement bait, hiring, and more — with a Mute/Solo mixer.
 - **Category:** Productivity
 - **Language:** English
 
