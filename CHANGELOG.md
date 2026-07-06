@@ -13,7 +13,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- Release workflow: the `CWS_AUTO_PUBLISH` variable is now matched
+  case-insensitively (`true`/`True`/`TRUE`), so store auto-submit isn't silently
+  skipped by capitalization.
 
 ## [0.2.0] — 2026-07-06
 

@@ -192,5 +192,6 @@ jobs:
             --client-id "$CWS_CLIENT_ID"
             --client-secret "$CWS_CLIENT_SECRET"
             --refresh-token "$CWS_REFRESH_TOKEN")
-          if [ "${CWS_AUTO_PUBLISH:-}" = "true" ]; then ARGS+=(--auto-publish); fi
+          pub="${CWS_AUTO_PUBLISH:-}"   # case-insensitive: accept true/True/TRUE
+          if [ "${pub,,}" = "true" ]; then ARGS+=(--auto-publish); fi
           npx --yes chrome-webstore-upload-cli@3 "${ARGS[@]}"
