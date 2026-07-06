@@ -14,6 +14,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [Unreleased]
 
 ### Added
+- **“How AI-slop detection works”** panel on the options page — a read-only,
+  transparency view over the scorer. Shows the structural “tells” it looks for
+  (each with a plain-English description and your current learned weight) and the
+  full curated phrase banlist, grouped by category and filterable with a search
+  box. No new data or permissions; it surfaces what the extension already computes.
+- **Profile link** next to each entry under Insights → Top sources, so you can
+  jump to the author's LinkedIn profile to block, mute, or report them there.
+- Options-page sections are now **collapsible panels**; Activity, Insights, the
+  detection panel, Custom filters, and Advanced default to collapsed.
+
 - Hosted **GitHub Pages** site under [`docs/`](docs/): a standalone HTML privacy
   policy (`privacy-policy.html`) plus a small landing page. Google's Web Store
   reviewer verifies this reliably, unlike a `raw.githubusercontent.com` link.

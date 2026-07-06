@@ -7,6 +7,7 @@ var Filters = self.FeedHackerFilters;
 var Log = self.FeedHackerLog;
 var Authors = self.FeedHackerAuthors;
 var Update = self.FeedHackerUpdate;
+var Scorer = self.FeedHackerScorer;
 var DEFAULTS = Filters.DEFAULTS;
 var WEIGHTS_KEY = "feedhacker:slopWeights";
 var STATS_KEY = "feedhacker:stats";
@@ -56,6 +57,9 @@ function renderStatus(st) {
   byId("scanEverywhere").checked = !!st.scanEverywhere;
   byId("implicitLearning").checked = !!st.implicitLearning;
   byId("remoteBanlist").checked = !!st.remoteBanlist;
+
+  var thr = byId("slop-threshold");
+  if (thr) thr.textContent = String(typeof st.slopThreshold === "number" ? st.slopThreshold : 0.5);
 }
 
 // --- Properties from the manifest ---
@@ -127,13 +131,14 @@ function renderErrors(list) {
 
 function loadAll() {
   chrome.storage.sync.get(DEFAULTS, renderStatus);
-  chrome.storage.local.get([STATS_KEY, Log.STORAGE_KEY, CUSTOM_KEY, AUTHORS_KEY, HISTORY_KEY], function (o) {
+  chrome.storage.local.get([STATS_KEY, Log.STORAGE_KEY, CUSTOM_KEY, AUTHORS_KEY, HISTORY_KEY, WEIGHTS_KEY], function (o) {
     renderActivity(o && o[STATS_KEY]);
     renderErrors(o && o[Log.STORAGE_KEY]);
     renderCustom(o && o[CUSTOM_KEY]);
     renderAuthors(o && o[AUTHORS_KEY]);
     renderInsights(o && o[HISTORY_KEY]);
     renderTopSources(o && o[AUTHORS_KEY]);
+    renderSlopSignals(o && o[WEIGHTS_KEY]);
   });
 }
 
@@ -198,6 +203,12 @@ function renderInsights(history) {
   });
   table.appendChild(tb); box.appendChild(table);
 }
+// A source's key is the LinkedIn profile/company path (e.g. "/in/jane-doe"), so we
+// can link straight to the profile — from there LinkedIn's own menu lets you block,
+// mute, or report. Name-only keys have no URL, so no link is shown for those.
+function profileUrl(key) {
+  return (key && /^\/(?:in|company|school)\//.test(key)) ? "https://www.linkedin.com" + key : "";
+}
 function renderTopSources(store) {
   var box = byId("top-sources");
   box.innerHTML = "";
@@ -209,10 +220,152 @@ function renderTopSources(store) {
   top.forEach(function (a) {
     var tr = document.createElement("tr");
     tr.innerHTML = "<td></td><td class='num'>" + a.hidden + "</td><td class='num'>" + a.shown + "</td>";
-    (tr.firstChild as any).textContent = a.name || a.key;
+    var nameCell = tr.firstChild as any;
+    var span = document.createElement("span");
+    span.textContent = a.name || a.key;
+    nameCell.appendChild(span);
+    var url = profileUrl(a.key);
+    if (url) {
+      var link = document.createElement("a");
+      link.href = url; link.target = "_blank"; link.rel = "noopener";
+      link.textContent = "profile ↗";
+      link.title = "Open profile on LinkedIn — block, mute, or report from there";
+      link.style.marginLeft = "8px"; link.style.fontSize = "12px";
+      nameCell.appendChild(link);
+    }
     tb.appendChild(tr);
   });
   table.appendChild(tb); box.appendChild(table);
+}
+
+// --- How AI-slop detection works: signals table + curated phrase list ---
+// Plain-English descriptions for each scoring feature. Keyed by the scorer's
+// FEATURE_IDS so the table stays in sync if a tell is added/removed there.
+var SIGNAL_DESC = {
+  banlist: "Curated words and phrases that read as AI‑written (listed below).",
+  emdash: "Heavy use of em dashes (—).",
+  antithesis: "“Not X, but Y” framing — “it’s not about the tool, it’s about the mindset.”",
+  ruleofthree: "Three‑part lists and staccato triples — “A, B, and C” / “Ship. Learn. Repeat.”",
+  rhetorical: "Rhetorical setups — “The result?”, “The takeaway?”, “The best part?”",
+  emoji: "Emoji packed into the text.",
+  bullets: "Emoji / dash / number bullet lines — the listicle shape.",
+  connectives: "Formal signposting — moreover, furthermore, therefore, ultimately…",
+  openers: "Formula openers — “Let’s be honest”, “Hot take”, “Plot twist”.",
+  broetry: "One thought per line with lots of short standalone lines (LinkedIn “broetry”).",
+  uniformity: "Unnaturally even sentence lengths."
+};
+
+function renderSlopSignals(stored) {
+  var tb = byId("slop-signals");
+  if (!Scorer || !tb) return;
+  var w = Scorer.defaultWeights();
+  if (stored) for (var k in stored) if (typeof stored[k] === "number") w[k] = stored[k];
+  var ids = Scorer.FEATURE_IDS;
+  var max = 0;
+  ids.forEach(function (id) { if (typeof w[id] === "number" && w[id] > max) max = w[id]; });
+  tb.innerHTML = "";
+  ids.forEach(function (id) {
+    var wt = typeof w[id] === "number" ? w[id] : 0;
+    var pct = max > 0 ? Math.round(Math.max(0, wt) / max * 100) : 0;
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td></td><td class='muted'></td>" +
+      "<td class='num'><span class='wnum'></span>" +
+      "<span class='wtrack'><span class='wbar' style='width:" + pct + "%'></span></span></td>";
+    (tr.children[0] as any).textContent = (Scorer.FEATURE_LABELS[id] || id);
+    (tr.children[1] as any).textContent = SIGNAL_DESC[id] || "";
+    (tr.querySelector(".wnum") as any).textContent = wt.toFixed(1);
+    tb.appendChild(tr);
+  });
+  var note = byId("slop-model-note");
+  if (note) note.textContent = "Model bias " + (typeof w.bias === "number" ? w.bias : -1.6).toFixed(1) +
+    ". A higher weight means that signal pushes harder toward hiding; evidence has to add up past the threshold before a post is hidden.";
+}
+
+// The curated banlist is loaded once (from the bundled claudisms.json, plus the
+// opt-in remote entries when that setting is on) and cached for live filtering.
+var slopEntries: any[] = [];
+function mergeEntries(base, extra) {
+  var seen = {}; var out: any[] = [];
+  base.concat(extra).forEach(function (e) {
+    if (!e || !e.id || seen[e.id]) return;
+    seen[e.id] = 1; out.push(e);
+  });
+  return out;
+}
+function loadSlopPhrases() {
+  var box = byId("slop-phrase-list");
+  if (!box) return;
+  fetch(chrome.runtime.getURL("claudisms.json"))
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (data) {
+      var entries = (data && Array.isArray(data.entries)) ? data.entries.slice() : [];
+      chrome.storage.sync.get({ remoteBanlist: false }, function (s) {
+        if (s.remoteBanlist) {
+          chrome.storage.local.get([REMOTE_KEY], function (o) {
+            var rem = o && o[REMOTE_KEY];
+            slopEntries = (rem && Array.isArray(rem.entries)) ? mergeEntries(entries, rem.entries) : entries;
+            renderPhrases();
+          });
+        } else { slopEntries = entries; renderPhrases(); }
+      });
+    })
+    .catch(function (e) { box.innerHTML = "<li class='empty'>Couldn't load the phrase list: " + e.message + "</li>"; });
+}
+var CAT_ORDER = ["confirmed", "aggressive", "manual"];
+function phraseWords(e) {
+  if (e.matchType === "literal" && Array.isArray(e.match)) return e.match.slice();
+  return [];
+}
+function phraseTitle(e, words) {
+  if (words.length) return words.join(", ");
+  if (e.matchType === "regex" && e.pattern) return e.note || ("pattern: " + e.pattern);
+  return e.note || e.id;
+}
+function renderPhrases() {
+  var box = byId("slop-phrase-list");
+  var countEl = byId("slop-phrase-count");
+  if (!box) return;
+  var q = String((byId("slop-phrase-search") as any).value || "").trim().toLowerCase();
+  var matched = slopEntries.filter(function (e) {
+    if (!q) return true;
+    var words = phraseWords(e);
+    var hay = [e.id, e.category, e.note, e.replacement, e.pattern, words.join(" ")]
+      .filter(Boolean).join(" ").toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  if (countEl) countEl.textContent = "(" + matched.length +
+    (q ? " of " + slopEntries.length : "") + ")";
+  box.innerHTML = "";
+  if (!matched.length) { box.innerHTML = "<li class='empty'>No phrases match “" + q + "”.</li>"; return; }
+  // Group by category, confirmed first.
+  var groups: any = {};
+  matched.forEach(function (e) { var c = e.category || "other"; (groups[c] = groups[c] || []).push(e); });
+  var cats = Object.keys(groups).sort(function (a, b) {
+    var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  cats.forEach(function (cat) {
+    groups[cat].forEach(function (e) {
+      var words = phraseWords(e);
+      var li = document.createElement("li");
+      var t = document.createElement("div"); t.className = "pwords"; t.textContent = phraseTitle(e, words);
+      li.appendChild(t);
+      if (e.note && words.length) {
+        var n = document.createElement("div"); n.className = "pnote"; n.textContent = e.note; li.appendChild(n);
+      }
+      var meta = document.createElement("div"); meta.className = "pmeta";
+      var badge = document.createElement("span");
+      badge.className = "badge " + (CAT_ORDER.indexOf(cat) >= 0 ? cat : "manual");
+      badge.textContent = cat;
+      meta.appendChild(badge);
+      if (e.replacement) {
+        var rep = document.createElement("span"); rep.className = "prep";
+        rep.textContent = "→ " + e.replacement; meta.appendChild(rep);
+      }
+      li.appendChild(meta);
+      box.appendChild(li);
+    });
+  });
 }
 
 // --- Custom filters ---
@@ -333,9 +486,18 @@ chrome.storage.onChanged.addListener(function (changes, area) {
     if (changes[CUSTOM_KEY]) renderCustom(changes[CUSTOM_KEY].newValue);
     if (changes[AUTHORS_KEY]) { renderAuthors(changes[AUTHORS_KEY].newValue); renderTopSources(changes[AUTHORS_KEY].newValue); }
     if (changes[HISTORY_KEY]) renderInsights(changes[HISTORY_KEY].newValue);
+    if (changes[WEIGHTS_KEY]) renderSlopSignals(changes[WEIGHTS_KEY].newValue);
+    if (changes[REMOTE_KEY]) loadSlopPhrases();
   }
 });
 
+// Live-filter the curated phrase list as you type.
+(function () {
+  var input = byId("slop-phrase-search");
+  if (input) input.addEventListener("input", renderPhrases);
+})();
+
 renderProps();
 loadAll();
+loadSlopPhrases();
 })();
