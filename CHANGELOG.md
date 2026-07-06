@@ -17,6 +17,13 @@ _Nothing yet._
 
 ## [0.3.0] — 2026-07-06
 
+### Fixed
+- **Spurious "No LinkedIn post markers found" heartbeat error.** The DOM-break
+  heartbeat now only counts empty scans while the feed tab is actually visible and
+  focused. Leaving LinkedIn open in a background tab, a minimized window, or while
+  switched to another app pauses LinkedIn's feed rendering, so zero markers there is
+  expected — it no longer trips the "selectors may be out of date" alarm.
+
 ### Added
 - **Company / brand posts filter** — Mute (or Solo) posts authored by a LinkedIn
   Company or School page (WSJ, brands, publishers, orgs): corporate content that
