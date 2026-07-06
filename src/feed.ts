@@ -267,6 +267,61 @@
     var name = el.dataset.feedhackerActor || getActor(el) || "Someone";
     return name + " (" + labelsText(flags) + ")";   // name + category only
   }
+
+  // A one-line preview of a flagged post's opening, so the stub carries enough for the
+  // user to judge a probabilistic AI-slop call WITHOUT expanding it. Built from the same
+  // innerText the scorer saw. In a real browser innerText puts the actor name, headline
+  // and timestamp on their own lines ahead of the commentary, so we skip those metadata
+  // lines and take the first line of real content; under jsdom (no block newlines) the
+  // post collapses to one line, so we strip a leading name echo and trim from there.
+  // Metadata lines that never carry post content: connection degree, CTAs, "Edited",
+  // visibility, follower counts, and the timestamp row.
+  var PREVIEW_META_RE = /^(?:•\s*)?(?:1st|2nd|3rd\+?|following|follow|connect|message|promoted|edited|see translation|visible to\b.*|and \d[\d,]* others?|\d[\d,]*\s+(?:followers?|connections?)|\d+\s*(?:s|m|h|d|w|mo|y)(?:\s*•.*)?)$/i;
+  // The post's timestamp row ("2h", "1d • Edited", "Now") is the LAST header element
+  // before the commentary — a reliable boundary between the actor header and the body.
+  var PREVIEW_TS_RE = /^(?:•\s*)?(?:now|\d+\s*(?:s|m|h|d|w|mo|y|hr|hrs|min|mins|sec|secs))\b/i;
+  function truncatePreview(s, n) {
+    s = (s || "").replace(/\s+/g, " ").trim();
+    if (s.length <= n) return s;
+    var cut = s.slice(0, n), sp = cut.lastIndexOf(" ");
+    if (sp > n * 0.6) cut = cut.slice(0, sp);           // prefer a word boundary
+    return cut.replace(/[\s.,;:!?–—-]+$/, "") + "…";
+  }
+  function firstBodyLine(text, name) {
+    var raw = (text || "").replace(/^(Feed post|Promoted)\s*/i, "");
+    var nm = (name || "").replace(/\s+/g, " ").trim();
+    // Only treat `name` as a header echo to strip when it reads like a real name — not
+    // when getActor fell back to body text (long, or carrying sentence punctuation).
+    var nameLc = (nm.length >= 2 && nm.length < 40 && !/[:!?]/.test(nm)) ? nm.toLowerCase() : "";
+    function stripName(s) {
+      for (var g = 0; g < 3 && nameLc && s.toLowerCase().indexOf(nameLc) === 0; g++) {
+        s = s.slice(nm.length).replace(/^[\s•·|,–—-]+/, "");
+      }
+      return s;
+    }
+    var lines: any[] = [];
+    var split = raw.split(/[\r\n]+/);
+    for (var s0 = 0; s0 < split.length; s0++) {
+      var t0 = split[s0].replace(/\s+/g, " ").trim();
+      if (t0) lines.push(t0);
+    }
+    // Primary: the first real line AFTER the timestamp row skips the whole actor header
+    // (name, degree, headline) even when a job headline looks like content.
+    var pick = "", passedTs = false;
+    for (var i = 0; i < lines.length; i++) {
+      if (PREVIEW_TS_RE.test(lines[i])) { passedTs = true; continue; }
+      if (!passedTs || PREVIEW_META_RE.test(lines[i])) continue;
+      var body = stripName(lines[i]);
+      if (body) { pick = body; break; }
+    }
+    // Fallback (single-blob innerText, or no timestamp row): strip a leading name echo
+    // and obvious metadata, then take the first remaining line.
+    for (var j = 0; !pick && j < lines.length; j++) {
+      var l2 = stripName(lines[j]);
+      if (l2 && !PREVIEW_META_RE.test(l2)) pick = l2;
+    }
+    return truncatePreview(pick, 140);
+  }
   function explainerText(flags) {
     return "Flagged: " + flags.map(function (f) {
       return f.detail ? f.label + " (" + f.detail + ")" : f.label;
@@ -326,6 +381,33 @@
     }
   }
 
+  // Author + opening line on an AI-slop stub. Slop is the one probabilistic filter, so
+  // we always surface who wrote it and what it says — enough to make the call without
+  // clicking "Show anyway". Not a control (no automation), so comment stubs get it too.
+  function appendSlopPreview(doc, el, stub, settings, flags) {
+    if (!hasFlag(flags, "sloppy")) return;
+    var line = el.dataset.feedhackerPreview || "";
+    var name = el.dataset.feedhackerActor || "";
+    if (!line && !name) return;
+    var wrap = doc.createElement("span");
+    wrap.className = "feedhacker-preview";
+    // Skip the name here when "Name names" already puts it in the label, to avoid echo.
+    if (name && !settings.nameNames) {
+      var who = doc.createElement("b");
+      who.className = "feedhacker-preview-author";
+      who.textContent = name;
+      wrap.appendChild(who);
+    }
+    if (line) {
+      var q = doc.createElement("span");
+      q.className = "feedhacker-preview-line";
+      q.textContent = (wrap.childNodes.length ? ": " : "") + "“" + line + "”";
+      wrap.appendChild(q);
+    }
+    stub.classList.add("feedhacker-has-preview");
+    stub.appendChild(wrap);
+  }
+
   function renderCollapsed(doc, el, stub, flags, settings) {
     clearEl(stub);
     stub.className = "feedhacker-stub";
@@ -333,6 +415,7 @@
     label.className = "feedhacker-stub-label";
     label.textContent = collapsedText(el, flags, settings);
     stub.appendChild(label);
+    appendSlopPreview(doc, el, stub, settings, flags);
 
     // Explicit positive training for AI slop, without un-hiding (cleaner signal than
     // overloading Show/Hide). Only when we have the scored features to learn from.
@@ -444,7 +527,12 @@
       custom = root.FeedHackerCustom.match(text, author(), settings.customCompiled);
     }
     if (!solos.length && !muted.length && !custom.length) return null;
-    if (settings.nameNames) el.dataset.feedhackerActor = getActor(el); // capture while visible
+    // Capture the author + opening line while the post is still visible (innerText goes
+    // empty once we hide it). The slop stub reads both back; the name also feeds "Name
+    // names". Cheap here — only posts past the early-returns above reach this.
+    var actor = getActor(el);
+    el.dataset.feedhackerActor = actor;
+    el.dataset.feedhackerPreview = firstBodyLine(text, actor);
 
     if (solos.length) {   // Solo wins: show ONLY soloed kinds, hide the rest.
       var flagsS = matchedFlags(el, matchers, solos, text, settings);
@@ -552,7 +640,9 @@
       if (!root.FeedHackerScorer) continue;
       var res = root.FeedHackerScorer.classify(raw, settings.slopWeights, { matchers: matchers, aggressive: !!settings.aggressive });
       if (!res.isSlop) continue;
-      if (settings.nameNames) el.dataset.feedhackerActor = getActor(el);
+      var cActor = getActor(el);
+      el.dataset.feedhackerActor = cActor;
+      el.dataset.feedhackerPreview = firstBodyLine(raw, cActor);
       collapse(doc, el, [{ id: "sloppy", label: "AI Slop comment", detail: res.detail, features: res.features }], settings);
       hidden++;
     }
@@ -650,13 +740,14 @@
       hid[j].classList.remove("feedhacker-hidden");
       hid[j].classList.remove("feedhacker-gone");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       delete el.dataset.feedhackerScanned; delete el.dataset.feedhackerLen;
       delete el.dataset.feedhackerHidden; delete el.dataset.feedhackerReveal;
       delete el.dataset.feedhackerReasons;
       delete el.dataset.feedhackerActor;
+      delete el.dataset.feedhackerPreview;
       delete el.dataset.feedhackerFeatures;
     }
   }
@@ -668,7 +759,8 @@
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
-    authorInfo: authorInfo, actorAnchor: actorAnchor, applyDigest: applyDigest, clearDigest: clearDigest
+    authorInfo: authorInfo, actorAnchor: actorAnchor, applyDigest: applyDigest, clearDigest: clearDigest,
+    firstBodyLine: firstBodyLine
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerFeed = api;

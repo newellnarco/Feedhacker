@@ -8,6 +8,15 @@
 }
 .feedhacker-explainer { background: #eef3fb; color: #1d2226; flex-wrap: wrap; }
 .feedhacker-why { font-weight: 600; }
+
+/* AI-slop stub preview: author + opening line, so the call can be judged in place. */
+.feedhacker-stub.feedhacker-has-preview { flex-wrap: wrap; }
+.feedhacker-preview {
+  flex-basis: 100%; order: 5; min-width: 0;
+  font-size: 12.5px; font-style: italic; color: #5f6b7a;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.feedhacker-preview-author { font-style: normal; font-weight: 700; color: #1d2226; }
 .feedhacker-show {
   cursor: pointer; border: 1px solid #c7ccd4; background: #fff;
   color: #0a66c2; border-radius: 14px; padding: 3px 12px;

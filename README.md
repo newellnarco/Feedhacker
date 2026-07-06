@@ -50,6 +50,11 @@ crosses a threshold. Tells include:
 - the curated phrase banlist (`claudisms.json`) as **one weighted signal** among
   many (curated hits count more than common‑word ones).
 
+Because the AI‑slop call is a judgment, the stub shows the **author's name and
+the post's first line** right on the placeholder — so you can decide whether it's
+really slop without clicking **Show anyway**. (The deterministic filters —
+Promoted, Hiring, etc. — don't need this and don't show it.)
+
 It **learns** from you: clicking **Show anyway** teaches a false positive, the
 **👍 slop** button or **Hide again** confirms a true positive, and a post you
 simply **scroll past** (still hidden) counts as a weak confirmation. Each
