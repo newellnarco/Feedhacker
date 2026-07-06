@@ -272,9 +272,13 @@
 
   function labelsText(flags) { return flags.map(function (f) { return f.label; }).join(", "); }
   function collapsedText(el, flags, settings) {
-    if (!settings.nameNames) return labelsText(flags);
+    // The AI-slop reason is conveyed by the green splat icon + the stub's hover title,
+    // so it isn't printed here — only the other categories are.
+    var cats = flags.filter(function (f) { return f.id !== "sloppy"; })
+      .map(function (f) { return f.label; }).join(", ");
+    if (!settings.nameNames) return cats;
     var name = el.dataset.feedhackerActor || getActor(el) || "Someone";
-    return name + " (" + labelsText(flags) + ")";   // name + category only
+    return cats ? name + " (" + cats + ")" : name;   // name (+ any non-slop categories)
   }
 
   // A one-line preview of a flagged post's opening, so the stub carries enough for the
@@ -551,15 +555,20 @@
   function renderCollapsed(doc, el, stub, flags, settings) {
     clearEl(stub);
     stub.className = "feedhacker-stub";
+    stub.removeAttribute("title");
+    if (hasFlag(flags, "sloppy")) stub.title = "AI slop";   // reason on hover, not as text
     // "+ sample" is an add-on to "Names" — the three-line stub only applies when both
     // are on. (nameNames alone stays the one-line "Name (category)" label.)
     if (settings.nameSample && settings.nameNames) {
       appendNameSampleStub(doc, el, stub, flags);
     } else {
-      var label = doc.createElement("span");
-      label.className = "feedhacker-stub-label";
-      label.textContent = collapsedText(el, flags, settings);
-      stub.appendChild(label);
+      var text = collapsedText(el, flags, settings);
+      if (text) {
+        var label = doc.createElement("span");
+        label.className = "feedhacker-stub-label";
+        label.textContent = text;
+        stub.appendChild(label);
+      }
       appendSlopPreview(doc, el, stub, settings, flags);
     }
 
