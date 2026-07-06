@@ -408,14 +408,44 @@
     stub.appendChild(wrap);
   }
 
+  // Three-line stub for the "Name + sample + category" display mode: who wrote it,
+  // a sample of the hidden text, and the filter category — stacked. A richer superset
+  // of "Name names", so it takes precedence and replaces the single-line label +
+  // inline preview (no echo). Sample/name come from the datasets captured at hide time.
+  function appendNameSampleStub(doc, el, stub, flags) {
+    stub.classList.add("feedhacker-has-namesample");
+    var block = doc.createElement("span");
+    block.className = "feedhacker-namesample";
+    var name = doc.createElement("b");
+    name.className = "feedhacker-ns-name";
+    name.textContent = el.dataset.feedhackerActor || getActor(el) || "Someone";
+    block.appendChild(name);
+    var sample = el.dataset.feedhackerPreview || "";
+    if (sample) {
+      var s = doc.createElement("span");
+      s.className = "feedhacker-ns-sample";
+      s.textContent = "“" + sample + "”";
+      block.appendChild(s);
+    }
+    var cat = doc.createElement("span");
+    cat.className = "feedhacker-ns-category";
+    cat.textContent = labelsText(flags);
+    block.appendChild(cat);
+    stub.appendChild(block);
+  }
+
   function renderCollapsed(doc, el, stub, flags, settings) {
     clearEl(stub);
     stub.className = "feedhacker-stub";
-    var label = doc.createElement("span");
-    label.className = "feedhacker-stub-label";
-    label.textContent = collapsedText(el, flags, settings);
-    stub.appendChild(label);
-    appendSlopPreview(doc, el, stub, settings, flags);
+    if (settings.nameSample) {
+      appendNameSampleStub(doc, el, stub, flags);
+    } else {
+      var label = doc.createElement("span");
+      label.className = "feedhacker-stub-label";
+      label.textContent = collapsedText(el, flags, settings);
+      stub.appendChild(label);
+      appendSlopPreview(doc, el, stub, settings, flags);
+    }
 
     // Explicit positive training for AI slop, without un-hiding (cleaner signal than
     // overloading Show/Hide). Only when we have the scored features to learn from.
@@ -510,7 +540,7 @@
       if (key) {
         if (A.isAllowed(settings.authors, key)) return null;
         if (A.isMuted(settings.authors, key)) {
-          if (settings.nameNames) el.dataset.feedhackerActor = getActor(el);
+          if (settings.nameNames || settings.nameSample) el.dataset.feedhackerActor = getActor(el);
           recordOutcome(settings, author(), true);
           collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings);
           return ["author"];

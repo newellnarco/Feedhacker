@@ -49,7 +49,8 @@ function renderStatus(st) {
   if (st.aggressive) extras.push("aggressive slop");
   if (st.hideSlopComments) extras.push("hide slop comments");
   if (st.hideCompletely) extras.push("hide completely");
-  if (st.nameNames) extras.push("name names");
+  if (st.nameSample) extras.push("name + sample + category");
+  else if (st.nameNames) extras.push("name names");
   var el = byId("active-summary");
   el.textContent = "Active filters: " + (active.length ? active.join(", ") : "none") +
     (extras.length ? " · Options: " + extras.join(", ") : "");

@@ -297,6 +297,22 @@ test("with Name names on, the preview drops the duplicate author prefix", () => 
   assert.ok(/Let’s be honest/.test(preview.textContent), "first line still shown");
 });
 
+test("nameSample renders a three-line stub: name, sample, category", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ nameSample: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.ok(stub.classList.contains("feedhacker-has-namesample"), "three-line layout class set");
+  const block = stub.querySelector(".feedhacker-namesample");
+  assert.ok(block, "namesample block present");
+  assert.ok(/Jane Doe/.test(block.querySelector(".feedhacker-ns-name").textContent), "line 1 is the name");
+  assert.ok(/Let’s be honest/.test(block.querySelector(".feedhacker-ns-sample").textContent), "line 2 is the sample text");
+  assert.strictEqual(block.querySelector(".feedhacker-ns-category").textContent, "AI Slop", "line 3 is the category");
+  // The richer mode supersedes the single-line label + inline preview (no echo).
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-label"), null, "no single-line label");
+  assert.strictEqual(stub.querySelector(".feedhacker-preview"), null, "no inline preview");
+});
+
 test("reset() clears the stashed preview", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];

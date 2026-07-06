@@ -21,7 +21,7 @@
   ];
 
   // Non-per-filter boolean settings (checkboxes in the popup).
-  var DISPLAY_KEYS = ["nameNames", "hideCompletely", "hideSlopComments", "digest"];
+  var DISPLAY_KEYS = ["nameNames", "nameSample", "hideCompletely", "hideSlopComments", "digest"];
 
   function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 

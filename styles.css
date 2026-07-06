@@ -17,6 +17,16 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .feedhacker-preview-author { font-style: normal; font-weight: 700; color: #1d2226; }
+
+/* "Name + sample + category" stub: three stacked lines on the left, buttons at top-right. */
+.feedhacker-stub.feedhacker-has-namesample { align-items: flex-start; }
+.feedhacker-namesample { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.feedhacker-ns-name { font-weight: 700; color: #1d2226; }
+.feedhacker-ns-sample {
+  font-size: 12.5px; font-style: italic; color: #5f6b7a;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.feedhacker-ns-category { font-size: 12px; color: #5f6b7a; }
 .feedhacker-show {
   cursor: pointer; border: 1px solid #c7ccd4; background: #fff;
   color: #0a66c2; border-radius: 14px; padding: 3px 12px;
