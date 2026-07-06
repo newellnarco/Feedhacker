@@ -221,11 +221,15 @@
     // Only trust "no markers" when the user is actually looking at the feed. A backgrounded
     // tab, a minimized window, or switching to another app pauses LinkedIn's feed rendering,
     // so zero markers there is expected — not a broken selector.
+    // Fail closed: if the visibility/focus probes throw, treat the tab as inactive so an
+    // uncertain state never contributes to the "selectors out of date" alarm.
     try {
       if (document.hidden) return false;
       if (typeof document.hasFocus === "function" && !document.hasFocus()) return false;
-    } catch (e) {}
-    return true;
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
   function heartbeat() {
     if (!SEL) return;
