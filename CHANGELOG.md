@@ -13,6 +13,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [Unreleased]
 
+### Changed
+- Options page "Updates" text now explains updating per install method (Chrome Web
+  Store auto-updates; the Windows installer's daily task needs a Chrome restart to
+  apply; Load-unpacked needs a manual download + reload), instead of telling
+  everyone to download manually.
+
 ### Fixed
 - Release workflow: the `CWS_AUTO_PUBLISH` variable is now matched
   case-insensitively (`true`/`True`/`TRUE`), so store auto-submit isn't silently
