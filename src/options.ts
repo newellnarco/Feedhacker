@@ -167,7 +167,9 @@ function currentVersion() { try { return chrome.runtime.getManifest().version; }
     Update.checkForUpdate(null, currentVersion()).then(function (res) {
       status.textContent = res.updateAvailable
         ? "Update available: v" + res.current + " → v" + res.latest +
-          ". Download the latest release, then reload FeedHacker on chrome://extensions."
+          ". Chrome Web Store installs update themselves. Windows installs: the daily auto‑update task " +
+          "fetches it — restart Chrome (or run installer\\update.bat) to apply. Manual Load‑unpacked installs: " +
+          "download the latest release and reload FeedHacker on chrome://extensions."
         : "You're on the latest version (v" + res.current + ").";
     }).catch(function (e) {
       status.textContent = "Couldn't check for updates: " + ((e && e.message) || e);
