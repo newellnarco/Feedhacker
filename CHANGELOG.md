@@ -39,12 +39,14 @@ _Nothing yet._
   airy LinkedIn format the old broetry tell under-scored). Applies to AI-slop
   comments too.
 - **Stub controls are now icon buttons** — a compact, right-justified cluster:
-  a **green splat** (AI slop — confirm + train), a **red mic‑slash** (Mute), a
-  **blue eye** (Always show), and a **box‑arrow** (Visit profile), each with a hover
-  tooltip. Clicking AI slop / Mute / Always show also tidies the row away to keep the
-  list short. A new **Post controls** legend on the options page explains all four.
-  The stub no longer prints the "AI Slop" category as text — the reason shows on
-  hover (the stub tooltip and the splat icon).
+  a **green splat** (AI slop — confirm + train), a **grey eye‑with‑strike** (Hide post),
+  a **red mic‑slash** (Mute), a **blue eye** (Always show), and a **box‑arrow**
+  (Visit profile), each with a hover tooltip. Confirming **AI slop** only trains the
+  filter now — it leaves the stub in place; use **Hide post** to retire just that one
+  row (without muting or training), or **Mute** / **Always show**, which also tidy the
+  row away to keep the list short. A new **Post controls** legend on the options page
+  explains all five. The stub no longer prints the "AI Slop" category as text — the
+  reason shows on hover (the stub tooltip and the splat icon).
 - **Muted authors are now soft-blocked** — their posts are hidden outright (no
   "Muted author" stub), so a muted author simply stops appearing. Unmute from the
   options page.
