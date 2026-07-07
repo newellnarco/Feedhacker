@@ -106,7 +106,7 @@
       authorStore = Authors.mute(authorStore, Authors.keyFor(info), info && info.name);
       refreshAuthorFlags();
       authorsDirty = true; saveAuthorsSoon();
-      if (ready) { F.reset(document); scanNow(); reportBadge(); }   // apply immediately
+      if (ready) { F.reset(document, true); scanNow(); reportBadge(); }   // apply immediately (keep user Hide/Show actions)
     } catch (e) { logError(e, "mute-author"); }
   }
   settings.onMuteAuthor = onMuteAuthor;
@@ -116,7 +116,7 @@
       authorStore = Authors.allow(authorStore, Authors.keyFor(info), info && info.name);
       refreshAuthorFlags();
       authorsDirty = true; saveAuthorsSoon();
-      if (ready) { F.reset(document); scanNow(); reportBadge(); }   // reveal now + keep showing
+      if (ready) { F.reset(document, true); scanNow(); reportBadge(); }   // reveal now + keep showing
     } catch (e) { logError(e, "allow-author"); }
   }
   settings.onAllowAuthor = onAllowAuthor;
@@ -425,7 +425,7 @@
 
   function reapply() {
     if (!ready) return;
-    F.reset(document);          // reveal everything, then re-apply with new settings
+    F.reset(document, true);    // re-apply with new settings, but keep the user's Hide/Show-anyway choices
     scanNow();                  // no-ops cleanly if nothing is active
     reportBadge();
   }

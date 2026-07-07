@@ -370,6 +370,7 @@
   function dismissRow(el) {
     if (!el || el.dataset.feedhackerDismissing === "1") return;
     el.dataset.feedhackerDismissing = "1";
+    el.dataset.feedhackerDismissed = "1";   // sticky: survives a settings re-apply / reset so the row can't pop back
     el.classList.add("feedhacker-dismissing");
     var gone = function () { el.classList.add("feedhacker-gone"); };
     el.addEventListener("transitionend", function h(e) {
@@ -708,6 +709,7 @@
 
   function consider(doc, el, matchers, settings) {
     if (el.dataset.feedhackerReveal === "1") return null;
+    if (el.dataset.feedhackerDismissed === "1") return null;   // user hit "Hide" — stay gone, don't re-stub
     if (el.dataset.feedhackerHidden === "1") return null;
     if (el.dataset.feedhackerScanned === "1") return null;   // judge each post ONCE — later comment/see-more mutations must not re-flag it
     var text = getPostText(el);
@@ -945,21 +947,37 @@
     return false;
   }
 
-  function reset(doc) {
+  // Reset FeedHacker's DOM state. A FULL reset (default) reveals EVERYTHING and clears all
+  // flags — used when the extension is disabled or we leave a scanned surface. A re-apply
+  // (preserveUserActions=true, used when settings/authors change) instead PRESERVES the
+  // user's explicit per-post decisions — a row they Hid stays gone, a row they revealed
+  // with "Show anyway" stays shown — so changing an unrelated setting can't resurrect a
+  // hidden post or re-hide a shown one.
+  function reset(doc, preserveUserActions?: boolean) {
     clearDigest(doc);
+    function kept(el) {
+      return !!preserveUserActions && !!el &&
+        (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerDismissed === "1");
+    }
     var stubs = doc.querySelectorAll(".feedhacker-stub");
-    for (var i = 0; i < stubs.length; i++) stubs[i].remove();
+    for (var i = 0; i < stubs.length; i++) {
+      if (preserveUserActions && stubs[i].closest('[data-feedhacker-reveal="1"],[data-feedhacker-dismissed="1"]')) continue;
+      stubs[i].remove();
+    }
     var hid = doc.querySelectorAll(".feedhacker-hidden, .feedhacker-gone, .feedhacker-dismissing");
     for (var j = 0; j < hid.length; j++) {
+      if (kept(hid[j])) continue;
       hid[j].classList.remove("feedhacker-hidden");
       hid[j].classList.remove("feedhacker-gone");
       hid[j].classList.remove("feedhacker-dismissing");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
+      if (kept(el)) continue;
       delete el.dataset.feedhackerScanned; delete el.dataset.feedhackerLen;
       delete el.dataset.feedhackerHidden; delete el.dataset.feedhackerReveal;
+      delete el.dataset.feedhackerDismissed;
       delete el.dataset.feedhackerReasons;
       delete el.dataset.feedhackerActor;
       delete el.dataset.feedhackerPreview;

@@ -134,6 +134,42 @@ test("reset() reveals everything and clears FeedHacker state", () => {
   assert.strictEqual(doc.querySelector(".feedhacker-stub"), null);
 });
 
+test("Hide survives a settings re-apply (preserving reset) — the row does not pop back", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());
+  const hide = el.querySelector(".feedhacker-stub .feedhacker-hidepost");
+  assert.ok(hide, "stub has a Hide control");
+  hide.click();
+  assert.strictEqual(el.dataset.feedhackerDismissed, "1", "Hide marks the row dismissed");
+  assert.ok(el.classList.contains("feedhacker-dismissing"), "row is retiring");
+
+  // reapply() after e.g. a settings change / mute author: preserving reset + rescan.
+  feed.reset(doc, true);
+  feed.scan(doc, [], baseSettings());
+  assert.strictEqual(el.dataset.feedhackerDismissed, "1", "still dismissed after a preserving reset");
+  assert.ok(el.classList.contains("feedhacker-dismissing"), "still retiring — did not pop back as a fresh stub");
+
+  // A FULL reset (extension disabled / off a scanned surface) does clear it.
+  feed.reset(doc);
+  assert.strictEqual(el.dataset.feedhackerDismissed, undefined, "full reset clears the dismiss");
+  assert.ok(!el.classList.contains("feedhacker-dismissing"));
+});
+
+test("Show anyway survives a settings re-apply — the row stays revealed", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());
+  el.querySelector(".feedhacker-stub button.feedhacker-show").click();   // Show anyway
+  assert.strictEqual(el.dataset.feedhackerReveal, "1");
+  assert.ok(!el.classList.contains("feedhacker-hidden"), "revealed");
+
+  feed.reset(doc, true);
+  feed.scan(doc, [], baseSettings());
+  assert.strictEqual(el.dataset.feedhackerReveal, "1", "still revealed after a preserving reset");
+  assert.ok(!el.classList.contains("feedhacker-hidden"), "not re-hidden by the rescan");
+});
+
 test("scanComments collapses an AI-slop comment", () => {
   const comment =
     `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
