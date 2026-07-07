@@ -11,6 +11,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.2]
+
+### Fixed
+- **Hidden and revealed posts could "pop back."** Clicking **Hide** on a stub (or
+  **Show anyway** to reveal a post) could be undone whenever FeedHacker re-applied — which
+  happens on any settings change and after **Mute author** / **Always show** clicks. The
+  re-apply did a full `reset()` that wiped *all* state and re-scanned, so a Hidden row
+  reappeared and a Shown row got re-hidden. Re-applies now **preserve your explicit
+  per-post choices**: a row you Hid stays gone and a row you revealed stays shown. A full
+  reset (extension disabled, or leaving the feed) still reveals everything as before.
+
 ## [0.4.1]
 
 ### Fixed
@@ -190,7 +201,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - Runs entirely in the browser (only the `storage` permission); optional remote
   banlist behind a per‑site permission prompt.
 
-[0.4.1]: https://github.com/newellnarco/Feedhacker/compare/v0.4.0...HEAD
+[0.4.2]: https://github.com/newellnarco/Feedhacker/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.4.1
 [0.4.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.4.0
 [0.3.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.3.0
 [0.2.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.2.0
