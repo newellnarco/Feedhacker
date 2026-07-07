@@ -452,6 +452,17 @@
       svgEl(doc, "circle", { cx: "13.2", cy: "10.9", r: "0.85", fill: "#fff" })
     ]);
   }
+  // Eye with a strike-through — Hide post (dismiss this one row without muting/training).
+  // A neutral grey "closed eye" so it reads as "hide", distinct from the blue "Always show" eye.
+  function eyeOffIcon(doc) {
+    return iconSvg(doc, {}, [
+      svgEl(doc, "path", { d: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z", fill: "#fff", stroke: "#5c6470", "stroke-width": "1.7", "stroke-linejoin": "round" }),
+      svgEl(doc, "circle", { cx: "12", cy: "12", r: "4", fill: "#8a94a3", stroke: "#5c6470", "stroke-width": "1.1" }),
+      svgEl(doc, "circle", { cx: "12", cy: "12", r: "1.9", fill: "#3a414d" }),
+      svgEl(doc, "line", { x1: "5", y1: "5", x2: "19", y2: "19", stroke: "#fff", "stroke-width": "3.4", "stroke-linecap": "round" }),
+      svgEl(doc, "line", { x1: "5", y1: "5", x2: "19", y2: "19", stroke: "#3a414d", "stroke-width": "2", "stroke-linecap": "round" })
+    ]);
+  }
   // Square with an up-right arrow — open profile in a new tab.
   function extLinkIcon(doc) {
     return iconSvg(doc, { stroke: "currentColor", sw: "2" }, [
@@ -596,14 +607,33 @@
     // Explicit positive training for AI slop, without un-hiding (cleaner signal than
     // overloading Show/Hide). Only when we have the scored features to learn from.
     if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
-      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc), "AI slop");
+      var confirmed = el.dataset.feedhackerConfirmedSlop === "1";
+      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc), confirmed ? "Confirmed AI slop" : "AI slop");
+      if (confirmed) { yes.disabled = true; yes.classList.add("feedhacker-confirmed"); }
       yes.addEventListener("click", function (ev) {
         ev.preventDefault(); ev.stopPropagation();
-        emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter)
-        dismissRow(el);                          // then retire the row from the feed
+        // Idempotent: one positive signal per post. The stub stays after confirming, so
+        // guard against a double/accidental re-click overweighting a single example.
+        if (el.dataset.feedhackerConfirmedSlop === "1") return;
+        el.dataset.feedhackerConfirmedSlop = "1";
+        emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter) — stub stays
+        yes.disabled = true; yes.title = "Confirmed AI slop";
+        yes.classList.add("feedhacker-confirmed");
       });
       actions.appendChild(yes);
     }
+
+    // Hide: retire just this row from the feed, without muting the author or training.
+    // Confirming AI slop no longer hides the row on its own — this is the explicit way to.
+    // Available on comment stubs too (they have no author/mute controls), so an AI-slop
+    // comment can still be cleared away. Label reads "Hide post" on posts, "Hide" on comments.
+    var hide = iconButton(doc, "feedhacker-hidepost", eyeOffIcon(doc),
+      markerCountWithin(el) >= 1 ? "Hide post" : "Hide");
+    hide.addEventListener("click", function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      dismissRow(el);
+    });
+    actions.appendChild(hide);
 
     appendAuthorActions(doc, el, stub, actions, settings);
 
@@ -616,7 +646,9 @@
     stub.appendChild(actions);
   }
   function revealWithExplainer(doc, el, stub, flags, settings) {
-    emitFeedback(el, flags, settings, 0);   // user disagreed: false positive
+    // Don't emit a contradictory false-positive signal if the user already confirmed this
+    // post is slop — revealing it after confirming is just "let me read it anyway".
+    if (el.dataset.feedhackerConfirmedSlop !== "1") emitFeedback(el, flags, settings, 0);
     if (markerCountWithin(el) >= 1) recordOutcome(settings, authorInfo(el), false);  // kept: author "shown"
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;

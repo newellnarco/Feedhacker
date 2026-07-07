@@ -143,24 +143,33 @@
   <details class="panel" open>
     <summary><h2>Post controls</h2></summary>
     <div class="panel-body">
-      <p class="muted" style="margin:0 0 12px;">The icon buttons on each hidden‑post stub. Clicking
-        <b>AI slop</b>, <b>Mute</b>, or <b>Always show</b> also tidies that row away to keep the list short.</p>
+      <p class="muted" style="margin:0 0 12px;">The icon buttons on each hidden‑post stub.
+        <b>Hide post</b> and <b>Mute</b> retire the row from your feed; <b>Always show</b> reveals the post
+        (and removes the stub). Confirming <b>AI slop</b> only trains the filter — it leaves the stub in place.</p>
       <table class="actions-key">
         <tbody>
           <tr>
             <td><svg viewBox="0 0 24 24" width="22" height="22" fill="#2f9e1e" aria-hidden="true"><path d="M12 2.2C13.2 4 12.8 6.2 14.6 6.4 15.4 4.8 18.2 5.6 17.4 7.6 19.4 7 20.8 9.4 18.8 10.6 21.2 11 21.6 14 19.2 14.6 21 16.2 19.4 18.6 17.4 17.4 17.2 19.6 14.4 20.4 13.4 18.4 12.6 20.8 9.4 20.8 9 18.4 7 19.6 4.8 17.8 6.4 16 4.2 15.8 3.4 12.8 5.6 11.8 3.8 10.4 4.8 7.6 7 8.2 7 6 9.6 5.2 10.8 7 10.6 4.8 10.6 3.4 12 2.2Z"/><circle cx="4.3" cy="5" r="1.5"/><circle cx="20" cy="19.4" r="1.2"/></svg></td>
             <td><span class="act-name">AI slop</span> — confirm this post really is AI slop. It trains the
-              filter (a stronger signal than “Show anyway”) and then hides the row.</td>
+              filter (a stronger signal than “Show anyway”). The stub stays put — use <b>Hide post</b>
+              to tidy it away.</td>
+          </tr>
+          <tr>
+            <td><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" fill="#fff" stroke="#5c6470" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="4" fill="#8a94a3" stroke="#5c6470" stroke-width="1.1"/><circle cx="12" cy="12" r="1.9" fill="#3a414d"/><line x1="5" y1="5" x2="19" y2="19" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><line x1="5" y1="5" x2="19" y2="19" stroke="#3a414d" stroke-width="2" stroke-linecap="round"/></svg></td>
+            <td><span class="act-name">Hide post</span> — retire just this one row from the feed, without
+              muting the author or training the filter. A quick way to clear a stub you’ve dealt with.</td>
           </tr>
           <tr>
             <td><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#d93a2f"/><rect x="9.4" y="5" width="5.2" height="8" rx="2.6" fill="#fff"/><path d="M7.5 11.4a4.5 4.5 0 0 0 9 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><line x1="12" y1="15.9" x2="12" y2="18.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><line x1="9" y1="18.6" x2="15" y2="18.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><line x1="6.2" y1="5.6" x2="18" y2="18.2" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/></svg></td>
-            <td><span class="act-name">Mute</span> — always hide this author (a soft block; posts just stop
-              appearing). Manage or undo under <b>Muted authors</b> below.</td>
+            <td><span class="act-name">Mute</span> — a <b>soft block</b>: you won’t see this author’s posts
+              again — they’re filtered out of your feed completely (works for people, companies, and schools).
+              Manage or undo under <b>Muted authors</b> below.</td>
           </tr>
           <tr>
             <td><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" fill="#fff" stroke="#141414" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="4.4" fill="#3e5f8a" stroke="#141414" stroke-width="1.1"/><circle cx="12" cy="12" r="2.1" fill="#15233b"/><circle cx="13.2" cy="10.9" r="0.85" fill="#fff"/></svg></td>
             <td><span class="act-name">Always show</span> — always show this author; never filter them
-              again. They’re added to the <b>Whitelist</b> below, where you can remove them.</td>
+              again. Their posts appear normally, with <b>no FeedHacker stub or controls</b>. They’re added
+              to the <b>Whitelist</b> below, where you can remove them.</td>
           </tr>
           <tr>
             <td><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#5f6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></td>
@@ -242,7 +251,9 @@
   <details class="panel" open>
     <summary><h2>Muted authors</h2></summary>
     <div class="panel-body">
-      <p class="muted" style="margin:0 0 8px;">Always hidden. Remove one to start seeing their posts again.</p>
+      <p class="muted" style="margin:0 0 8px;">Soft‑blocked — people, companies, or schools whose posts are
+        filtered out of your feed completely. Click the <b>×</b> next to a name to unmute and start seeing
+        their posts again.</p>
       <ul class="chiplist" id="muted-list"></ul>
     </div>
   </details>

@@ -144,6 +144,27 @@ test("scanComments collapses an AI-slop comment", () => {
   assert.ok(doc.querySelector(".comment").classList.contains("feedhacker-hidden"));
 });
 
+test("an AI-slop comment stub can be retired with Hide (confirm does not retire it)", () => {
+  const comment =
+    `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
+    `<div componentkey="comment-commentary_1">${SLOP_BODY}</div></div>`;
+  const doc = makeDoc(feedHtml(post(`<div>normal body</div>${comment}`)));
+  const seen = [];
+  feed.scanComments(doc, [], baseSettings({ hideSlopComments: true, onFeedback: (f, label) => seen.push(label) }));
+  const stub = doc.querySelector(".comment .feedhacker-stub");
+  assert.ok(stub, "comment gets a slop stub");
+  const confirm = stub.querySelector(".feedhacker-confirm");
+  confirm.click();
+  assert.deepStrictEqual(seen, [1], "confirm trains the filter");
+  assert.ok(!doc.querySelector(".comment").classList.contains("feedhacker-dismissing"), "confirm does not retire the comment");
+  const hide = stub.querySelector(".feedhacker-hidepost");
+  assert.ok(hide, "comment stub has a Hide control");
+  assert.strictEqual(hide.title, "Hide", "labelled 'Hide' for a comment");
+  hide.click();
+  assert.ok(doc.querySelector(".comment").classList.contains("feedhacker-dismissing"), "Hide retires the comment row");
+  assert.deepStrictEqual(seen, [1], "Hide emits no extra feedback");
+});
+
 test("scanComments is a no-op when the toggle is off", () => {
   const comment =
     `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
@@ -270,7 +291,7 @@ test("Always show button allowlists the author and reveals the post", () => {
   assert.strictEqual(el.querySelector(".feedhacker-stub"), null, "stub removed after allowing");
 });
 
-test("👍 confirm trains a positive without un-hiding", () => {
+test("👍 confirm trains a positive without un-hiding or retiring the row", () => {
   const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
   const seen = [];
@@ -280,7 +301,41 @@ test("👍 confirm trains a positive without un-hiding", () => {
   yes.click();
   assert.deepStrictEqual(seen, [1]);
   assert.ok(el.classList.contains("feedhacker-hidden"), "not un-hidden by confirming");
-  assert.ok(el.classList.contains("feedhacker-dismissing"), "row is retired from the feed after confirming slop");
+  assert.ok(!el.classList.contains("feedhacker-dismissing"), "confirming AI slop leaves the stub in place");
+});
+
+test("👍 confirm is idempotent — repeated clicks emit one positive", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const seen = [];
+  feed.consider(doc, el, [], baseSettings({ onFeedback: (f, label) => seen.push(label) }));
+  const yes = el.querySelector(".feedhacker-stub .feedhacker-confirm");
+  yes.click(); yes.click(); yes.click();
+  assert.deepStrictEqual(seen, [1], "only one positive training signal per post");
+  assert.ok(yes.disabled, "confirm button is disabled after confirming");
+});
+
+test("Show anyway after confirming slop does not emit a contradictory negative", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const seen = [];
+  feed.consider(doc, el, [], baseSettings({ onFeedback: (f, label) => seen.push(label) }));
+  const stub = el.querySelector(".feedhacker-stub");
+  stub.querySelector(".feedhacker-confirm").click();          // label 1
+  stub.querySelector(".feedhacker-show").click();             // reveal — must NOT emit label 0
+  assert.deepStrictEqual(seen, [1], "no contradictory false-positive after an explicit confirm");
+});
+
+test("Hide post retires the row without training or muting", () => {
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  const seen = [];
+  feed.consider(doc, el, [], baseSettings({ onFeedback: (f, label) => seen.push(label) }));
+  const hide = el.querySelector(".feedhacker-stub .feedhacker-hidepost");
+  assert.ok(hide, "hide-post button present");
+  hide.click();
+  assert.deepStrictEqual(seen, [], "hiding the post does not emit feedback");
+  assert.ok(el.classList.contains("feedhacker-dismissing"), "row is retired from the feed after Hide post");
 });
 
 test("firstBodyLine strips the actor name and returns a trimmed opening line", () => {
