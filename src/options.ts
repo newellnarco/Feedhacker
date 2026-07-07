@@ -45,10 +45,11 @@ function renderStatus(st) {
     else if (st["mute" + f.key]) active.push(f.label);
   });
   var extras: any[] = [];
-  if (st.aggressive) extras.push("aggressive slop");
   if (st.hideSlopComments) extras.push("hide slop comments");
   if (st.hideCompletely) extras.push("hide completely");
-  if (st.nameNames) extras.push(st.nameSample ? "names + sample" : "names");
+  if (st.nameNames && st.nameSample) extras.push("author + sample");
+  else if (st.nameNames) extras.push("author");
+  else if (st.nameSample) extras.push("sample");
   var el = byId("active-summary");
   el.textContent = "Active filters: " + (active.length ? active.join(", ") : "none") +
     (extras.length ? " · Options: " + extras.join(", ") : "");
@@ -161,24 +162,63 @@ function currentVersion() { try { return chrome.runtime.getManifest().version; }
 (function initUpdates() {
   var cur = byId("update-current");
   if (cur) cur.textContent = currentVersion();
-  var btn = byId("check-updates"), status = byId("update-status");
+  var btn = byId("check-updates"), status = byId("update-status"), now = byId("update-now");
   if (!btn || !status || !Update) return;
+
+  // "Update now" (download + apply with no restart) only works on the Windows sideload
+  // build, which alone carries the nativeMessaging permission + the local update helper.
+  var canSelfUpdate = false;
+  try { canSelfUpdate = (chrome.runtime.getManifest().permissions || []).indexOf("nativeMessaging") >= 0; } catch (e) {}
+  function showNow(show) { if (now) now.style.display = show ? "" : "none"; }
+  showNow(false);
+
   btn.addEventListener("click", function () {
     btn.disabled = true;
     var label = btn.textContent;
     btn.textContent = "Checking…";
+    showNow(false);
     Update.checkForUpdate(null, currentVersion()).then(function (res) {
-      status.textContent = res.updateAvailable
-        ? "Update available: v" + res.current + " → v" + res.latest +
-          ". Chrome Web Store installs update themselves. Windows installs: the daily auto‑update task " +
-          "fetches it — restart Chrome (or run installer\\update.bat) to apply. Manual Load‑unpacked installs: " +
-          "download the latest release and reload FeedHacker on chrome://extensions."
-        : "You're on the latest version (v" + res.current + ").";
+      if (!res.updateAvailable) {
+        status.textContent = "You're on the latest version (v" + res.current + ").";
+        return;
+      }
+      status.textContent = "Update available: v" + res.current + " → v" + res.latest + ". ";
+      if (canSelfUpdate) {
+        status.textContent += "Click “Update now” to download and apply it — no restart.";
+        showNow(true);
+      } else {
+        status.textContent += "Chrome Web Store installs update themselves. Manual installs: " +
+          "download the latest release and reload FeedHacker on chrome://extensions.";
+      }
     }).catch(function (e) {
       status.textContent = "Couldn't check for updates: " + ((e && e.message) || e);
     }).then(function () {
       btn.disabled = false;
       btn.textContent = label;
+    });
+  });
+
+  if (now) now.addEventListener("click", function () {
+    now.disabled = true;
+    var lbl = now.textContent;
+    now.textContent = "Updating…";
+    status.textContent = "Downloading the latest release…";
+    chrome.runtime.sendMessage({ type: "feedhacker:selfUpdate" }, function (res) {
+      var le = chrome.runtime.lastError;
+      if (le || !res) {
+        status.textContent = "Update failed: " + ((le && le.message) || "no response from the update helper.");
+        now.disabled = false; now.textContent = lbl; return;
+      }
+      if (res.ok && res.updated) {
+        status.textContent = "Updated to v" + res.version + " — reloading FeedHacker…";
+        // The extension reloads itself; this page will show the new version on refresh.
+      } else if (res.ok) {
+        status.textContent = "Already on the latest version (v" + res.version + ").";
+        showNow(false); now.disabled = false; now.textContent = lbl;
+      } else {
+        status.textContent = "Update failed: " + (res.error || "unknown error");
+        now.disabled = false; now.textContent = lbl;
+      }
     });
   });
 })();

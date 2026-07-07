@@ -18,44 +18,13 @@ FILTERS.forEach(function (f) {
   var m = document.createElement("button"); m.className = "ms"; m.textContent = "M"; m.dataset.key = "mute" + f.key; m.dataset.kind = "m";
   var s = document.createElement("button"); s.className = "ms"; s.textContent = "S"; s.dataset.key = "solo" + f.key; s.dataset.kind = "s";
   row.appendChild(name); row.appendChild(m); row.appendChild(s);
-  if (f.id === "sloppy") {   // Aggressive toggle sits next to AI slop
-    var a = document.createElement("button"); a.className = "ms"; a.textContent = "A"; a.dataset.key = "aggressive"; a.dataset.kind = "a";
-    a.title = "Aggressive: also apply broader, higher-false-positive AI-slop rules";
-    row.appendChild(a);
-  }
   box.appendChild(row);
 });
 
 function paint(b, on) {
-  var cls = b.dataset.kind === "m" ? "m-on" : b.dataset.kind === "s" ? "s-on" : "a-on";
+  var cls = b.dataset.kind === "m" ? "m-on" : "s-on";
   b.classList.toggle(cls, !!on);
 }
-
-// Aggressive is a modifier on the AI-slop Mute, not a filter of its own — it does
-// nothing unless AI slop is muted. So we couple them: clicking A also turns M on,
-// turning M off clears A, and A is dimmed (with a hint) whenever M is off.
-var aggBtn = document.querySelector('.ms[data-key="aggressive"]') as any;
-function paintAggAvailability(muteOn) {
-  if (!aggBtn) return;
-  aggBtn.classList.toggle("ms-dim", !muteOn);
-  aggBtn.title = muteOn
-    ? "Aggressive: also apply broader, higher-false-positive AI-slop rules"
-    : "Turn on Mute (M) for AI slop to use Aggressive";
-}
-
-// "+ sample" only adds to "Names" — it does nothing on its own. Couple them: the
-// sample box is disabled + grayed while Names is off, and turning Names off clears it.
-var namesBox = byId("nameNames");
-var sampleBox = byId("nameSample");
-function paintSampleAvailability(namesOn) {
-  sampleBox.disabled = !namesOn;
-  var row = sampleBox.closest(".row"); if (row) row.classList.toggle("row-dim", !namesOn);
-  if (!namesOn) sampleBox.checked = false;
-}
-namesBox.addEventListener("change", function () {
-  if (!namesBox.checked && sampleBox.checked) chrome.storage.sync.set({ nameSample: false });
-  paintSampleAvailability(namesBox.checked);
-});
 
 // Master enable/disable — pauses all filtering without uninstalling.
 var enabledBox = byId("enabled");
@@ -75,9 +44,6 @@ chrome.storage.sync.get(DEFAULTS, function (st) {
   paintMaster(st.enabled);
   document.querySelectorAll(".ms").forEach(function (b) { paint(b, st[b.dataset.key]); });
   DISPLAY.forEach(function (id) { byId(id).checked = !!st[id]; });
-  paintAggAvailability(st.muteSloppy);
-  if (st.nameSample && !st.nameNames) chrome.storage.sync.set({ nameSample: false });   // heal stale state
-  paintSampleAvailability(st.nameNames);
 });
 
 byId("open-options").addEventListener("click", function () {
@@ -105,15 +71,11 @@ document.querySelectorAll(".ms").forEach(function (b) {
     chrome.storage.sync.get(DEFAULTS, function (st) {
       var nv = !st[b.dataset.key];
       var patch: any = {}; patch[b.dataset.key] = nv;
-      // Couple Aggressive to the AI-slop Mute: A implies M; clearing M clears A.
-      if (b.dataset.key === "aggressive" && nv && !st.muteSloppy) patch.muteSloppy = true;
-      if (b.dataset.key === "muteSloppy" && !nv && st.aggressive) patch.aggressive = false;
       chrome.storage.sync.set(patch);
       for (var k in patch) {
         var btn = document.querySelector('.ms[data-key="' + k + '"]') as any;
         if (btn) paint(btn, patch[k]);
       }
-      paintAggAvailability(patch.muteSloppy != null ? patch.muteSloppy : st.muteSloppy);
     });
   });
 });

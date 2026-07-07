@@ -63,7 +63,6 @@
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; }
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
     .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
-    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
     .actions-key td { vertical-align: top; border-bottom: 1px solid #eef0f3; }
     .actions-key tr:last-child td { border-bottom: 0; }
     .actions-key td:first-child { width: 40px; text-align: center; padding-top: 9px; }
@@ -113,7 +112,7 @@
   <details class="panel" open>
     <summary><h2>Actions</h2></summary>
     <div class="panel-body">
-      <p class="muted" style="margin:0 0 12px;">The Mute / Solo / Aggressive buttons on each filter row in the
+      <p class="muted" style="margin:0 0 12px;">The Mute / Solo buttons on each filter row in the
         toolbar popup, and what they affect.</p>
       <table class="actions-key">
         <tbody>
@@ -128,12 +127,6 @@
             <td><span class="act-name">Solo</span> — the “show me just this” mode: shows only that type and hides
               everything else, so you can audit what a filter is catching. While any Solo is on it overrides the
               Mutes. <span class="muted">Example: Solo “Hiring posts” → your feed shows only hiring posts.</span></td>
-          </tr>
-          <tr>
-            <td><span class="ms a-on">A</span></td>
-            <td><span class="act-name">Aggressive</span> — AI slop only. Adds the broader, higher‑false‑positive
-              phrase rules (ones that match common words) on top of the curated banlist, catching more but with more
-              misfires.</td>
           </tr>
         </tbody>
       </table>
@@ -187,11 +180,12 @@
       <p class="muted" id="update-status">Running version <span id="update-current"></span>.</p>
       <div class="actions">
         <button id="check-updates">Check for updates</button>
+        <button id="update-now" style="display:none;">Update now</button>
         <a id="releases-link" href="https://github.com/newellnarco/Feedhacker/releases/latest" target="_blank" rel="noopener" style="align-self:center;">Releases ↗</a>
       </div>
       <p class="muted" style="margin:10px 0 0;">How updates arrive depends on how you installed:
         <b>Chrome Web Store</b> installs update automatically.
-        The <b>Windows</b> installer runs a daily task that downloads new releases from GitHub — you still need to <b>restart Chrome</b> (or run <code>installer\update.bat</code>) to apply them, since Chrome doesn't hot‑reload unpacked extensions.
+        The <b>Windows</b> installer registers a self‑update helper — when a new version is found, <b>Update now</b> downloads it and applies it instantly, with <b>no restart</b> (a daily task also updates in the background).
         A manual <b>Load unpacked</b> install: download the latest release and reload FeedHacker on <code>chrome://extensions</code>.</p>
     </div>
   </details>
@@ -227,8 +221,9 @@
 
       <h3 class="subhead">Flagged phrases <span class="muted" id="slop-phrase-count"></span></h3>
       <p class="muted" style="margin:0 0 10px; font-size:12.5px;">The curated banlist of words and phrases that read as
-        AI‑written. <b>Confirmed</b> phrases count strongly. <b>Aggressive</b> ones match common words and only apply
-        when you turn on “aggressive slop”. <b>Manual</b> entries are guidance only and are not auto‑matched.</p>
+        AI‑written. <b>Confirmed</b> phrases count strongly. <b>Aggressive</b> ones match common words, so they always
+        apply but count as weaker evidence — the sensitivity slider governs how much they filter. <b>Manual</b> entries
+        are guidance only and are not auto‑matched.</p>
       <input type="search" id="slop-phrase-search" placeholder="Filter phrases…" autocomplete="off">
       <ul class="phrases" id="slop-phrase-list"></ul>
     </div>

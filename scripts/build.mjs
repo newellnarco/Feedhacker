@@ -21,6 +21,24 @@ const JS_FILES = [
 // Static assets that ship as-is from the repo root.
 const STATIC_FILES = ["manifest.json", "popup.html", "options.html", "welcome.html", "styles.css", "claudisms.json"];
 
+// Sideload builds (the plain zip the self-updater downloads, and the Windows bundle) get
+// a fixed `key` so the unpacked extension ID is stable — native messaging must whitelist
+// an exact ID — plus the `nativeMessaging` permission so the options page's "Update now"
+// can drive the local update helper. This public key hashes to the unpacked ID
+// `fefpmbcbklcplgfohobiekbndohmfcpi`, which installer/windows/install.ps1 registers as
+// the native host's allowed origin. The Chrome Web Store package omits both (store
+// installs auto-update; it keeps the listing's permissions minimal).
+const SIDELOAD_KEY =
+  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAzHWqci7gZ86QXnY485kCGxv9DY6TBSn07wS9DFM5x2Plop4QqjfvMiFIJP6pJS1077CAAxHVnrSf639JmdfbBAyJvb9czLFO2Qcz5dwUIIvk//ZgNJjPpAD3CvNG1IIGU1ZJVfu11E8P51KhQIldjz11TC8IGECyA2clfSo3j/pyzgpssKapVXCm2gjjRzAQ3TZh4jJAl6UYs3DywpJfsVkUpG+lisardeKUIPmrm5FU58evIQwGJZ4+/DiASpWThELhyVeTpY9S5/NbM0J0KfkutCnxB7uYYX0ELcLHSiLCjjUdM617JqVgeyNxY6vYLka9pWT5Tlio7f9D5nfQIDAQAB";
+
+function patchManifestForSideload(manifestPath) {
+  const m = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  m.key = SIDELOAD_KEY;
+  m.permissions = m.permissions || [];
+  if (!m.permissions.includes("nativeMessaging")) m.permissions.push("nativeMessaging");
+  fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2) + "\n");
+}
+
 const OUT = "dist";
 const STAGE = path.join(OUT, "feedhacker");
 const WIN_STAGE = path.join(OUT, "feedhacker-win");
@@ -149,12 +167,19 @@ for (const f of STATIC_FILES) {
   copyFile(f, path.join(STAGE, f));
 }
 fs.cpSync("icons", path.join(STAGE, "icons"), { recursive: true });
-zipDir(STAGE, zipPath, "feedhacker"); // unzips to a feedhacker/ folder (Load unpacked)
 
-// Chrome Web Store upload package: same runtime files, but manifest.json at the ZIP
-// ROOT (no wrapping folder), which is what the Developer Dashboard requires.
+// Chrome Web Store upload package FIRST, from the CLEAN manifest (no key, no
+// nativeMessaging) — store installs auto-update and the listing stays minimal. manifest.json
+// sits at the ZIP ROOT (no wrapping folder), which the Developer Dashboard requires.
 rmrf(storeZip);
 zipDir(STAGE, storeZip);
+
+// Everything below is a SIDELOAD build. Bake in the fixed key + nativeMessaging so the
+// unpacked ID is stable and "Update now" can reach the local update helper. The plain
+// feedhacker-<version>.zip is what the self-updater re-downloads, so it must carry these
+// too — otherwise a self-update would swap in the store-clean manifest and change the ID.
+patchManifestForSideload(path.join(STAGE, "manifest.json"));
+zipDir(STAGE, zipPath, "feedhacker"); // unzips to a feedhacker/ folder (Load unpacked)
 
 // --- Windows one-click bundle: extension + installer scripts + docs ---
 rmrf(WIN_STAGE); rmrf(winZip);

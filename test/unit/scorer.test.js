@@ -71,8 +71,8 @@ test("banlist feature weights confirmed hits above aggressive ones", () => {
       { id: "a", category: "aggressive", aggressive: true, matchType: "literal", match: ["shape"] }
     ]
   });
-  const confirmed = scorer.extractFeatures("we delved into the data", { matchers: ms, aggressive: true }).banlist;
-  const aggr = scorer.extractFeatures("the shape of it", { matchers: ms, aggressive: true }).banlist;
+  const confirmed = scorer.extractFeatures("we delved into the data", { matchers: ms }).banlist;
+  const aggr = scorer.extractFeatures("the shape of it", { matchers: ms }).banlist;
   assert.ok(confirmed > aggr, "confirmed hit should carry more weight");
 });
 

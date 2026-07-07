@@ -128,9 +128,9 @@
   // Banlist tell is handled specially because it depends on the runtime matchers +
   // per-entry confidence (curated "confirmed" phrases count more than "aggressive"
   // common-word rules). Returned value is a saturating count of weighted hits.
-  function banlistValue(matchers, text, aggressive) {
+  function banlistValue(matchers, text) {
     if (!matchers || !matchers.length || !root.FeedHackerMatcher) return { value: 0, hits: [] };
-    var det = root.FeedHackerMatcher.findHitDetails(matchers, text, !!aggressive);
+    var det = root.FeedHackerMatcher.findHitDetails(matchers, text);
     if (!det.length) return { value: 0, hits: [] };
     var weight = 0, seen: any = {}, hits: any[] = [];
     for (var i = 0; i < det.length; i++) {
@@ -164,7 +164,7 @@
 
   var THRESHOLD = 0.5;
 
-  // Extract every feature value from text. opts: {matchers, aggressive}.
+  // Extract every feature value from text. opts: {matchers}.
   function extractFeatures(text, opts) {
     opts = opts || {};
     var out: any = {};
@@ -174,7 +174,7 @@
       return out;
     }
     var w = words(text);
-    var bl = banlistValue(opts.matchers, text, opts.aggressive);
+    var bl = banlistValue(opts.matchers, text);
     out.banlist = bl.value;
     out._hits = bl.hits;
     for (var i = 0; i < TELLS.length; i++) {

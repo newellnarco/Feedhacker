@@ -29,27 +29,25 @@ test("buildMatchers skips manual and keeps category/aggressive", () => {
 
 test("literal matcher uses word boundaries (no partial-word hits)", () => {
   const ms = matcher.buildMatchers(DATA);
-  assert.deepStrictEqual(matcher.findHits(ms, "please sit with this idea", false).includes("literal-a"), true);
-  // "shapeshifter" should NOT match the aggressive "shape" (boundary guard), and
-  // aggressive off means it's skipped anyway.
-  assert.strictEqual(matcher.findHits(ms, "a shapeshifter appeared", false).includes("aggr"), false);
+  assert.deepStrictEqual(matcher.findHits(ms, "please sit with this idea").includes("literal-a"), true);
+  // "shapeshifter" should NOT match the aggressive "shape" (boundary guard).
+  assert.strictEqual(matcher.findHits(ms, "a shapeshifter appeared").includes("aggr"), false);
 });
 
-test("aggressive matchers only fire when aggressive=true", () => {
+test("aggressive matchers always fire (sensitivity governs downstream, not a gate)", () => {
   const ms = matcher.buildMatchers(DATA);
-  assert.strictEqual(matcher.findHits(ms, "the shape of things", false).includes("aggr"), false);
-  assert.strictEqual(matcher.findHits(ms, "the shape of things", true).includes("aggr"), true);
+  assert.strictEqual(matcher.findHits(ms, "the shape of things").includes("aggr"), true);
 });
 
 test("minCount regex requires the threshold count", () => {
   const ms = matcher.buildMatchers(DATA);
-  assert.strictEqual(matcher.findHits(ms, "one 😀 two 😀", false).includes("emoji"), false);
-  assert.strictEqual(matcher.findHits(ms, "😀 😀 😀 party", false).includes("emoji"), true);
+  assert.strictEqual(matcher.findHits(ms, "one 😀 two 😀").includes("emoji"), false);
+  assert.strictEqual(matcher.findHits(ms, "😀 😀 😀 party").includes("emoji"), true);
 });
 
 test("findHitDetails returns matched text plus category/aggressive", () => {
   const ms = matcher.buildMatchers(DATA);
-  const det = matcher.findHitDetails(ms, "let's delve into this", false);
+  const det = matcher.findHitDetails(ms, "let's delve into this");
   const rx = det.find((d) => d.id === "rx");
   assert.ok(rx);
   assert.strictEqual(rx.category, "confirmed");

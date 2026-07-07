@@ -24,7 +24,7 @@ or removed entirely if you prefer.
 
 | Filter | What it catches |
 | --- | --- |
-| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. Includes an **Aggressive** mode for broader, higher‑false‑positive rules. |
+| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. The sensitivity slider dials how aggressively it filters. |
 | **Promoted posts** | Sponsored/"Promoted" posts. |
 | **Newsletter signups** | Newsletter subscribe funnels. |
 | **Hiring posts** | "We're hiring", `#hiring`, "view job" cards, etc. |
@@ -99,22 +99,23 @@ of the standard filters.
   signal with its plain‑English description and your current learned weight, plus
   the full curated phrase list (searchable) — so you can see exactly why a post is
   flagged.
-- **Actions legend** — an options‑page card explaining what the Mute / Solo /
-  Aggressive buttons each affect.
+- **Actions legend** — an options‑page card explaining what the Mute / Solo
+  buttons each affect.
 
 ### Extra options
 
 - **Enable / disable** — a master switch in the popup pauses all filtering
   without uninstalling.
-- **Names** — stub shows *who* posted plus the category.
-- **+ sample** — adds a line of the hidden post's text to the *Names* stub (three
-  lines: author, sample, category); available only when *Names* is on.
-- **Hide Hidden Content** — remove matched posts entirely (no placeholder).
+- **Show author** — stub shows *who* posted plus the category.
+- **Show sample** — previews a line of the hidden post's text in the stub (with the
+  author line too when *Show author* is on). Works on its own.
+- **Hide hidden content** — remove matched posts entirely (no placeholders).
+- **Collapse hidden content** — digest runs of hidden posts into one summary bar.
 - **Hide AI‑slop comments** — also collapse AI‑slop comments under posts.
 - **Toolbar badge** — shows how many posts are hidden on the page, or a red `!`
   if something errored.
 - **Options page** — properties/details, per‑filter activity, and the error log
-  (open it from the popup's "Details & activity" link).
+  (open it from the popup's "Advanced Settings" link).
 - **"Load more posts"** — a grafted button that drives LinkedIn's own
   infinite‑scroll loader so a batch that's entirely filtered doesn't dead‑end
   your feed.

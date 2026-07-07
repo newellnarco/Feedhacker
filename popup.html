@@ -4,27 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { width: 300px; margin: 0; padding: 13px 15px;
+    body { width: 328px; margin: 0; padding: 13px 15px;
       font: 13.5px/1.4 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; }
-    h1 { font-size: 15px; margin: 0 0 2px; }
-    .legend { font-size: 11px; color: #8a94a3; margin: 0 0 9px; }
-    .legend b { color: #6a7686; }
+    .hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; }
+    h1 { font-size: 15px; margin: 0; }
+    .enable { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700;
+      padding: 4px 9px; border: 1px solid #e2e4e8; border-radius: 7px; background: #fafbfc; }
+    .enable input { width: 15px; height: 15px; }
+    .enable.off { background: #fdecec; border-color: #f5c2c2; }
+    #paused-note { display: none; font-size: 11.5px; color: #b42318; margin: 3px 0 0; }
+    #paused-note.show { display: block; }
+    .section { display: flex; align-items: center; justify-content: space-between;
+      font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+      color: #6a7686; background: #f1f3f5; border-radius: 6px; padding: 5px 9px; margin: 13px 0 7px; }
+    .section .key { font-weight: 400; text-transform: none; letter-spacing: 0; color: #8a94a3; }
+    .section .key b { color: #6a7686; }
+    .section.ai { background: #e8f0fe; color: #1a56c4; }   /* AI-slop gets its own blue header */
     .frow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
     .fname { flex: 1; }
+    .slabel { color: #6a7686; }
     .ms { width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; cursor: pointer; }
     .ms:hover { background: #f3f4f6; }
-    .ms.ms-dim { opacity: .4; }   /* Aggressive rides on Mute — dimmed while AI slop isn't muted */
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
     .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
-    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
-    .group-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
-      color: #8a94a3; margin: 12px 0 3px; }
     label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
-    label.row input { margin-top: 2px; }
-    label.row.row-dim { opacity: .45; cursor: default; }   /* "+ sample" is grayed until Names is on */
+    label.row input { margin-top: 2px; flex: 0 0 auto; }
+    label.row .t { flex: 1; min-width: 0; }   /* label text + hint flow as one line, not separate flex items */
     .muted { color: #8a94a3; }
-    .hint { margin: 11px 0 0; font-size: 11.5px; color: #6a7686; }
     #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
       background: #fdecec; border: 1px solid #f5c2c2; }
     #errors.show { display: block; }
@@ -38,36 +45,31 @@
     .linklike { background: none; border: 0; color: #0a66c2; cursor: pointer; font-size: 11.5px; padding: 0; }
     .linklike:hover { text-decoration: underline; }
     .footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .master { display: flex; align-items: center; gap: 8px; padding: 7px 9px; margin: 0 0 10px;
-      border: 1px solid #e2e4e8; border-radius: 8px; background: #fafbfc; }
-    .master input { width: 16px; height: 16px; }
-    .master .lbl { font-weight: 700; }
-    .master.off { background: #fdecec; border-color: #f5c2c2; }
-    #paused-note { display: none; font-size: 11.5px; color: #b42318; margin: -6px 0 8px; }
-    #paused-note.show { display: block; }
   </style>
 </head>
 <body>
-  <h1>FeedHacker</h1>
-  <label class="master" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
+  <div class="hdr">
+    <h1>FeedHacker</h1>
+    <label class="enable" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
+  </div>
   <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
-  <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo &nbsp;·&nbsp; <b>A</b> aggressive slop</div>
+
+  <div class="section"><span>Posts</span><span class="key"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo</span></div>
   <div id="filters"></div>
 
-  <div class="group-label">AI-slop sensitivity</div>
+  <div class="section ai"><span>AI-slop</span></div>
   <div class="frow">
+    <span class="slabel">Sensitivity</span>
     <input type="range" id="slopThreshold" min="0.2" max="0.8" step="0.05" style="flex:1">
-    <span id="slopThresholdVal" class="muted" style="width:64px; text-align:right"></span>
+    <span id="slopThresholdVal" class="muted" style="white-space:nowrap; text-align:right"></span>
   </div>
+  <label class="row"><input type="checkbox" id="hideSlopComments"><span class="t">Hide AI-slop comments</span></label>
 
-  <div class="group-label">Display</div>
-  <label class="row"><input type="checkbox" id="nameNames"> Names <span class="muted">(who + category)</span></label>
-  <label class="row"><input type="checkbox" id="nameSample"> + sample <span class="muted">(adds a line of the hidden text; needs Names)</span></label>
-  <label class="row"><input type="checkbox" id="hideCompletely"> Hide Hidden Content <span class="muted">(no placeholder)</span></label>
-  <label class="row"><input type="checkbox" id="digest"> Digest runs of hidden posts <span class="muted">(one summary bar)</span></label>
-
-  <div class="group-label">Comments</div>
-  <label class="row"><input type="checkbox" id="hideSlopComments"> Hide AI-slop comments</label>
+  <div class="section"><span>Feed display</span></div>
+  <label class="row"><input type="checkbox" id="hideCompletely"><span class="t">Hide hidden content <span class="muted">(no placeholders)</span></span></label>
+  <label class="row"><input type="checkbox" id="digest"><span class="t">Collapse hidden content <span class="muted">(one summary bar)</span></span></label>
+  <label class="row"><input type="checkbox" id="nameNames"><span class="t">Show author <span class="muted">(who + category)</span></span></label>
+  <label class="row"><input type="checkbox" id="nameSample"><span class="t">Show sample <span class="muted">(of hidden post)</span></span></label>
 
   <div id="errors">
     <p class="err-title">⚠ FeedHacker hit an error</p>
@@ -76,7 +78,7 @@
   </div>
 
   <div class="footer">
-    <button type="button" class="linklike" id="open-options">Details &amp; activity</button>
+    <button type="button" class="linklike" id="open-options">Advanced Settings</button>
     <button type="button" class="linklike" id="reset-learning">Reset AI-slop learning</button>
   </div>
 

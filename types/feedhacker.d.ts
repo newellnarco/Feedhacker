@@ -61,7 +61,6 @@ interface FhLogEntry { ts: number; iso: string; context: string; msg: string; so
 // long tail of per-filter mute*/solo* booleans use the index signature.
 interface FhSettings {
   enabled?: boolean;
-  aggressive?: boolean;
   nameNames?: boolean;
   hideCompletely?: boolean;
   hideSlopComments?: boolean;

@@ -240,7 +240,6 @@
       settings && settings.slopWeights,
       {
         matchers: matchers,
-        aggressive: settings && settings.aggressive,
         threshold: settings && typeof settings.slopThreshold === "number" ? settings.slopThreshold : undefined
       }
     );
@@ -554,18 +553,22 @@
     stub.appendChild(wrap);
   }
 
-  // Three-line stub for the "Name + sample + category" display mode: who wrote it,
-  // a sample of the hidden text, and the filter category — stacked. A richer superset
-  // of "Name names", so it takes precedence and replaces the single-line label +
-  // inline preview (no echo). Sample/name come from the datasets captured at hide time.
-  function appendNameSampleStub(doc, el, stub, flags) {
+  // Multi-line stub for the "Show sample" display mode: a sample of the hidden text
+  // and the filter category, with an author line on top when "Show author" is also on.
+  // Takes precedence over the single-line label + inline preview (no echo). Sample and
+  // author come from the datasets captured at hide time.
+  function appendNameSampleStub(doc, el, stub, flags, settings) {
     stub.classList.add("feedhacker-has-namesample");
     var block = doc.createElement("span");
     block.className = "feedhacker-namesample";
-    var name = doc.createElement("b");
-    name.className = "feedhacker-ns-name";
-    name.textContent = el.dataset.feedhackerActor || getActor(el) || "Someone";
-    block.appendChild(name);
+    // The author line is shown only when "Show author" is on; "Show sample" alone
+    // renders just the sample + category (the two settings are independent).
+    if (settings.nameNames) {
+      var name = doc.createElement("b");
+      name.className = "feedhacker-ns-name";
+      name.textContent = el.dataset.feedhackerActor || getActor(el) || "Someone";
+      block.appendChild(name);
+    }
     var sample = el.dataset.feedhackerPreview || "";
     if (sample) {
       var s = doc.createElement("span");
@@ -585,10 +588,11 @@
     stub.className = "feedhacker-stub";
     stub.removeAttribute("title");
     if (hasFlag(flags, "sloppy")) stub.title = "AI slop";   // reason on hover, not as text
-    // "+ sample" is an add-on to "Names" — the three-line stub only applies when both
-    // are on. (nameNames alone stays the one-line "Name (category)" label.)
-    if (settings.nameSample && settings.nameNames) {
-      appendNameSampleStub(doc, el, stub, flags);
+    // "Show sample" renders the multi-line stub (sample + category, plus the author
+    // line when "Show author" is also on). "Show author" alone stays the one-line
+    // "Name (category)" label handled by collapsedText below.
+    if (settings.nameSample) {
+      appendNameSampleStub(doc, el, stub, flags, settings);
     } else {
       var text = collapsedText(el, flags, settings);
       if (text) {
@@ -848,7 +852,7 @@
       if (el.dataset.feedhackerScanned === "1" && Number(el.dataset.feedhackerLen || 0) >= len) continue;
       el.dataset.feedhackerScanned = "1"; el.dataset.feedhackerLen = String(len);
       if (!root.FeedHackerScorer) continue;
-      var res = root.FeedHackerScorer.classify(raw, settings.slopWeights, { matchers: matchers, aggressive: !!settings.aggressive });
+      var res = root.FeedHackerScorer.classify(raw, settings.slopWeights, { matchers: matchers });
       if (!res.isSlop) continue;
       var cActor = getActor(el);
       el.dataset.feedhackerActor = cActor;

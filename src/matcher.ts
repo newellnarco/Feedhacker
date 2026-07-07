@@ -33,12 +33,11 @@
     return out;
   }
 
-  function findHits(matchers, text, aggressive) {
+  function findHits(matchers, text) {
     var hits: any[] = [];
     if (!text) return hits;
     for (var i = 0; i < matchers.length; i++) {
       var m = matchers[i];
-      if (m.aggressive && !aggressive) continue;
       if (m.minCount) {
         if (m.reCount && (text.match(m.reCount) || []).length >= m.minCount) hits.push(m.id);
         continue;
@@ -51,12 +50,11 @@
 
   // Like findHits, but returns [{id, text}] with the actual matched substring,
   // used to explain to the user WHY a post was flagged.
-  function findHitDetails(matchers, text, aggressive) {
+  function findHitDetails(matchers, text) {
     var out: any[] = [];
     if (!text) return out;
     for (var i = 0; i < matchers.length; i++) {
       var m = matchers[i];
-      if (m.aggressive && !aggressive) continue;
       if (m.minCount) {
         var cnt = m.reCount ? (text.match(m.reCount) || []).length : 0;
         if (cnt >= m.minCount) out.push({ id: m.id, text: String(cnt), category: m.category, aggressive: m.aggressive });
