@@ -180,11 +180,12 @@
       <p class="muted" id="update-status">Running version <span id="update-current"></span>.</p>
       <div class="actions">
         <button id="check-updates">Check for updates</button>
+        <button id="update-now" style="display:none;">Update now</button>
         <a id="releases-link" href="https://github.com/newellnarco/Feedhacker/releases/latest" target="_blank" rel="noopener" style="align-self:center;">Releases ↗</a>
       </div>
       <p class="muted" style="margin:10px 0 0;">How updates arrive depends on how you installed:
         <b>Chrome Web Store</b> installs update automatically.
-        The <b>Windows</b> installer runs a daily task that downloads new releases from GitHub — you still need to <b>restart Chrome</b> (or run <code>installer\update.bat</code>) to apply them, since Chrome doesn't hot‑reload unpacked extensions.
+        The <b>Windows</b> installer registers a self‑update helper — when a new version is found, <b>Update now</b> downloads it and applies it instantly, with <b>no restart</b> (a daily task also updates in the background).
         A manual <b>Load unpacked</b> install: download the latest release and reload FeedHacker on <code>chrome://extensions</code>.</p>
     </div>
   </details>

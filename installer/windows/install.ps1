@@ -65,6 +65,30 @@ if (-not $NoSchedule) {
   } catch { Warn "Could not register the scheduled task; you can still update by running update.bat." }
 }
 
+# --- Native-messaging host: lets the extension's "Update now" button self-update ---
+# The extension messages this host, which downloads the latest release and refreshes the
+# files; the extension then reloads itself with no Chrome restart. Per-user (HKCU), no
+# admin. The extension ID below is fixed by the "key" baked into the sideload build's
+# manifest (see scripts/build.mjs) — keep the two in sync.
+try {
+  $hostName = "com.feedhacker.updater"
+  $extId    = "fefpmbcbklcplgfohobiekbndohmfcpi"
+  $hostBat  = Join-Path $Inst "updater-host.bat"
+  $hostJson = Join-Path $Inst "$hostName.json"
+  $spec = [ordered]@{
+    name            = $hostName
+    description     = "FeedHacker self-update helper"
+    path            = $hostBat
+    type            = "stdio"
+    allowed_origins = @("chrome-extension://$extId/")
+  }
+  ($spec | ConvertTo-Json) | Set-Content -Path $hostJson -Encoding ASCII
+  $reg = "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName"
+  New-Item -Path $reg -Force | Out-Null
+  Set-ItemProperty -Path $reg -Name "(Default)" -Value $hostJson
+  Info "Registered the self-update helper — 'Update now' in the extension works without a restart."
+} catch { Warn "Could not register the self-update helper; 'Update now' will fall back to update.bat." }
+
 # --- 3. One-time Load unpacked (Chrome blocks silent off-store installs) ---
 Set-Clipboard -Value $Ext
 $chrome = Find-Chrome
@@ -81,5 +105,5 @@ Write-Host "   3. Paste the path (Ctrl+V) in the dialog and Select Folder."
 Write-Host "   4. Click the puzzle icon and pin FeedHacker."
 Write-Host "===============================================" -ForegroundColor White
 Write-Host ""
-Info "Installed. Updates download automatically; new files load when you restart Chrome."
+Info "Installed. Updates download automatically; or use 'Update now' in the extension's Advanced Settings to update and apply instantly — no restart."
 Read-Host "Press Enter to close"

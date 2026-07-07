@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { width: 300px; margin: 0; padding: 13px 15px;
+    body { width: 328px; margin: 0; padding: 13px 15px;
       font: 13.5px/1.4 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; }
     .hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; }
     h1 { font-size: 15px; margin: 0; }
@@ -29,7 +29,8 @@
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
     .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
     label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
-    label.row input { margin-top: 2px; }
+    label.row input { margin-top: 2px; flex: 0 0 auto; }
+    label.row .t { flex: 1; min-width: 0; }   /* label text + hint flow as one line, not separate flex items */
     .muted { color: #8a94a3; }
     #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
       background: #fdecec; border: 1px solid #f5c2c2; }
@@ -60,15 +61,15 @@
   <div class="frow">
     <span class="slabel">Sensitivity</span>
     <input type="range" id="slopThreshold" min="0.2" max="0.8" step="0.05" style="flex:1">
-    <span id="slopThresholdVal" class="muted" style="width:88px; text-align:right"></span>
+    <span id="slopThresholdVal" class="muted" style="white-space:nowrap; text-align:right"></span>
   </div>
-  <label class="row"><input type="checkbox" id="hideSlopComments"> Hide AI-slop comments</label>
+  <label class="row"><input type="checkbox" id="hideSlopComments"><span class="t">Hide AI-slop comments</span></label>
 
   <div class="section"><span>Feed display</span></div>
-  <label class="row"><input type="checkbox" id="hideCompletely"> Hide hidden content <span class="muted">(no placeholders)</span></label>
-  <label class="row"><input type="checkbox" id="digest"> Collapse hidden content <span class="muted">(one summary bar)</span></label>
-  <label class="row"><input type="checkbox" id="nameNames"> Show author <span class="muted">(who + category)</span></label>
-  <label class="row"><input type="checkbox" id="nameSample"> Show sample <span class="muted">(of hidden post)</span></label>
+  <label class="row"><input type="checkbox" id="hideCompletely"><span class="t">Hide hidden content <span class="muted">(no placeholders)</span></span></label>
+  <label class="row"><input type="checkbox" id="digest"><span class="t">Collapse hidden content <span class="muted">(one summary bar)</span></span></label>
+  <label class="row"><input type="checkbox" id="nameNames"><span class="t">Show author <span class="muted">(who + category)</span></span></label>
+  <label class="row"><input type="checkbox" id="nameSample"><span class="t">Show sample <span class="muted">(of hidden post)</span></span></label>
 
   <div id="errors">
     <p class="err-title">⚠ FeedHacker hit an error</p>

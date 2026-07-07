@@ -28,3 +28,11 @@ test("host permission stays narrowed (no broad https://*/*)", () => {
 test("no self-hosted update_url (the Web Store manages updates)", () => {
   assert.strictEqual(manifest.update_url, undefined, "remove update_url before publishing to the store");
 });
+
+test("base manifest stays store-clean: no nativeMessaging, no key", () => {
+  // These are injected only into the sideload builds by scripts/build.mjs so the Chrome
+  // Web Store package keeps a minimal permission set (store installs auto-update).
+  assert.ok(!(manifest.permissions || []).includes("nativeMessaging"),
+    "nativeMessaging must not be in the store manifest — it's a sideload-only permission");
+  assert.strictEqual(manifest.key, undefined, "the manifest `key` is sideload-only; keep it out of the store manifest");
+});

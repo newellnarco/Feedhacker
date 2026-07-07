@@ -13,6 +13,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.0]
 
+### Added
+- **One-click "Update now" (Windows install, no restart).** In **Advanced Settings →
+  Updates**, *Check for updates* now reveals an **Update now** button when a newer
+  release exists. It drives the whole update from inside the extension: a per-user
+  native-messaging helper (registered by the Windows installer, no admin) downloads the
+  latest green release, then the extension reloads itself via `chrome.runtime.reload()`
+  — the new version applies instantly, with **no Chrome restart** and no waiting for the
+  daily task. Windows sideload build only; the Chrome Web Store build is unchanged
+  (Google auto-updates store installs) and carries no extra permission.
+
 ### Changed
 - **Removed the per-filter "Aggressive" (A) toggle.** The AI-slop **sensitivity
   slider** is now the single control for how aggressively slop is filtered. The
@@ -28,6 +38,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   - **AI-slop** gets its own section holding the sensitivity slider and *Hide AI-slop comments*.
   - **Feed display** groups the stub options.
   - Footer link **"Details & activity" → "Advanced Settings"**.
+  - Slightly wider popup; each option's label + hint stays on one line (no mid-label wrapping).
 - **Clearer display labels.** *Names → "Show author"*, *+ sample → "Show sample"*,
   *Hide Hidden Content → "Hide hidden content"*, *Digest runs → "Collapse hidden content"*.
 - **"Show sample" now works on its own** — it no longer requires "Show author"; with

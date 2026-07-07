@@ -58,6 +58,20 @@ the unpacked path never changes, Chrome loads the refreshed version the next tim
 starts (or when you click the reload icon on the extension card). Activity is logged to
 `%LOCALAPPDATA%\FeedHacker\update.log`.
 
+### Update now, from inside the extension (no restart)
+
+The installer also registers a per-user **native-messaging host**
+(`com.feedhacker.updater`, HKCU, no admin) so you don't have to wait for the daily task
+or restart Chrome. In the extension's **Advanced Settings → Updates**, click **Check for
+updates**; if a newer release exists, an **Update now** button appears. Clicking it messages
+the host, which runs the same `update.ps1` download, and then the extension calls
+`chrome.runtime.reload()` to load the new files **immediately — no Chrome restart**.
+
+This works only for the Windows sideload build, which alone ships the `nativeMessaging`
+permission and a fixed manifest `key` (so the unpacked extension ID is stable — native
+messaging must whitelist an exact ID). The Chrome Web Store build omits both; store
+installs are auto-updated by Google. `uninstall.bat` removes the host registration.
+
 ## Windows `.msi`
 
 Releases also attach a best-effort **`FeedHacker-<version>.msi`** (built in CI with WiX).

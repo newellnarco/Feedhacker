@@ -26,10 +26,45 @@ function paintError(tabId, entry) {
   } catch (e) {}
 }
 
-chrome.runtime.onMessage.addListener(function (msg, sender) {
+// Self-update via the native-messaging helper (Windows sideload installs only): the
+// helper downloads the latest release and refreshes the files on disk, then we reload
+// the extension so the new version loads with no Chrome restart. Falls back cleanly
+// (an error reply) when the helper isn't installed or the build lacks nativeMessaging.
+function runSelfUpdate(done) {
+  var replied = false;
+  var reply = function (r) { if (!replied) { replied = true; try { done(r); } catch (e) {} } };
+  if (!chrome.runtime.connectNative) { reply({ ok: false, error: "This build can't self-update (no native messaging)." }); return; }
+  var port;
+  try { port = chrome.runtime.connectNative("com.feedhacker.updater"); }
+  catch (e: any) { reply({ ok: false, error: (e && e.message) || "Could not start the update helper." }); return; }
+  port.onMessage.addListener(function (resp) {
+    if (resp && resp.ok) {
+      reply({ ok: true, updated: !!resp.updated, version: resp.version });
+      // Reload after the reply reaches the options page; for an unpacked extension this
+      // re-reads the refreshed files from disk — the whole point (no restart).
+      if (resp.updated) setTimeout(function () { try { chrome.runtime.reload(); } catch (e) {} }, 500);
+    } else {
+      reply({ ok: false, error: (resp && resp.error) || "The update helper reported a failure." });
+    }
+    try { port.disconnect(); } catch (e) {}
+  });
+  port.onDisconnect.addListener(function () {
+    var le = chrome.runtime.lastError;
+    reply({ ok: false, error: (le && le.message) || "Update helper not found — run the Windows installer, or use installer\\update.bat." });
+  });
+  try { port.postMessage({ action: "update" }); }
+  catch (e: any) { reply({ ok: false, error: (e && e.message) || "Could not message the update helper." }); }
+}
+
+chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (!sender || sender.id !== chrome.runtime.id) return;   // only our own content scripts
   if (!msg) return;
   var tabId = sender.tab && sender.tab.id;
+
+  if (msg.type === "feedhacker:selfUpdate") {
+    runSelfUpdate(sendResponse);
+    return true;   // keep the channel open for the async native-host reply
+  }
 
   if (msg.type === "feedhacker:count") {
     if (tabId == null) return;

@@ -24,6 +24,9 @@ $Root = Join-Path $env:LOCALAPPDATA "FeedHacker"
 schtasks /Delete /F /TN "FeedHacker Auto-Update" | Out-Null
 Info "Removed the auto-update scheduled task."
 
+Remove-Item -Path "HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.feedhacker.updater" -Force -ErrorAction SilentlyContinue | Out-Null
+Info "Removed the self-update helper registration."
+
 $chrome = Find-Chrome
 if ($chrome) { Start-Process $chrome "chrome://extensions/" }
 Write-Host ""
