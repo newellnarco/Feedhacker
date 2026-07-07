@@ -183,7 +183,7 @@ jobs:
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
           CWS_AUTO_PUBLISH: ${{ vars.CWS_AUTO_PUBLISH }}
-          EXTENSION_ID: djfbniehjjngpkimngegnjdeamfofnoa   # public id from the store URL
+          EXTENSION_ID: kccajfoghkplakndamlohpepopdpelkb   # public id from the store URL
         run: |
           set -e
           ARGS=(upload

@@ -4,7 +4,7 @@ All notable changes to FeedHacker — features and bug fixes, newest first.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 `manifest.json` and the Git tags / GitHub Releases.
 
-**Install:** [Chrome Web Store](https://chromewebstore.google.com/detail/feedhacker/djfbniehjjngpkimngegnjdeamfofnoa)
+**Install:** [Chrome Web Store](https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb)
 · [latest release](https://github.com/newellnarco/Feedhacker/releases/latest)
 
 > Maintaining this file: add entries under **Unreleased** as you work, then on
