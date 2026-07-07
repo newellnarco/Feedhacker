@@ -40,6 +40,7 @@
 
 .feedhacker-confirm { color: #2f9e1e; }                                  /* green splat */
 .feedhacker-confirm:hover:not([disabled]) { background: #eefaf3; border-color: #b7e2cd; }
+.feedhacker-confirm.feedhacker-confirmed { background: #eefaf3; border-color: #b7e2cd; opacity: 1; }  /* confirmed */
 .feedhacker-muteauthor:hover:not([disabled]) { color: #b42318; background: #fdecec; border-color: #e2b6b6; }
 .feedhacker-allow { color: #0a66c2; }                                     /* eye */
 .feedhacker-allow:hover:not([disabled]) { background: #e6eefb; border-color: #a8c6ee; }

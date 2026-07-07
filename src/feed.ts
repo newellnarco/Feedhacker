@@ -607,24 +607,33 @@
     // Explicit positive training for AI slop, without un-hiding (cleaner signal than
     // overloading Show/Hide). Only when we have the scored features to learn from.
     if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
-      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc), "AI slop");
+      var confirmed = el.dataset.feedhackerConfirmedSlop === "1";
+      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc), confirmed ? "Confirmed AI slop" : "AI slop");
+      if (confirmed) { yes.disabled = true; yes.classList.add("feedhacker-confirmed"); }
       yes.addEventListener("click", function (ev) {
         ev.preventDefault(); ev.stopPropagation();
+        // Idempotent: one positive signal per post. The stub stays after confirming, so
+        // guard against a double/accidental re-click overweighting a single example.
+        if (el.dataset.feedhackerConfirmedSlop === "1") return;
+        el.dataset.feedhackerConfirmedSlop = "1";
         emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter) — stub stays
+        yes.disabled = true; yes.title = "Confirmed AI slop";
+        yes.classList.add("feedhacker-confirmed");
       });
       actions.appendChild(yes);
     }
 
-    // Hide post: retire just this row from the feed, without muting the author or training.
+    // Hide: retire just this row from the feed, without muting the author or training.
     // Confirming AI slop no longer hides the row on its own — this is the explicit way to.
-    if (markerCountWithin(el) >= 1) {
-      var hide = iconButton(doc, "feedhacker-hidepost", eyeOffIcon(doc), "Hide post");
-      hide.addEventListener("click", function (ev) {
-        ev.preventDefault(); ev.stopPropagation();
-        dismissRow(el);
-      });
-      actions.appendChild(hide);
-    }
+    // Available on comment stubs too (they have no author/mute controls), so an AI-slop
+    // comment can still be cleared away. Label reads "Hide post" on posts, "Hide" on comments.
+    var hide = iconButton(doc, "feedhacker-hidepost", eyeOffIcon(doc),
+      markerCountWithin(el) >= 1 ? "Hide post" : "Hide");
+    hide.addEventListener("click", function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      dismissRow(el);
+    });
+    actions.appendChild(hide);
 
     appendAuthorActions(doc, el, stub, actions, settings);
 
@@ -637,7 +646,9 @@
     stub.appendChild(actions);
   }
   function revealWithExplainer(doc, el, stub, flags, settings) {
-    emitFeedback(el, flags, settings, 0);   // user disagreed: false positive
+    // Don't emit a contradictory false-positive signal if the user already confirmed this
+    // post is slop — revealing it after confirming is just "let me read it anyway".
+    if (el.dataset.feedhackerConfirmedSlop !== "1") emitFeedback(el, flags, settings, 0);
     if (markerCountWithin(el) >= 1) recordOutcome(settings, authorInfo(el), false);  // kept: author "shown"
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;
