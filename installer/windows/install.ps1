@@ -1,4 +1,4 @@
-# FeedHacker — Windows installer (no admin, no build, no source).
+# FeedHacker - Windows installer (no admin, no build, no source).
 # Installs the PREBUILT extension into %LOCALAPPDATA%\FeedHacker\extension, registers a
 # per-user daily auto-update task (pulls the latest GREEN release from GitHub), then
 # guides the one-time "Load unpacked" click Chrome requires for off-store extensions.
@@ -38,10 +38,10 @@ Info "Install location: $Root"
 # use it for an instant, offline install. Otherwise download the latest GitHub release.
 $bundled = Join-Path $PSScriptRoot "..\feedhacker"
 if (Test-Path (Join-Path $bundled "manifest.json")) {
-  Info "Installing the bundled prebuilt extension…"
+  Info "Installing the bundled prebuilt extension..."
   Copy-ExtensionInto -Src $bundled -ExtDir $Ext
 } else {
-  Info "Downloading the latest green release from GitHub…"
+  Info "Downloading the latest green release from GitHub..."
   try { Sync-LatestRelease -Repo $Repo -ExtDir $Ext -Force -Log { param($m) Info $m } | Out-Null }
   catch { Die ("Could not download the extension: " + $_.Exception.Message) }
 }
@@ -69,7 +69,7 @@ if (-not $NoSchedule) {
 # The extension messages this host, which downloads the latest release and refreshes the
 # files; the extension then reloads itself with no Chrome restart. Per-user (HKCU), no
 # admin. The extension ID below is fixed by the "key" baked into the sideload build's
-# manifest (see scripts/build.mjs) — keep the two in sync.
+# manifest (see scripts/build.mjs) - keep the two in sync.
 try {
   $hostName = "com.feedhacker.updater"
   $extId    = "fefpmbcbklcplgfohobiekbndohmfcpi"
@@ -86,13 +86,13 @@ try {
   $reg = "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName"
   New-Item -Path $reg -Force | Out-Null
   Set-ItemProperty -Path $reg -Name "(Default)" -Value $hostJson
-  Info "Registered the self-update helper — 'Update now' in the extension works without a restart."
+  Info "Registered the self-update helper - 'Update now' in the extension works without a restart."
 } catch { Warn "Could not register the self-update helper; 'Update now' will fall back to update.bat." }
 
 # --- 3. One-time Load unpacked (Chrome blocks silent off-store installs) ---
 Set-Clipboard -Value $Ext
 $chrome = Find-Chrome
-if ($chrome) { Start-Process $chrome "chrome://extensions/" } else { Warn "Chrome not found automatically — open chrome://extensions manually." }
+if ($chrome) { Start-Process $chrome "chrome://extensions/" } else { Warn "Chrome not found automatically - open chrome://extensions manually." }
 
 Write-Host ""
 Write-Host "================ ONE-TIME SETUP ================" -ForegroundColor White
@@ -105,5 +105,5 @@ Write-Host "   3. Paste the path (Ctrl+V) in the dialog and Select Folder."
 Write-Host "   4. Click the puzzle icon and pin FeedHacker."
 Write-Host "===============================================" -ForegroundColor White
 Write-Host ""
-Info "Installed. Updates download automatically; or use 'Update now' in the extension's Advanced Settings to update and apply instantly — no restart."
+Info "Installed. Updates download automatically; or use 'Update now' in the extension's Advanced Settings to update and apply instantly - no restart."
 Read-Host "Press Enter to close"

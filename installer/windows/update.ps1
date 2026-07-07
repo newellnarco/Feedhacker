@@ -1,4 +1,4 @@
-# FeedHacker — auto-update. Downloads the latest GREEN release from GitHub (published
+# FeedHacker - auto-update. Downloads the latest GREEN release from GitHub (published
 # only after CI passes) and refreshes the installed extension in place. No build, no
 # source, no admin. Run by the scheduled task, or manually via update.bat. Chrome loads
 # the refreshed files on its next restart (or click reload on chrome://extensions).
@@ -16,8 +16,8 @@ New-Item -ItemType Directory -Force -Path $Root | Out-Null
 function Log($m) { $line = "{0}  {1}" -f (Get-Date -Format s), $m; Add-Content -Path $Log -Value $line; Write-Host $line }
 
 try {
-  if (-not (Test-Path (Join-Path $Ext "manifest.json"))) { Log "Not installed at $Ext — run install first."; exit 1 }
-  Log "Checking GitHub for the latest green release…"
+  if (-not (Test-Path (Join-Path $Ext "manifest.json"))) { Log "Not installed at $Ext - run install first."; exit 1 }
+  Log "Checking GitHub for the latest green release..."
   $new = Sync-LatestRelease -Repo $Repo -ExtDir $Ext -Force:$Force -Log { param($m) Log $m }
   if ($new) { Log "Updated to v$new. Restart Chrome (or reload on chrome://extensions) to apply." }
 } catch {

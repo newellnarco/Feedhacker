@@ -1,4 +1,4 @@
-# FeedHacker — uninstaller. Removes the auto-update task and (optionally) the local
+# FeedHacker - uninstaller. Removes the auto-update task and (optionally) the local
 # files. Chrome cannot remove an unpacked extension programmatically, so it opens
 # chrome://extensions for the final one-click Remove.
 #

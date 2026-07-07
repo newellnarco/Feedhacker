@@ -11,6 +11,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.1]
+
+### Fixed
+- **Windows installer failed to run (`install.bat` / `install.ps1` parse errors).** The
+  PowerShell scripts contained em-dashes and ellipses; Windows PowerShell 5.1 reads a
+  UTF-8-without-BOM `.ps1` as Windows-1252, where a UTF-8 em-dash's trailing byte becomes
+  a smart quote that prematurely terminates the string — so the script failed to parse
+  ("Unexpected token", "missing terminator"). All installer scripts are now pure ASCII,
+  and a test guards against any non-ASCII byte creeping back in.
+
+### Changed
+- **Refreshed the Chrome Web Store screenshots** for the v0.4.0 UI: the popup mockup
+  (sectioned layout, no Aggressive toggle, Company filter, Show author / Show sample) and
+  the hidden-post stub (current icon actions). The detection-panel screenshot is unchanged.
+
 ## [0.4.0]
 
 ### Added
@@ -175,6 +190,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - Runs entirely in the browser (only the `storage` permission); optional remote
   banlist behind a per‑site permission prompt.
 
-[0.4.0]: https://github.com/newellnarco/Feedhacker/compare/v0.3.0...HEAD
+[0.4.1]: https://github.com/newellnarco/Feedhacker/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.4.0
 [0.3.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.3.0
 [0.2.0]: https://github.com/newellnarco/Feedhacker/releases/tag/v0.2.0

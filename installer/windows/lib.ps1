@@ -1,4 +1,4 @@
-# FeedHacker — shared install/update helpers. Downloads the latest GREEN prebuilt
+# FeedHacker - shared install/update helpers. Downloads the latest GREEN prebuilt
 # release from GitHub (built and published only after CI passes) so end users never
 # build from source. Prefers the GitHub REST API (no tools required); falls back to
 # the local GitHub CLI (`gh`) when the API is unavailable.
@@ -38,7 +38,7 @@ function Sync-LatestRelease {
   try { $rel = Invoke-RestMethod -Uri $api -Headers $headers -UseBasicParsing } catch { }
   # Fallback to the local GitHub CLI if the REST call failed (network/rate limit).
   if (-not $rel -and (Get-Command gh -ErrorAction SilentlyContinue)) {
-    & $Log "REST API unavailable; trying the local GitHub CLI (gh)…"
+    & $Log "REST API unavailable; trying the local GitHub CLI (gh)..."
     try { $rel = gh api "repos/$Repo/releases/latest" | ConvertFrom-Json } catch { }
   }
   if (-not $rel) { throw "Could not reach GitHub to find the latest release." }
@@ -54,7 +54,7 @@ function Sync-LatestRelease {
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
   try {
     $zip = Join-Path $tmp "extension.zip"
-    & $Log "Downloading $($asset.name)…"
+    & $Log "Downloading $($asset.name)..."
     Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip -Headers @{ "User-Agent" = "FeedHacker-Updater" } -UseBasicParsing
     $unzipped = Join-Path $tmp "unzipped"
     Expand-Archive -Path $zip -DestinationPath $unzipped -Force

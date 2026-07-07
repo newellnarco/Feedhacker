@@ -1,9 +1,9 @@
 # FeedHacker native-messaging host. Lets the extension's "Update now" button pull the
-# latest GREEN release (via lib.ps1) and then reload itself — no Chrome restart.
+# latest GREEN release (via lib.ps1) and then reload itself - no Chrome restart.
 #
 # Chrome speaks native messaging as: a 4-byte little-endian length prefix followed by a
 # UTF-8 JSON message, on stdin/stdout. CRITICAL: nothing else may write to stdout, or the
-# frame is corrupted — so every log line goes to update.log, never the console. The reply
+# frame is corrupted - so every log line goes to update.log, never the console. The reply
 # is a single framed JSON object: { ok, updated, version } or { ok:false, error }.
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
