@@ -22,3 +22,11 @@ Until the user says "ship":
 When the user says "ship" (and any prior Chrome Web Store submission has cleared
 review — the store rejects a new version while one is in review), cut the release via
 the **Release** workflow: tag → GitHub Release with prebuilt assets → store upload.
+
+## Release record (standing rule)
+
+Keep [`RELEASES.md`](RELEASES.md) current. It's the single source of truth for what
+shipped in each version and where it stands. **The Chrome Web Store lags GitHub** (Google
+review; one pending version at a time), so track the two separately. Update it whenever a
+version's state changes, and only mark a version **Live** in the store column once it is
+**confirmed published on the Chrome Web Store** — not when it was merely uploaded/submitted.

@@ -321,7 +321,10 @@
     // (name, degree, headline) even when a job headline looks like content.
     var pick = "", passedTs = false;
     for (var i = 0; i < lines.length; i++) {
-      if (PREVIEW_TS_RE.test(lines[i])) { passedTs = true; continue; }
+      // The timestamp row is the usual actor-header/body boundary; a Promoted post has no
+      // timestamp, so treat its "Promoted" label as the same boundary — otherwise the
+      // fallback grabs the author's headline as the "sample".
+      if (PREVIEW_TS_RE.test(lines[i]) || /^(?:•\s*)?promoted$/i.test(lines[i])) { passedTs = true; continue; }
       if (!passedTs || PREVIEW_META_RE.test(lines[i])) continue;
       var body = stripName(lines[i]);
       if (body) { pick = body; break; }
@@ -527,83 +530,55 @@
     }
   }
 
-  // Author + opening line on an AI-slop stub. Slop is the one probabilistic filter, so
-  // we always surface who wrote it and what it says — enough to make the call without
-  // clicking "Show anyway". Not a control (no automation), so comment stubs get it too.
-  function appendSlopPreview(doc, el, stub, settings, flags) {
-    if (!hasFlag(flags, "sloppy")) return;
-    var line = el.dataset.feedhackerPreview || "";
-    var name = el.dataset.feedhackerActor || "";
-    if (!line && !name) return;
-    var wrap = doc.createElement("span");
-    wrap.className = "feedhacker-preview";
-    // Skip the name here when "Name names" already puts it in the label, to avoid echo.
-    if (name && !settings.nameNames) {
-      var who = doc.createElement("b");
-      who.className = "feedhacker-preview-author";
-      who.textContent = name;
-      wrap.appendChild(who);
-    }
-    if (line) {
-      var q = doc.createElement("span");
-      q.className = "feedhacker-preview-line";
-      q.textContent = (wrap.childNodes.length ? ": " : "") + "“" + line + "”";
-      wrap.appendChild(q);
-    }
-    stub.classList.add("feedhacker-has-preview");
-    stub.appendChild(wrap);
-  }
-
-  // Multi-line stub for the "Show sample" display mode: a sample of the hidden text
-  // and the filter category, with an author line on top when "Show author" is also on.
-  // Takes precedence over the single-line label + inline preview (no echo). Sample and
-  // author come from the datasets captured at hide time.
-  function appendNameSampleStub(doc, el, stub, flags, settings) {
-    stub.classList.add("feedhacker-has-namesample");
-    var block = doc.createElement("span");
-    block.className = "feedhacker-namesample";
-    // The author line is shown only when "Show author" is on; "Show sample" alone
-    // renders just the sample + category (the two settings are independent).
-    if (settings.nameNames) {
-      var name = doc.createElement("b");
-      name.className = "feedhacker-ns-name";
-      name.textContent = el.dataset.feedhackerActor || getActor(el) || "Someone";
-      block.appendChild(name);
-    }
-    var sample = el.dataset.feedhackerPreview || "";
-    if (sample) {
-      var s = doc.createElement("span");
-      s.className = "feedhacker-ns-sample";
-      s.textContent = "“" + sample + "”";
-      block.appendChild(s);
-    }
-    var cat = doc.createElement("span");
-    cat.className = "feedhacker-ns-category";
-    cat.textContent = labelsText(flags);
-    block.appendChild(cat);
-    stub.appendChild(block);
+  // Small green check, shown on the AI-slop button once the user has confirmed the post.
+  function checkIcon(doc) {
+    return iconSvg(doc, { stroke: "currentColor", sw: "2.6" }, [
+      svgEl(doc, "path", { d: "M5 12.5 10 17.5 19 6.5", fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" })
+    ]);
   }
 
   function renderCollapsed(doc, el, stub, flags, settings) {
     clearEl(stub);
     stub.className = "feedhacker-stub";
     stub.removeAttribute("title");
-    if (hasFlag(flags, "sloppy")) stub.title = "AI slop";   // reason on hover, not as text
-    // "Show sample" renders the multi-line stub (sample + category, plus the author
-    // line when "Show author" is also on). "Show author" alone stays the one-line
-    // "Name (category)" label handled by collapsedText below.
-    if (settings.nameSample) {
-      appendNameSampleStub(doc, el, stub, flags, settings);
-    } else {
-      var text = collapsedText(el, flags, settings);
-      if (text) {
-        var label = doc.createElement("span");
-        label.className = "feedhacker-stub-label";
-        label.textContent = text;
-        stub.appendChild(label);
+    if (hasFlag(flags, "sloppy")) stub.title = "AI slop";   // reason on hover too
+
+    // Left content is controlled by the display toggles:
+    //   line 1 (inline with the action buttons): the rule(s) the post violated, prefixed
+    //     with the author when "Show author" is on;
+    //   line 2 (only when "Show sample" is on): a sample line from the post body.
+    var main = doc.createElement("span");
+    main.className = "feedhacker-stub-main";
+    var line1 = doc.createElement("span");
+    line1.className = "feedhacker-stub-line1";
+    var rule = labelsText(flags);
+    if (settings.nameNames) {
+      var who = doc.createElement("b");
+      who.className = "feedhacker-stub-author";
+      who.textContent = el.dataset.feedhackerActor || getActor(el) || "Someone";
+      line1.appendChild(who);
+      if (rule) {
+        var rl = doc.createElement("span");
+        rl.className = "feedhacker-stub-rule";
+        rl.textContent = " · " + rule;
+        line1.appendChild(rl);
       }
-      appendSlopPreview(doc, el, stub, settings, flags);
+    } else {
+      line1.className = "feedhacker-stub-line1 feedhacker-stub-rule";
+      line1.textContent = rule;
     }
+    main.appendChild(line1);
+    if (settings.nameSample) {
+      var sample = el.dataset.feedhackerPreview || "";
+      if (sample) {
+        var sm = doc.createElement("span");
+        sm.className = "feedhacker-stub-sample";
+        sm.textContent = "“" + sample + "”";
+        main.appendChild(sm);
+        stub.classList.add("feedhacker-stub-multi");   // two lines -> top-align the buttons
+      }
+    }
+    stub.appendChild(main);
 
     // Right-justified action cluster: 👍 slop, Mute author, Always show, Profile, Show anyway.
     var actions = doc.createElement("span");
@@ -613,17 +588,21 @@
     // overloading Show/Hide). Only when we have the scored features to learn from.
     if (hasFlag(flags, "sloppy") && el.dataset.feedhackerFeatures && settings && typeof settings.onFeedback === "function") {
       var confirmed = el.dataset.feedhackerConfirmedSlop === "1";
-      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc), confirmed ? "Confirmed AI slop" : "AI slop");
+      // The button already shows a GREEN splat, so a colour change wouldn't read as
+      // "done" — on click we swap it for a checkmark, then retire the row. (The splat is
+      // "yes, this is slop": trains the filter AND hides the post.)
+      var yes = iconButton(doc, "feedhacker-confirm", confirmed ? checkIcon(doc) : splatIcon(doc), confirmed ? "Confirmed AI slop" : "AI slop");
       if (confirmed) { yes.disabled = true; yes.classList.add("feedhacker-confirmed"); }
       yes.addEventListener("click", function (ev) {
         ev.preventDefault(); ev.stopPropagation();
-        // Idempotent: one positive signal per post. The stub stays after confirming, so
-        // guard against a double/accidental re-click overweighting a single example.
+        // Idempotent: one positive signal per post.
         if (el.dataset.feedhackerConfirmedSlop === "1") return;
         el.dataset.feedhackerConfirmedSlop = "1";
-        emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter) — stub stays
+        emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter)
         yes.disabled = true; yes.title = "Confirmed AI slop";
         yes.classList.add("feedhacker-confirmed");
+        clearEl(yes); yes.appendChild(checkIcon(doc));   // show a checkmark…
+        dismissRow(el);                                  // …then hide the row
       });
       actions.appendChild(yes);
     }
@@ -874,51 +853,7 @@
       }
     }
     hidden += scanComments(doc, matchers, settings);   // comment filter runs on its own
-    applyDigest(doc, settings);                         // group runs of hidden posts (no-op if off)
     return hidden;
-  }
-
-  // --- digest mode: group a run of consecutive hidden posts into one summary bar ---
-  function clearDigest(doc) {
-    var sums = doc.querySelectorAll(".feedhacker-digest-summary");
-    for (var i = 0; i < sums.length; i++) if (sums[i].parentNode) sums[i].parentNode.removeChild(sums[i]);
-    var d = doc.querySelectorAll(".feedhacker-digested");
-    for (var j = 0; j < d.length; j++) d[j].classList.remove("feedhacker-digested");
-  }
-  function buildDigestSummary(doc, run) {
-    var el = doc.createElement("div");
-    el.className = "feedhacker-stub feedhacker-digest-summary";
-    var label = doc.createElement("span");
-    label.className = "feedhacker-stub-label";
-    label.textContent = run.length + " low-signal posts hidden";
-    var btn = doc.createElement("button");
-    btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Show these";
-    btn.addEventListener("click", function (ev) {
-      ev.preventDefault(); ev.stopPropagation();
-      for (var k = 0; k < run.length; k++) run[k].classList.remove("feedhacker-digested");
-      if (el.parentNode) el.parentNode.removeChild(el);   // reveal individual stubs
-    });
-    el.appendChild(label); el.appendChild(btn);
-    return el;
-  }
-  function applyDigest(doc, settings) {
-    clearDigest(doc);
-    if (!settings.digest) return;
-    var posts = findPostContainers(doc);
-    function hidden(p) { return p.classList.contains("feedhacker-hidden"); }
-    var i = 0;
-    while (i < posts.length) {
-      if (!hidden(posts[i])) { i++; continue; }
-      var run = [posts[i]], j = i + 1;
-      while (j < posts.length && hidden(posts[j]) && posts[j].parentNode && posts[j].parentNode === posts[j - 1].parentNode) {
-        run.push(posts[j]); j++;
-      }
-      if (run.length >= 2) {
-        for (var k = 0; k < run.length; k++) run[k].classList.add("feedhacker-digested");
-        run[0].parentNode.insertBefore(buildDigestSummary(doc, run), run[0]);
-      }
-      i = j;
-    }
   }
 
   // --- performance: mutation triage ---
@@ -954,7 +889,6 @@
   // with "Show anyway" stays shown — so changing an unrelated setting can't resurrect a
   // hidden post or re-hide a shown one.
   function reset(doc, preserveUserActions?: boolean) {
-    clearDigest(doc);
     function kept(el) {
       return !!preserveUserActions && !!el &&
         (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerDismissed === "1");
@@ -993,7 +927,7 @@
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
-    authorInfo: authorInfo, actorAnchor: actorAnchor, applyDigest: applyDigest, clearDigest: clearDigest,
+    authorInfo: authorInfo, actorAnchor: actorAnchor,
     firstBodyLine: firstBodyLine
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

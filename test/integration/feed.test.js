@@ -180,7 +180,7 @@ test("scanComments collapses an AI-slop comment", () => {
   assert.ok(doc.querySelector(".comment").classList.contains("feedhacker-hidden"));
 });
 
-test("an AI-slop comment stub can be retired with Hide (confirm does not retire it)", () => {
+test("AI-slop comment stub: the splat confirms (trains) AND retires the row; Hide is labelled 'Hide'", () => {
   const comment =
     `<div class="comment"><img src="x"><a href="/in/jane">Jane</a>` +
     `<div componentkey="comment-commentary_1">${SLOP_BODY}</div></div>`;
@@ -189,16 +189,13 @@ test("an AI-slop comment stub can be retired with Hide (confirm does not retire 
   feed.scanComments(doc, [], baseSettings({ hideSlopComments: true, onFeedback: (f, label) => seen.push(label) }));
   const stub = doc.querySelector(".comment .feedhacker-stub");
   assert.ok(stub, "comment gets a slop stub");
-  const confirm = stub.querySelector(".feedhacker-confirm");
-  confirm.click();
-  assert.deepStrictEqual(seen, [1], "confirm trains the filter");
-  assert.ok(!doc.querySelector(".comment").classList.contains("feedhacker-dismissing"), "confirm does not retire the comment");
   const hide = stub.querySelector(".feedhacker-hidepost");
   assert.ok(hide, "comment stub has a Hide control");
   assert.strictEqual(hide.title, "Hide", "labelled 'Hide' for a comment");
-  hide.click();
-  assert.ok(doc.querySelector(".comment").classList.contains("feedhacker-dismissing"), "Hide retires the comment row");
-  assert.deepStrictEqual(seen, [1], "Hide emits no extra feedback");
+  const confirm = stub.querySelector(".feedhacker-confirm");
+  confirm.click();
+  assert.deepStrictEqual(seen, [1], "confirm trains the filter");
+  assert.ok(doc.querySelector(".comment").classList.contains("feedhacker-dismissing"), "confirm now also retires the row");
 });
 
 test("scanComments is a no-op when the toggle is off", () => {
@@ -327,7 +324,7 @@ test("Always show button allowlists the author and reveals the post", () => {
   assert.strictEqual(el.querySelector(".feedhacker-stub"), null, "stub removed after allowing");
 });
 
-test("👍 confirm trains a positive without un-hiding or retiring the row", () => {
+test("👍 confirm trains a positive AND retires the row (shows a checkmark)", () => {
   const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
   const seen = [];
@@ -335,9 +332,10 @@ test("👍 confirm trains a positive without un-hiding or retiring the row", () 
   const yes = el.querySelector(".feedhacker-stub .feedhacker-confirm");
   assert.ok(yes, "confirm button present");
   yes.click();
-  assert.deepStrictEqual(seen, [1]);
-  assert.ok(el.classList.contains("feedhacker-hidden"), "not un-hidden by confirming");
-  assert.ok(!el.classList.contains("feedhacker-dismissing"), "confirming AI slop leaves the stub in place");
+  assert.deepStrictEqual(seen, [1], "confirm trains a positive");
+  assert.strictEqual(el.dataset.feedhackerConfirmedSlop, "1", "marked confirmed");
+  assert.ok(el.classList.contains("feedhacker-dismissing"), "confirming AI slop now also retires the row");
+  assert.strictEqual(el.dataset.feedhackerDismissed, "1", "and sticks (won't pop back)");
 });
 
 test("👍 confirm is idempotent — repeated clicks emit one positive", () => {
@@ -389,78 +387,57 @@ test("firstBodyLine keeps the body when there is no clean author name", () => {
   assert.ok(/^Let’s be honest/.test(line), "body preserved when name is not a real name");
 });
 
-test("AI-slop stub shows the author name and first line for an informed decision", () => {
+test("with no display toggles, the stub shows just the rule inline (no author, no sample)", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
-  feed.consider(doc, el, [], baseSettings());
+  feed.consider(doc, el, [], baseSettings());   // both toggles off
   const stub = el.querySelector(".feedhacker-stub");
-  const preview = stub.querySelector(".feedhacker-preview");
-  assert.ok(preview, "preview present on a slop stub");
-  assert.ok(/jane doe/i.test(preview.querySelector(".feedhacker-preview-author").textContent), "author named");
-  assert.ok(/Let’s be honest/.test(preview.textContent), "first line shown");
-  assert.ok(stub.classList.contains("feedhacker-has-preview"));
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-line1").textContent, "AI Slop", "line 1 is just the rule");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-author"), null, "no author when Show author is off");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-sample"), null, "no sample when Show sample is off");
+  assert.strictEqual(stub.title, "AI slop", "reason is also on hover");
 });
 
-test("non-slop stubs (e.g. Promoted) get no author/first-line preview", () => {
+test("Show author puts the author inline with the rule on line 1", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ nameNames: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.ok(/Jane Doe/.test(stub.querySelector(".feedhacker-stub-author").textContent), "author shown");
+  assert.ok(/AI Slop/.test(stub.querySelector(".feedhacker-stub-line1").textContent), "rule shown inline with the author");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-sample"), null, "no sample without Show sample");
+});
+
+test("Show sample adds a sample of the post on the second line", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ nameNames: true, nameSample: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.ok(stub.classList.contains("feedhacker-stub-multi"), "two-line layout");
+  assert.ok(/Jane Doe/.test(stub.querySelector(".feedhacker-stub-author").textContent), "line 1 has the author");
+  assert.ok(/AI Slop/.test(stub.querySelector(".feedhacker-stub-line1").textContent), "line 1 has the rule");
+  assert.ok(/Let’s be honest/.test(stub.querySelector(".feedhacker-stub-sample").textContent), "line 2 is the post sample");
+});
+
+test("Show sample without Show author: rule on line 1, sample on line 2, no author", () => {
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings({ nameNames: false, nameSample: true }));
+  const stub = el.querySelector(".feedhacker-stub");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-author"), null, "no author line");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-line1").textContent, "AI Slop", "line 1 is the rule");
+  assert.ok(/Let’s be honest/.test(stub.querySelector(".feedhacker-stub-sample").textContent), "line 2 is the sample");
+});
+
+test("non-slop stub (Promoted) shows the rule and, with Show author off, no author/sample", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/acme">Acme</a><span>Promoted</span><div>buy things now</div>`)));
   const el = feed.findPostContainers(doc)[0];
   feed.consider(doc, el, [], baseSettings({ muteSloppy: false, mutePromoted: true }));
   const stub = el.querySelector(".feedhacker-stub");
   assert.ok(stub, "promoted post collapsed");
-  assert.strictEqual(stub.querySelector(".feedhacker-preview"), null, "no preview for a deterministic filter");
-});
-
-test("with Name names on, the preview drops the duplicate author prefix", () => {
-  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
-  const el = feed.findPostContainers(doc)[0];
-  feed.consider(doc, el, [], baseSettings({ nameNames: true }));
-  const stub = el.querySelector(".feedhacker-stub");
-  const labelText = stub.querySelector(".feedhacker-stub-label").textContent;
-  assert.ok(/Jane Doe/.test(labelText), "label names them");
-  assert.ok(!/AI Slop/.test(labelText), "AI-slop reason isn't printed as text");
-  assert.strictEqual(stub.title, "AI slop", "AI-slop reason is on hover instead");
-  const preview = stub.querySelector(".feedhacker-preview");
-  assert.strictEqual(preview.querySelector(".feedhacker-preview-author"), null, "name not repeated in preview");
-  assert.ok(/Let’s be honest/.test(preview.textContent), "first line still shown");
-});
-
-test("AI-slop reason is shown on hover, not printed next to the icons", () => {
-  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
-  const el = feed.findPostContainers(doc)[0];
-  feed.consider(doc, el, [], baseSettings());   // names off, slop-only
-  const stub = el.querySelector(".feedhacker-stub");
-  assert.strictEqual(stub.title, "AI slop", "reason on hover");
-  assert.strictEqual(stub.querySelector(".feedhacker-stub-label"), null, "no 'AI Slop' text label");
-});
-
-test("nameSample renders a three-line stub: name, sample, category", () => {
-  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
-  const el = feed.findPostContainers(doc)[0];
-  // "Show author" + "Show sample" both on for the three-line stub.
-  feed.consider(doc, el, [], baseSettings({ nameNames: true, nameSample: true }));
-  const stub = el.querySelector(".feedhacker-stub");
-  assert.ok(stub.classList.contains("feedhacker-has-namesample"), "three-line layout class set");
-  const block = stub.querySelector(".feedhacker-namesample");
-  assert.ok(block, "namesample block present");
-  assert.ok(/Jane Doe/.test(block.querySelector(".feedhacker-ns-name").textContent), "line 1 is the name");
-  assert.ok(/Let’s be honest/.test(block.querySelector(".feedhacker-ns-sample").textContent), "line 2 is the sample text");
-  assert.strictEqual(block.querySelector(".feedhacker-ns-category").textContent, "AI Slop", "line 3 is the category");
-  // The richer mode supersedes the single-line label + inline preview (no echo).
-  assert.strictEqual(stub.querySelector(".feedhacker-stub-label"), null, "no single-line label");
-  assert.strictEqual(stub.querySelector(".feedhacker-preview"), null, "no inline preview");
-});
-
-test("nameSample without nameNames renders sample + category, no author line", () => {
-  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
-  const el = feed.findPostContainers(doc)[0];
-  feed.consider(doc, el, [], baseSettings({ nameNames: false, nameSample: true }));
-  const stub = el.querySelector(".feedhacker-stub");
-  assert.ok(stub.classList.contains("feedhacker-has-namesample"), "sample stub renders independently of author");
-  const block = stub.querySelector(".feedhacker-namesample");
-  assert.ok(block, "namesample block present");
-  assert.strictEqual(block.querySelector(".feedhacker-ns-name"), null, "no author line when Show author is off");
-  assert.ok(/Let’s be honest/.test(block.querySelector(".feedhacker-ns-sample").textContent), "sample text present");
-  assert.strictEqual(block.querySelector(".feedhacker-ns-category").textContent, "AI Slop", "category present");
+  assert.ok(/Promoted/.test(stub.querySelector(".feedhacker-stub-line1").textContent), "shows the Promoted rule");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-author"), null, "no author with Show author off");
+  assert.strictEqual(stub.querySelector(".feedhacker-stub-sample"), null, "no sample with Show sample off");
 });
 
 test("reset() clears the stashed preview", () => {
@@ -472,12 +449,3 @@ test("reset() clears the stashed preview", () => {
   assert.strictEqual(el.dataset.feedhackerPreview, undefined);
 });
 
-test("digest groups consecutive hidden posts into one summary bar", () => {
-  const list = post(`<div>${SLOP_BODY}</div>`) + post(`<div>${SLOP_BODY}</div>`) + post("<div>a normal human post</div>");
-  const doc = makeDoc(feedHtml(list));
-  feed.scan(doc, [], baseSettings({ digest: true }));
-  const summaries = doc.querySelectorAll(".feedhacker-digest-summary");
-  assert.strictEqual(summaries.length, 1, "one summary for the run of two");
-  assert.ok(/2 low-signal posts hidden/.test(summaries[0].textContent));
-  assert.strictEqual(doc.querySelectorAll(".feedhacker-digested").length, 2);
-});

@@ -9,24 +9,17 @@
 .feedhacker-explainer { background: #eef3fb; color: #1d2226; flex-wrap: wrap; }
 .feedhacker-why { font-weight: 600; }
 
-/* AI-slop stub preview: author + opening line, so the call can be judged in place. */
-.feedhacker-stub.feedhacker-has-preview { flex-wrap: wrap; }
-.feedhacker-preview {
-  flex-basis: 100%; order: 5; min-width: 0;
-  font-size: 12.5px; font-style: italic; color: #5f6b7a;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.feedhacker-preview-author { font-style: normal; font-weight: 700; color: #1d2226; }
-
-/* "Name + sample + category" stub: three stacked lines on the left, buttons at top-right. */
-.feedhacker-stub.feedhacker-has-namesample { align-items: flex-start; }
-.feedhacker-namesample { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-.feedhacker-ns-name { font-weight: 700; color: #1d2226; }
-.feedhacker-ns-sample {
+/* Stub content, driven by the display toggles: line 1 = [author ·] the rule(s) violated,
+   inline with the action buttons; line 2 (with "Show sample") = a sample from the post. */
+.feedhacker-stub-main { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.feedhacker-stub-line1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feedhacker-stub-author { font-weight: 700; color: #1d2226; }
+.feedhacker-stub-rule { color: #5f6b7a; }
+.feedhacker-stub-sample {
   font-size: 12.5px; font-style: italic; color: #5f6b7a;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
-.feedhacker-ns-category { font-size: 12px; color: #5f6b7a; }
+.feedhacker-stub.feedhacker-stub-multi { align-items: flex-start; }   /* two lines: top-align the buttons */
 /* Right-justified, tightened action cluster on the stub. */
 .feedhacker-actions { display: inline-flex; align-items: stretch; gap: 6px; margin-left: auto; flex: none; }
 
@@ -59,8 +52,6 @@
 .feedhacker-dismissing { opacity: 0; transform: translateX(16px); pointer-events: none;
   transition: opacity .3s ease, transform .3s ease; }
 
-.feedhacker-digested { display: none !important; }
-.feedhacker-digest-summary { background: #eef0f3; color: #5f6b7a; font-style: italic; }
 
 .feedhacker-gone { display: none !important; }
 
