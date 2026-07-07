@@ -13,6 +13,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.2]
 
+### Changed
+- **Stub layout is now driven by the display toggles.** With neither toggle, a hidden
+  post's stub shows just the **rule it violated** (e.g. "AI Slop, Promoted Post") inline
+  with the action buttons. **Show author** adds the author on that same line (`Author ·
+  Rule`); **Show sample** adds a line of the actual post below it. Previously an AI-slop
+  stub always forced the author + first line regardless of the toggles.
+- **The AI-slop "splat" button now confirms *and* hides the post.** Since the button is
+  already green, clicking it swaps to a **checkmark** (rather than a colour change) as it
+  trains the filter and retires the row. Updated the options-page "Post controls" text.
+
 ### Fixed
 - **Hidden and revealed posts could "pop back."** Clicking **Hide** on a stub (or
   **Show anyway** to reveal a post) could be undone whenever FeedHacker re-applied — which
@@ -21,6 +31,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   reappeared and a Shown row got re-hidden. Re-applies now **preserve your explicit
   per-post choices**: a row you Hid stays gone and a row you revealed stays shown. A full
   reset (extension disabled, or leaving the feed) still reveals everything as before.
+- **"Show sample" showed the author's headline on Promoted posts.** The sample now treats
+  a "Promoted" label as the actor-header/body boundary, so it previews the actual post
+  text instead of the author's job title.
+
+### Removed
+- **"Collapse hidden content" (digest mode).** It only grouped runs of consecutive
+  same-category hidden posts and its "Show these" button didn't reliably un-collapse, so
+  the checkbox and all of its code were removed.
 
 ## [0.4.1]
 

@@ -53,10 +53,9 @@ crosses a threshold. Tells include:
 - the curated phrase banlist (`claudisms.json`) as **one weighted signal** among
   many (curated hits count more than common‑word ones).
 
-Because the AI‑slop call is a judgment, the stub shows the **author's name and
-the post's first line** right on the placeholder — so you can decide whether it's
-really slop without clicking **Show anyway**. (The deterministic filters —
-Promoted, Hiring, etc. — don't need this and don't show it.)
+Each stub shows the **rule the post violated** inline with its action buttons. Turn on
+**Show author** to add who posted, and **Show sample** to preview a line of the post — so
+you can judge a borderline AI‑slop call in place without clicking **Show anyway**.
 
 It **learns** from you: clicking **Show anyway** teaches a false positive, the
 **👍 slop** button or **Hide again** confirms a true positive, and a post you
@@ -88,8 +87,6 @@ of the standard filters.
 
 - **AI‑slop sensitivity slider** — dial the confidence threshold from *aggressive*
   to *strict* in the popup.
-- **Digest mode** — collapse a run of consecutive hidden posts into a single
-  "N low‑signal posts hidden" bar.
 - **Filter beyond the home feed** (opt‑in) — also clean permalinks, search
   results, profiles, and company pages.
 - **Insights** — the options page keeps 30 days of daily hidden counts and your
@@ -110,7 +107,6 @@ of the standard filters.
 - **Show sample** — previews a line of the hidden post's text in the stub (with the
   author line too when *Show author* is on). Works on its own.
 - **Hide hidden content** — remove matched posts entirely (no placeholders).
-- **Collapse hidden content** — digest runs of hidden posts into one summary bar.
 - **Hide AI‑slop comments** — also collapse AI‑slop comments under posts.
 - **Toolbar badge** — shows how many posts are hidden on the page, or a red `!`
   if something errored.
@@ -189,7 +185,7 @@ matcher.js        pure regex/string matcher over the banlist
 scorer.js         pure structural AI-tell scoring + online learning
 authors.js        pure per-author memory (mute/allow, scores, top sources)
 customfilters.js  pure compiler+matcher for user-defined filters
-feed.js           pure DOM layer — find posts, classify, collapse/reveal, digest
+feed.js           pure DOM layer — find posts, classify, collapse/reveal
 logger.js         pure error-log ring buffer helpers
 content.js        glue — storage, banlist, learned weights, authors, errors, observer
 background.js     service worker — per-tab badge (hidden count / error state)
