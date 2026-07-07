@@ -76,7 +76,7 @@ set, and it can never fail the GitHub Release.
      dashboard when you're ready (the "update on a click" flow).
 3. **Release as usual:** bump `manifest.json`/`package.json`, then
    `git tag vX.Y.Z && git push origin vX.Y.Z`. CI builds `feedhacker-<version>-store.zip`
-   and uploads it to item `djfbniehjjngpkimngegnjdeamfofnoa`. Once the new version is
+   and uploads it to item `kccajfoghkplakndamlohpepopdpelkb`. Once the new version is
    published and approved, **Chrome auto-updates every store user** within hours to a day —
    no action on their part.
 

@@ -8,7 +8,7 @@ your LinkedIn home feed — driven by a per‑filter **Mute / Solo** mixer.
 > Unofficial, unaffiliated with LinkedIn. Runs entirely in your browser; nothing
 > is sent to any server.
 
-**[Install from the Chrome Web Store ↗](https://chromewebstore.google.com/detail/feedhacker/djfbniehjjngpkimngegnjdeamfofnoa)**
+**[Install from the Chrome Web Store ↗](https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb)**
 · [Changelog](CHANGELOG.md) · [Releases](https://github.com/newellnarco/Feedhacker/releases/latest)
 
 ---
@@ -123,7 +123,7 @@ of the standard filters.
 
 ## Install
 
-**[➡ Install from the Chrome Web Store](https://chromewebstore.google.com/detail/feedhacker/djfbniehjjngpkimngegnjdeamfofnoa)** —
+**[➡ Install from the Chrome Web Store](https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb)** —
 one click, no dev mode, and Google auto‑updates you. This is the recommended way
 to install. (Publishing materials and the release process live in
 [`store/`](store/README.md).)
