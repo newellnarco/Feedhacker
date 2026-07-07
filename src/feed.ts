@@ -240,7 +240,6 @@
       settings && settings.slopWeights,
       {
         matchers: matchers,
-        aggressive: settings && settings.aggressive,
         threshold: settings && typeof settings.slopThreshold === "number" ? settings.slopThreshold : undefined
       }
     );
@@ -848,7 +847,7 @@
       if (el.dataset.feedhackerScanned === "1" && Number(el.dataset.feedhackerLen || 0) >= len) continue;
       el.dataset.feedhackerScanned = "1"; el.dataset.feedhackerLen = String(len);
       if (!root.FeedHackerScorer) continue;
-      var res = root.FeedHackerScorer.classify(raw, settings.slopWeights, { matchers: matchers, aggressive: !!settings.aggressive });
+      var res = root.FeedHackerScorer.classify(raw, settings.slopWeights, { matchers: matchers });
       if (!res.isSlop) continue;
       var cActor = getActor(el);
       el.dataset.feedhackerActor = cActor;

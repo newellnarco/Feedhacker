@@ -45,7 +45,6 @@ function renderStatus(st) {
     else if (st["mute" + f.key]) active.push(f.label);
   });
   var extras: any[] = [];
-  if (st.aggressive) extras.push("aggressive slop");
   if (st.hideSlopComments) extras.push("hide slop comments");
   if (st.hideCompletely) extras.push("hide completely");
   if (st.nameNames) extras.push(st.nameSample ? "names + sample" : "names");

@@ -24,7 +24,7 @@ or removed entirely if you prefer.
 
 | Filter | What it catches |
 | --- | --- |
-| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. Includes an **Aggressive** mode for broader, higher‑false‑positive rules. |
+| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. The sensitivity slider dials how aggressively it filters. |
 | **Promoted posts** | Sponsored/"Promoted" posts. |
 | **Newsletter signups** | Newsletter subscribe funnels. |
 | **Hiring posts** | "We're hiring", `#hiring`, "view job" cards, etc. |
@@ -99,8 +99,8 @@ of the standard filters.
   signal with its plain‑English description and your current learned weight, plus
   the full curated phrase list (searchable) — so you can see exactly why a post is
   flagged.
-- **Actions legend** — an options‑page card explaining what the Mute / Solo /
-  Aggressive buttons each affect.
+- **Actions legend** — an options‑page card explaining what the Mute / Solo
+  buttons each affect.
 
 ### Extra options
 

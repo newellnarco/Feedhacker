@@ -28,9 +28,8 @@ test("only AI slop is muted by default", () => {
   assert.ok(otherMutes.every((v) => v === false));
 });
 
-test("DEFAULTS includes display keys and aggressive, all false", () => {
+test("DEFAULTS includes display keys, all false", () => {
   for (const k of filters.DISPLAY_KEYS) assert.strictEqual(filters.DEFAULTS[k], false);
-  assert.strictEqual(filters.DEFAULTS.aggressive, false);
 });
 
 test("master switch defaults to enabled", () => {

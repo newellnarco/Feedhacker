@@ -63,7 +63,6 @@
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; }
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
     .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
-    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
     .actions-key td { vertical-align: top; border-bottom: 1px solid #eef0f3; }
     .actions-key tr:last-child td { border-bottom: 0; }
     .actions-key td:first-child { width: 40px; text-align: center; padding-top: 9px; }
@@ -113,7 +112,7 @@
   <details class="panel" open>
     <summary><h2>Actions</h2></summary>
     <div class="panel-body">
-      <p class="muted" style="margin:0 0 12px;">The Mute / Solo / Aggressive buttons on each filter row in the
+      <p class="muted" style="margin:0 0 12px;">The Mute / Solo buttons on each filter row in the
         toolbar popup, and what they affect.</p>
       <table class="actions-key">
         <tbody>
@@ -128,12 +127,6 @@
             <td><span class="act-name">Solo</span> — the “show me just this” mode: shows only that type and hides
               everything else, so you can audit what a filter is catching. While any Solo is on it overrides the
               Mutes. <span class="muted">Example: Solo “Hiring posts” → your feed shows only hiring posts.</span></td>
-          </tr>
-          <tr>
-            <td><span class="ms a-on">A</span></td>
-            <td><span class="act-name">Aggressive</span> — AI slop only. Adds the broader, higher‑false‑positive
-              phrase rules (ones that match common words) on top of the curated banlist, catching more but with more
-              misfires.</td>
           </tr>
         </tbody>
       </table>
@@ -227,8 +220,9 @@
 
       <h3 class="subhead">Flagged phrases <span class="muted" id="slop-phrase-count"></span></h3>
       <p class="muted" style="margin:0 0 10px; font-size:12.5px;">The curated banlist of words and phrases that read as
-        AI‑written. <b>Confirmed</b> phrases count strongly. <b>Aggressive</b> ones match common words and only apply
-        when you turn on “aggressive slop”. <b>Manual</b> entries are guidance only and are not auto‑matched.</p>
+        AI‑written. <b>Confirmed</b> phrases count strongly. <b>Aggressive</b> ones match common words, so they always
+        apply but count as weaker evidence — the sensitivity slider governs how much they filter. <b>Manual</b> entries
+        are guidance only and are not auto‑matched.</p>
       <input type="search" id="slop-phrase-search" placeholder="Filter phrases…" autocomplete="off">
       <ul class="phrases" id="slop-phrase-list"></ul>
     </div>

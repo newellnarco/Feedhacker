@@ -37,7 +37,6 @@
       d["solo" + f.key] = false;
     }
     for (var j = 0; j < DISPLAY_KEYS.length; j++) d[DISPLAY_KEYS[j]] = false;
-    d.aggressive = false;
     d.enabled = true;            // master on/off; pause without uninstalling
     d.slopThreshold = 0.5;       // AI-slop confidence cutoff (0.2 lax .. 0.8 strict)
     d.implicitLearning = true;   // learn weak "confirmed" from posts scrolled past

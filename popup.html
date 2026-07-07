@@ -14,10 +14,8 @@
     .ms { width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; cursor: pointer; }
     .ms:hover { background: #f3f4f6; }
-    .ms.ms-dim { opacity: .4; }   /* Aggressive rides on Mute — dimmed while AI slop isn't muted */
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
     .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
-    .ms.a-on { background: #7c3aed; border-color: #7c3aed; color: #fff; }   /* aggressive = purple */
     .group-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
       color: #8a94a3; margin: 12px 0 3px; }
     label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
@@ -51,7 +49,7 @@
   <h1>FeedHacker</h1>
   <label class="master" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
   <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
-  <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo &nbsp;·&nbsp; <b>A</b> aggressive slop</div>
+  <div class="legend"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo</div>
   <div id="filters"></div>
 
   <div class="group-label">AI-slop sensitivity</div>
