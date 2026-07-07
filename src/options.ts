@@ -47,7 +47,9 @@ function renderStatus(st) {
   var extras: any[] = [];
   if (st.hideSlopComments) extras.push("hide slop comments");
   if (st.hideCompletely) extras.push("hide completely");
-  if (st.nameNames) extras.push(st.nameSample ? "names + sample" : "names");
+  if (st.nameNames && st.nameSample) extras.push("author + sample");
+  else if (st.nameNames) extras.push("author");
+  else if (st.nameSample) extras.push("sample");
   var el = byId("active-summary");
   el.textContent = "Active filters: " + (active.length ? active.join(", ") : "none") +
     (extras.length ? " · Options: " + extras.join(", ") : "");

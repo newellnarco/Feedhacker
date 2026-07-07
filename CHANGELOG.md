@@ -22,6 +22,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   catches less. Removes the toggle from the popup, its coupling to the AI-slop Mute,
   the `aggressive` setting, and the Aggressive entries in the options-page Actions
   legend and phrase-list note.
+- **Popup redesign.** Reorganized the toolbar popup into labelled sections:
+  - **Enabled** moved into the header as a prominent master switch.
+  - **Posts** header now carries the `M mute · S solo` key (the standalone legend is gone).
+  - **AI-slop** gets its own section holding the sensitivity slider and *Hide AI-slop comments*.
+  - **Feed display** groups the stub options.
+  - Footer link **"Details & activity" → "Advanced Settings"**.
+- **Clearer display labels.** *Names → "Show author"*, *+ sample → "Show sample"*,
+  *Hide Hidden Content → "Hide hidden content"*, *Digest runs → "Collapse hidden content"*.
+- **"Show sample" now works on its own** — it no longer requires "Show author"; with
+  author off it renders just the sample line + category (previously the checkbox was
+  greyed out until author was on).
 
 ## [0.3.0] — 2026-07-06
 

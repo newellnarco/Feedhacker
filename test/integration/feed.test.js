@@ -400,7 +400,7 @@ test("AI-slop reason is shown on hover, not printed next to the icons", () => {
 test("nameSample renders a three-line stub: name, sample, category", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
-  // "+ sample" is an add-on to "Names", so both are on for the three-line stub.
+  // "Show author" + "Show sample" both on for the three-line stub.
   feed.consider(doc, el, [], baseSettings({ nameNames: true, nameSample: true }));
   const stub = el.querySelector(".feedhacker-stub");
   assert.ok(stub.classList.contains("feedhacker-has-namesample"), "three-line layout class set");
@@ -414,13 +414,17 @@ test("nameSample renders a three-line stub: name, sample, category", () => {
   assert.strictEqual(stub.querySelector(".feedhacker-preview"), null, "no inline preview");
 });
 
-test("nameSample without nameNames falls back to the one-line stub", () => {
+test("nameSample without nameNames renders sample + category, no author line", () => {
   const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];
   feed.consider(doc, el, [], baseSettings({ nameNames: false, nameSample: true }));
   const stub = el.querySelector(".feedhacker-stub");
-  assert.ok(!stub.classList.contains("feedhacker-has-namesample"), "no three-line layout without Names");
-  assert.ok(stub.querySelector(".feedhacker-preview"), "falls back to the one-line slop preview");
+  assert.ok(stub.classList.contains("feedhacker-has-namesample"), "sample stub renders independently of author");
+  const block = stub.querySelector(".feedhacker-namesample");
+  assert.ok(block, "namesample block present");
+  assert.strictEqual(block.querySelector(".feedhacker-ns-name"), null, "no author line when Show author is off");
+  assert.ok(/Let’s be honest/.test(block.querySelector(".feedhacker-ns-sample").textContent), "sample text present");
+  assert.strictEqual(block.querySelector(".feedhacker-ns-category").textContent, "AI Slop", "category present");
 });
 
 test("reset() clears the stashed preview", () => {
