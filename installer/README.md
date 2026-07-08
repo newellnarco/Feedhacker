@@ -27,7 +27,22 @@ installing, updating, scheduling — is automated and needs **no administrator r
   GitHub CLI (`gh`) installed and signed in, it's used as a fallback when the API is
   unreachable.
 
-## Use
+## Fastest: one-line install/update (no download)
+
+Open **PowerShell** (Start → type "PowerShell" → Enter) and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/newellnarco/Feedhacker/main/installer/windows/web-install.ps1 | iex
+```
+
+This fetches the installer scripts from the repo, downloads the **latest green release**
+(no zip to grab by hand), registers the daily auto-update, and guides the one-time
+**Load unpacked**. **Run the same command again anytime to update** — it reinstalls the
+latest build in place. Options are available when you run the script directly (see
+[Options](#options)): `-NoSchedule` to skip the daily task, `-Ref <branch|tag>` to pin a
+version of the scripts.
+
+## Or download the bundle
 
 1. Download `feedhacker-<version>-win.zip` from the
    [latest release](https://github.com/newellnarco/Feedhacker/releases/latest) and unzip it.
@@ -39,6 +54,10 @@ installing, updating, scheduling — is automated and needs **no administrator r
 ### Options
 
 ```powershell
+# One-line web install/update, skipping the daily task or pinning a script version:
+powershell -ExecutionPolicy Bypass -File web-install.ps1 -NoSchedule
+powershell -ExecutionPolicy Bypass -File web-install.ps1 -Ref v0.4.3
+
 # Install without registering the daily auto-update task:
 powershell -ExecutionPolicy Bypass -File install.ps1 -NoSchedule
 
@@ -74,10 +93,11 @@ installs are auto-updated by Google. `uninstall.bat` removes the host registrati
 
 ## Windows `.msi`
 
-Releases also attach a best-effort **`FeedHacker-<version>.msi`** (built in CI with WiX).
-It lays the prebuilt extension + these scripts into `%LOCALAPPDATA%\FeedHacker` and adds
-a Start-Menu "Finish setup" shortcut. It still can't bypass Chrome's one-time
-"Load unpacked" for an off-store extension — see below.
+Releases also attach a best-effort **`FeedHacker-<version>.msi`** (built in CI with WiX
+v5). It lays the prebuilt extension + these scripts into `%LOCALAPPDATA%\FeedHacker` and
+adds a Start-Menu "Finish setup" shortcut. It still can't bypass Chrome's one-time
+"Load unpacked" for an off-store extension — see below. For most people the one-line web
+installer above is simpler; the MSI exists for managed/Add-Remove-Programs setups.
 
 ## Why not a true silent .exe/.msi?
 

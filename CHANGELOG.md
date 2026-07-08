@@ -11,6 +11,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.3]
+
+### Added
+- **One-line web installer/updater for Windows.** Install (or update) straight from
+  GitHub with a single PowerShell command — no zip to download by hand, no build:
+  ```powershell
+  irm https://raw.githubusercontent.com/newellnarco/Feedhacker/main/installer/windows/web-install.ps1 | iex
+  ```
+  It fetches the installer scripts from the repo, then pulls the latest **green**
+  release (published only after CI passes), sets up daily auto-updates, and guides the
+  one-time "Load unpacked". Re-running the same command updates in place.
+
+### Fixed
+- **Windows `.msi` build no longer fails in CI.** `dotnet tool install --global wix`
+  had started pulling WiX v7, which refuses to build without accepting the paid Open
+  Source Maintenance Fee (OSMF) EULA (`error WIX7015`). Pinned the CI toolchain to WiX
+  v5, which needs no EULA and matches the schema `feedhacker.wxs` already targets, so
+  the best-effort MSI attaches to releases again.
+
 ## [0.4.2]
 
 ### Changed

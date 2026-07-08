@@ -62,7 +62,10 @@ jobs:
       - name: Install WiX
         shell: pwsh
         run: |
-          dotnet tool install --global wix
+          # Pin to WiX v5: v6/v7 gate `wix build` behind the Open Source Maintenance Fee
+          # (OSMF) EULA and fail in CI with "error WIX7015: You must accept the ... EULA".
+          # v5 needs no EULA and uses the same v4 schema this feedhacker.wxs targets.
+          dotnet tool install --global wix --version 5.0.2
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
       - name: Build MSI
         shell: pwsh

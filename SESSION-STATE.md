@@ -31,14 +31,19 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   newellnarco@gmail.com remains the reliable notification for future submissions. On a new
   session, just re-run step 2/3 above.
 
-## Next release — v0.4.3 (not started)
+## Next release — v0.4.3 (in progress, not shipped)
 
-- **Nothing staged yet.** 0.4.2 just shipped; there are no new changes for 0.4.3.
-- When new work begins: bump `manifest.json` + `package.json` to **0.4.3**, and log changes under
-  a `## [0.4.3]` section in `CHANGELOG.md` (accumulate everything under that one next version).
-- **Backlog / possible follow-ups:** (none committed) — e.g. the best-effort **MSI** installer
-  build still fails in CI (WiX); it never blocks a release and isn't needed for auto-updates, so
-  it's optional to fix.
+- `manifest.json` + `package.json` bumped to **0.4.3**; changes logged under `## [0.4.3]` in
+  `CHANGELOG.md`. **Not shipped** — awaiting an explicit "ship".
+- **Staged so far:**
+  - **One-line web installer/updater** (`installer/windows/web-install.ps1`): a PowerShell
+    one-liner (`irm .../web-install.ps1 | iex`) that installs/updates from GitHub with no manual
+    zip download — fetches the installer scripts, pulls the latest green release, sets up
+    auto-update, guides Load-unpacked. Re-running it updates in place.
+  - **MSI CI fix:** pinned WiX to **v5.0.2** in `release.yml`. The failure was `error WIX7015`
+    (WiX v7 now requires accepting the paid OSMF EULA); v5 needs no EULA and matches the
+    `feedhacker.wxs` schema. The MSI is still best-effort and can't bypass Chrome's Load-unpacked.
+- **Backlog / possible follow-ups:** (none committed).
 
 ## Key facts & gotchas (so a new session doesn't relearn them)
 
