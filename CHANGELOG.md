@@ -11,6 +11,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.3]
+
+### Fixed
+- **Orphaned tabs now shut down cleanly after an extension update.** When Chrome
+  auto-updates (or you reload) the extension while a LinkedIn tab is open, the content
+  script already running in that tab is orphaned — `chrome.runtime.id` goes away and every
+  `chrome.*` call throws "Extension context invalidated". FeedHacker now detects the dead
+  context and tears itself down: it disconnects the feed observer, clears its timers and
+  scroll listener, removes its injected "Load more" bar, and reveals anything it had
+  hidden — instead of churning (and logging its own errors) for the life of the tab. This
+  does not affect the harmless `chrome-extension://invalid/` request some sites (LinkedIn
+  included) fire from their own `fetch` interceptor against the stale context — that one is
+  the page's, not ours, and a plain tab reload clears it.
+
 ## [0.4.2]
 
 ### Changed
