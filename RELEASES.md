@@ -24,9 +24,9 @@ at different speeds, so they're tracked separately:
 |---|---|---|---|---|
 | 0.2.0 | ✅ Released (2026-07-06) | ◻︎ prior item | 2026-07-06 | Last version on the old item `djfbnie…`. |
 | 0.3.0 | ✅ Released (2026-07-07) | ⏳ Submitted → review | 2026-07-07 | First upload to the **new** item; auto-published (submitted for review). |
-| 0.4.0 | ✅ Released (2026-07-07) | ✅ Review cleared (2026-07-08) | 2026-07-07 | Cleared review, which freed the slot for 0.4.2. Live status on the store to be confirmed in the dashboard. |
+| 0.4.0 | ✅ Released (2026-07-07) | ✅ **Live** (published 2026-07-08) | 2026-07-07 | Confirmed live — Google "Item successfully published" email, Version 0.4.0, 2026-07-08 10:33 UTC. |
 | 0.4.1 | ✅ Released (2026-07-07) | ◻︎ Skipped on store | — | Store upload was blocked (`ITEM_NOT_UPDATABLE`); superseded by 0.4.2. Installer ASCII fix lives on the GitHub download. |
-| 0.4.2 | ✅ Released (2026-07-08) | ⏳ Submitted → review | 2026-07-08 | Uploaded, "Publish successful" (submitted for review). Cumulative: everything since 0.4.0. |
+| 0.4.2 | ✅ Released (2026-07-08) | ⏳ In review | 2026-07-08 | Uploaded 21:13 UTC, "Publish successful" (submitted for review). Awaiting Google's decision. Cumulative: everything since 0.4.0. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
