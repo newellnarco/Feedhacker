@@ -29,6 +29,28 @@ test("every file the manifest references is present in dist/feedhacker", () => {
   assert.deepStrictEqual(missing, [], `dist/feedhacker is missing: ${missing.join(", ")}`);
 });
 
+test("the banlist ships bundled and is NOT exposed as a web-accessible resource", () => {
+  // Mitigation: fetching a web-accessible claudisms.json on linkedin.com left an
+  // extension-origin entry in the page's Resource Timing that a site could enumerate
+  // (and, after a context swap, probe as chrome-extension://invalid/). The banlist now
+  // rides in as a bundled content script. Guard both halves so neither regresses.
+  const wars = (manifest.web_accessible_resources || []).flatMap((w) => w.resources || []);
+  assert.ok(!wars.includes("claudisms.json"), "claudisms.json must NOT be web-accessible");
+
+  const csJs = (manifest.content_scripts || []).flatMap((cs) => cs.js || []);
+  assert.ok(csJs.includes("banlist.js"), "banlist.js must be injected as a content script");
+  assert.ok(!csJs.includes(undefined), "content-script js list intact");
+
+  const banlist = fs.readFileSync(path.join(EXT, "banlist.js"), "utf8");
+  assert.match(banlist, /self\.FeedHackerBanlist\s*=/, "banlist.js must set self.FeedHackerBanlist");
+  const parsed = JSON.parse(banlist.replace(/^self\.FeedHackerBanlist\s*=\s*/, "").replace(/;\s*$/, ""));
+  assert.ok(Array.isArray(parsed.entries) && parsed.entries.length > 0, "bundled banlist has entries");
+
+  const content = fs.readFileSync(path.join(EXT, "content.js"), "utf8");
+  assert.ok(!/getURL\(\s*["']claudisms\.json["']\s*\)/.test(content),
+    "content.js must not fetch claudisms.json on the page anymore");
+});
+
 test("each packaged icon PNG's pixel size matches its manifest key (128x128 required by the store)", () => {
   const sizes = Object.entries(manifest.icons || {});
   assert.ok(sizes.some(([s]) => s === "128"), "manifest must declare a 128x128 icon for the Web Store");

@@ -11,6 +11,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.3]
+
+### Changed
+- **Smaller page footprint on LinkedIn — the banlist now ships bundled.** Previously the
+  content script fetched `claudisms.json` from a `web_accessible_resource` at boot, which left
+  an extension-origin entry in the page's Resource Timing and made the file enumerable/loadable
+  by the site. The banlist is now compiled into a bundled content script (`banlist.js` sets
+  `self.FeedHackerBanlist`), so `web_accessible_resources` is empty and FeedHacker exposes no
+  extension-origin resource for a site's own telemetry to enumerate (and, after a context swap,
+  probe as `chrome-extension://invalid/`). Boot is also slightly faster — no fetch round-trip.
+
+### Fixed
+- **Orphaned tabs now shut down cleanly after an extension update.** When Chrome
+  auto-updates (or you reload) the extension while a LinkedIn tab is open, the content
+  script already running in that tab is orphaned — `chrome.runtime.id` goes away and every
+  `chrome.*` call throws "Extension context invalidated". FeedHacker now detects the dead
+  context and tears itself down: it disconnects the feed observer, clears its timers and
+  scroll listener, removes its injected "Load more" bar, and reveals anything it had
+  hidden — instead of churning (and logging its own errors) for the life of the tab. This
+  does not affect the harmless `chrome-extension://invalid/` request some sites (LinkedIn
+  included) fire from their own `fetch` interceptor against the stale context — that one is
+  the page's, not ours, and a plain tab reload clears it.
+
 ## [0.4.2]
 
 ### Changed

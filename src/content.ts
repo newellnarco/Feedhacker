@@ -24,11 +24,37 @@
   var ready = false;
   var F = self.FeedHackerFeed;
 
+  // --- extension-context lifecycle ----------------------------------------
+  // Chrome auto-updates (or a manual reload) swap in a new extension context and
+  // ORPHAN the content script already running in an open LinkedIn tab: chrome.runtime.id
+  // goes undefined, every chrome.* call throws "Extension context invalidated", and any
+  // chrome-extension://<id>/… reference the page still holds resolves to the sentinel
+  // chrome-extension://invalid/. We can't fix the orphaned page, but we CAN stop doing
+  // work in it — disconnect the observer, drop the timers/listeners, and pull our injected
+  // UI — so the dead tab stays quiet until the user navigates (which reloads us fresh).
+  var mainObserver: any = null, scanTimer: any = null, scrollHandler: any = null, dead = false;
+  function contextAlive() {
+    try { return !!(chrome && chrome.runtime && chrome.runtime.id); } catch (e) { return false; }
+  }
+  function teardown() {
+    if (dead) return;
+    dead = true;
+    try { if (mainObserver) mainObserver.disconnect(); } catch (e) {}
+    try { if (scanTimer) clearInterval(scanTimer); } catch (e) {}
+    try { if (scrollHandler) window.removeEventListener("scroll", scrollHandler); } catch (e) {}
+    try { F.reset(document); } catch (e) {}   // reveal anything we hid, so a dead tab isn't left filtering
+    try { var lb = document.getElementById("feedhacker-loadmore"); if (lb && lb.parentNode) lb.parentNode.removeChild(lb); } catch (e) {}
+  }
+
   // --- error logging -------------------------------------------------------
   // Append a timestamped entry to storage.local and tell the service worker to
   // flip the badge to an error state. Everything here is defensive: logging must
   // never itself throw and take the extension down.
   function logError(err, context) {
+    if (dead) return;
+    // A dead context is expected after an update, not a bug — don't console-spam or flag
+    // the badge for it. Tear down instead so the orphaned tab goes quiet.
+    if (!contextAlive()) { teardown(); return; }
     try {
       console.error("FeedHacker [" + (context || "?") + "]", err);
       if (!Log || !chrome.storage || !chrome.storage.local) return;
@@ -243,6 +269,8 @@
   }
 
   function scanNow() {
+    if (dead) return;
+    if (!contextAlive()) { teardown(); return; }   // orphaned after an update — stop cleanly
     if (!ready) return;
     try {
       // Master switch off, or not on a scanned surface: reveal everything and idle.
@@ -307,7 +335,7 @@
       }
     }
   }
-  function onUserScroll() { pump(false); harvestImplicit(); }
+  function onUserScroll() { if (dead) return; pump(false); harvestImplicit(); }
 
   // Grafted "Load more" bar — inline at the feed's end, spaced + boxed (a fixed button
   // was hidden behind LinkedIn's Messaging widget). Repositioned as the feed grows;
@@ -359,34 +387,36 @@
   function start() {
     // Skip full rescans on batches that added no real content (e.g. our own stubs,
     // attribute-only churn) — the big win on large, chatty feeds.
-    var observer = new MutationObserver(function (records) {
+    mainObserver = new MutationObserver(function (records) {
+      if (dead) return;
       if (F.mutationsRelevant(records)) schedule();
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    mainObserver.observe(document.documentElement, { childList: true, subtree: true });
     scanNow();
-    setInterval(scanNow, 8000);   // slow safety net; the observer drives real-time updates
+    scanTimer = setInterval(scanNow, 8000);   // slow safety net; the observer drives real-time updates
     var scrollPending = false;
-    function onScrollRaf() {
+    scrollHandler = function onScrollRaf() {
       if (scrollPending) return;
       scrollPending = true;
       requestAnimationFrame(function () { scrollPending = false; onUserScroll(); });
-    }
-    window.addEventListener("scroll", onScrollRaf, { passive: true });   // load as you scroll near bottom
+    };
+    window.addEventListener("scroll", scrollHandler, { passive: true });   // load as you scroll near bottom
   }
 
+  // The banlist ships bundled (banlist.js sets self.FeedHackerBanlist) rather than being
+  // fetched from a web-accessible resource. Fetching the packaged banlist over the extension
+  // origin on linkedin.com left an entry in the page's Resource Timing and required the JSON to
+  // be web-accessible — surface a site's own telemetry could enumerate and (after a context
+  // swap) probe as chrome-extension://invalid/. Reading a bundled global keeps our page
+  // footprint to just the injected content scripts and needs no web_accessible_resources.
   function init() {
-    fetch(chrome.runtime.getURL("claudisms.json"))
-      .then(function (r) {
-        if (!r.ok) throw new Error("banlist HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (data) {
-        var entries = (data && data.entries) ? data.entries : [];
-        matchers = self.FeedHackerMatcher.buildMatchers({ entries: entries });
-        ready = true;
-        start();
-      })
-      .catch(function (err) { logError(err, "banlist-fetch"); });
+    try {
+      var data = (self as any).FeedHackerBanlist || { entries: [] };
+      var entries = (data && data.entries) ? data.entries : [];
+      matchers = self.FeedHackerMatcher.buildMatchers({ entries: entries });
+      ready = true;
+      start();
+    } catch (err) { logError(err, "banlist-init"); }
   }
 
   // Load settings (sync) + learned weights, custom filters, author memory (local).
