@@ -24,9 +24,9 @@ at different speeds, so they're tracked separately:
 |---|---|---|---|---|
 | 0.2.0 | ✅ Released (2026-07-06) | ◻︎ prior item | 2026-07-06 | Last version on the old item `djfbnie…`. |
 | 0.3.0 | ✅ Released (2026-07-07) | ⏳ Submitted → review | 2026-07-07 | First upload to the **new** item; auto-published (submitted for review). |
-| 0.4.0 | ✅ Released (2026-07-07) | ⏳ In review | 2026-07-07 | Uploaded, "Publish successful" (submitted for review). This submission holds the review slot. |
-| 0.4.1 | ✅ Released (2026-07-07) | ❌ Blocked — not uploaded | — | Store upload rejected `ITEM_NOT_UPDATABLE` (0.4.0 still pending). Installer ASCII fix; GitHub download is the fix path. |
-| 0.4.2 | 🚧 Unreleased (accumulating) | — | — | Not yet tagged/released. |
+| 0.4.0 | ✅ Released (2026-07-07) | ✅ Review cleared (2026-07-08) | 2026-07-07 | Cleared review, which freed the slot for 0.4.2. Live status on the store to be confirmed in the dashboard. |
+| 0.4.1 | ✅ Released (2026-07-07) | ◻︎ Skipped on store | — | Store upload was blocked (`ITEM_NOT_UPDATABLE`); superseded by 0.4.2. Installer ASCII fix lives on the GitHub download. |
+| 0.4.2 | ✅ Released (2026-07-08) | ⏳ Submitted → review | 2026-07-08 | Uploaded, "Publish successful" (submitted for review). Cumulative: everything since 0.4.0. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -35,7 +35,7 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 
-### 0.4.2 — unreleased (accumulating)
+### 0.4.2 — released on GitHub (2026-07-08); submitted to the store
 - Hidden/revealed posts no longer "pop back" when settings re-apply (Hide / Show-anyway are sticky).
 - Hidden-post **stub redesign**: toggle-driven — rule inline by default; **Show author** adds the
   author inline; **Show sample** adds a post sample on line 2.
