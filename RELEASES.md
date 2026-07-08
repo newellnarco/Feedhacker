@@ -26,7 +26,7 @@ at different speeds, so they're tracked separately:
 | 0.3.0 | ✅ Released (2026-07-07) | ⏳ Submitted → review | 2026-07-07 | First upload to the **new** item; auto-published (submitted for review). |
 | 0.4.0 | ✅ Released (2026-07-07) | ✅ **Live** (published 2026-07-08) | 2026-07-07 | Confirmed live — Google "Item successfully published" email, Version 0.4.0, 2026-07-08 10:33 UTC. |
 | 0.4.1 | ✅ Released (2026-07-07) | ◻︎ Skipped on store | — | Store upload was blocked (`ITEM_NOT_UPDATABLE`); superseded by 0.4.2. Installer ASCII fix lives on the GitHub download. |
-| 0.4.2 | ✅ Released (2026-07-08) | ⏳ In review | 2026-07-08 | Uploaded 21:13 UTC, "Publish successful" (submitted for review). Awaiting Google's decision. Cumulative: everything since 0.4.0. |
+| 0.4.2 | ✅ Released (2026-07-08) | ✅ **Live** (published 2026-07-08) | 2026-07-08 | Confirmed live — Google "Item successfully published" email, Version 0.4.2, 2026-07-08 21:57 UTC. Cumulative: everything since 0.4.0. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -35,7 +35,7 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 
-### 0.4.2 — released on GitHub (2026-07-08); submitted to the store
+### 0.4.2 — released on GitHub (2026-07-08); live on the store (2026-07-08)
 - Hidden/revealed posts no longer "pop back" when settings re-apply (Hide / Show-anyway are sticky).
 - Hidden-post **stub redesign**: toggle-driven — rule inline by default; **Show author** adds the
   author inline; **Show sample** adds a post sample on line 2.

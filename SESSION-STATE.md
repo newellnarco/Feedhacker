@@ -22,13 +22,13 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 ## Current state — as of 2026-07-08
 
 - **Latest GitHub release:** `v0.4.2` (2026-07-08). `main` sits at 0.4.2.
-- **Chrome Web Store:** **v0.4.0 is LIVE** (published 2026-07-08 10:33 UTC). **v0.4.2 was
-  submitted 2026-07-08 ~21:13 UTC and is IN REVIEW** → **the submission slot is BLOCKED** until
-  Google publishes or rejects 0.4.2.
+- **Chrome Web Store:** **v0.4.2 is LIVE** (published 2026-07-08 21:57 UTC — Google "Item
+  successfully published" email, Version 0.4.2). **The submission slot is OPEN** (the latest
+  submitted version has cleared review).
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
-- **Monitoring:** an in-session cron watches Gmail for the 0.4.2 decision, but it dies when the
-  session ends — Google's email to newellnarco@gmail.com is the reliable notification. On a new
+- **Monitoring:** 0.4.2 has cleared review, so no decision is pending. Google's email to
+  newellnarco@gmail.com remains the reliable notification for future submissions. On a new
   session, just re-run step 2/3 above.
 
 ## Next release — v0.4.3 (not started)
