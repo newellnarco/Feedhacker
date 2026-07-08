@@ -13,6 +13,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.3]
 
+### Changed
+- **Smaller page footprint on LinkedIn — the banlist now ships bundled.** Previously the
+  content script fetched `claudisms.json` from a `web_accessible_resource` at boot, which left
+  an extension-origin entry in the page's Resource Timing and made the file enumerable/loadable
+  by the site. The banlist is now compiled into a bundled content script (`banlist.js` sets
+  `self.FeedHackerBanlist`), so `web_accessible_resources` is empty and FeedHacker exposes no
+  extension-origin resource for a site's own telemetry to enumerate (and, after a context swap,
+  probe as `chrome-extension://invalid/`). Boot is also slightly faster — no fetch round-trip.
+
 ### Fixed
 - **Orphaned tabs now shut down cleanly after an extension update.** When Chrome
   auto-updates (or you reload) the extension while a LinkedIn tab is open, the content

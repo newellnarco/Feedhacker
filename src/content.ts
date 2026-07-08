@@ -403,19 +403,20 @@
     window.addEventListener("scroll", scrollHandler, { passive: true });   // load as you scroll near bottom
   }
 
+  // The banlist ships bundled (banlist.js sets self.FeedHackerBanlist) rather than being
+  // fetched from a web-accessible resource. Fetching the packaged banlist over the extension
+  // origin on linkedin.com left an entry in the page's Resource Timing and required the JSON to
+  // be web-accessible — surface a site's own telemetry could enumerate and (after a context
+  // swap) probe as chrome-extension://invalid/. Reading a bundled global keeps our page
+  // footprint to just the injected content scripts and needs no web_accessible_resources.
   function init() {
-    fetch(chrome.runtime.getURL("claudisms.json"))
-      .then(function (r) {
-        if (!r.ok) throw new Error("banlist HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (data) {
-        var entries = (data && data.entries) ? data.entries : [];
-        matchers = self.FeedHackerMatcher.buildMatchers({ entries: entries });
-        ready = true;
-        start();
-      })
-      .catch(function (err) { logError(err, "banlist-fetch"); });
+    try {
+      var data = (self as any).FeedHackerBanlist || { entries: [] };
+      var entries = (data && data.entries) ? data.entries : [];
+      matchers = self.FeedHackerMatcher.buildMatchers({ entries: entries });
+      ready = true;
+      start();
+    } catch (err) { logError(err, "banlist-init"); }
   }
 
   // Load settings (sync) + learned weights, custom filters, author memory (local).

@@ -23,6 +23,7 @@
         "https://www.linkedin.com/*"
       ],
       "js": [
+        "banlist.js",
         "filters.js",
         "logger.js",
         "selectors.js",
@@ -37,16 +38,6 @@
         "styles.css"
       ],
       "run_at": "document_idle"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "claudisms.json"
-      ],
-      "matches": [
-        "https://www.linkedin.com/*"
-      ]
     }
   ],
   "action": {

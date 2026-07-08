@@ -15,7 +15,7 @@ process.chdir(ROOT);
 
 // Compiled JS (from build/) that ships in the extension.
 const JS_FILES = [
-  "background.js", "inject.js", "filters.js", "logger.js", "selectors.js", "matcher.js",
+  "background.js", "inject.js", "banlist.js", "filters.js", "logger.js", "selectors.js", "matcher.js",
   "scorer.js", "authors.js", "customfilters.js", "feed.js", "content.js", "popup.js", "options.js", "update.js",
 ];
 // Static assets that ship as-is from the repo root.
@@ -148,6 +148,14 @@ function zipDir(srcDir, zipPath, prefix = "") {
 // --- build ---------------------------------------------------------------------
 console.log("Compiling TypeScript…");
 execFileSync(process.execPath, [path.join("node_modules", "typescript", "bin", "tsc")], { stdio: "inherit" });
+
+// Generate build/banlist.js from claudisms.json so the banlist ships bundled into the
+// content scripts (content.js reads self.FeedHackerBanlist) instead of being fetched from
+// a web-accessible resource. This keeps claudisms.json out of web_accessible_resources and
+// off linkedin.com's page-visible Resource Timing — one fewer extension-origin reference a
+// site could enumerate. JSON.parse validates the source before we emit it as JS.
+const banlist = JSON.parse(fs.readFileSync("claudisms.json", "utf8"));
+fs.writeFileSync(path.join("build", "banlist.js"), "self.FeedHackerBanlist=" + JSON.stringify(banlist) + ";\n");
 
 const version = JSON.parse(fs.readFileSync("manifest.json", "utf8")).version;
 const zipPath = path.join(OUT, `feedhacker-${version}.zip`);
