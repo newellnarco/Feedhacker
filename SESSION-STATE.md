@@ -43,6 +43,16 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   - **MSI CI fix:** pinned WiX to **v5.0.2** in `release.yml`. The failure was `error WIX7015`
     (WiX v7 now requires accepting the paid OSMF EULA); v5 needs no EULA and matches the
     `feedhacker.wxs` schema. The MSI is still best-effort and can't bypass Chrome's Load-unpacked.
+  - **Fail-safe teardown** (`src/content.ts`): when our extension context is invalidated
+    (reload/update/disable with a LinkedIn tab open), the orphaned content script now detects the
+    dead `chrome.runtime.id`, disconnects its observer/timers/scroll listener, and restores the
+    page (reveals hidden posts, drops the Load-more bar) instead of churning + driving extra feed
+    loads. New guard test `test/integration/content-teardown.test.js`. NOTE: a user reported a
+    `chrome-extension://invalid/` console flood on LinkedIn; investigation proved it comes from a
+    **different** extension (ID `nenlahapcbofgnanklpelkaejcehkggg`, which wraps `window.fetch` via
+    `linkedin-inject.js`), not FeedHacker — FeedHacker's only network call is one `claudisms.json`
+    fetch, and the flood occurs on pages where FeedHacker idles. The teardown is defensive hardening,
+    not a fix for that extension's bug.
 - **Backlog / possible follow-ups:** (none committed).
 
 ## Key facts & gotchas (so a new session doesn't relearn them)

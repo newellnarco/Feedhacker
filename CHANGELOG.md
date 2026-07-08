@@ -23,6 +23,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   release (published only after CI passes), sets up daily auto-updates, and guides the
   one-time "Load unpacked". Re-running the same command updates in place.
 
+### Changed
+- **FeedHacker now fails safe when its extension context goes away.** If the extension is
+  reloaded, updated, or disabled while a LinkedIn tab stays open, the old content script is
+  orphaned (`chrome.runtime.id` disappears). It now detects that, **tears itself down** —
+  disconnects its observer, clears its timers, drops its scroll listener — and **restores the
+  page** (reveals anything it hid, removes its "Load more" bar). Previously the orphaned
+  script kept re-scanning on every DOM change and kept asking LinkedIn to load more feed,
+  which needlessly multiplied network churn. (This does **not** fix console `chrome-extension://invalid/`
+  floods coming from *other* extensions — those originate in that extension's own code.)
+
 ### Fixed
 - **Windows `.msi` build no longer fails in CI.** `dotnet tool install --global wix`
   had started pulling WiX v7, which refuses to build without accepting the paid Open

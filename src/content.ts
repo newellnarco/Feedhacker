@@ -242,8 +242,43 @@
     }
   }
 
+  // --- lifecycle / fail-safe teardown ------------------------------------
+  // When our extension context goes away — the (unpacked) extension is reloaded,
+  // updated, or disabled while a LinkedIn tab stays open — this content script is
+  // orphaned: chrome.runtime.id disappears and every chrome.* call starts throwing
+  // "Extension context invalidated." An orphaned script must STOP touching the page.
+  // If it keeps its MutationObserver + interval alive it re-scans on every DOM change
+  // and, worse, keeps asking LinkedIn to load MORE feed (kickLoader), multiplying the
+  // network churn that page telemetry and other extensions react to. So the moment we
+  // notice a dead context we shut down and restore the page to its untouched state.
+  var observer: any = null;
+  var scanIntervalId: any = null;
+  var scrollPending = false;
+  var torndown = false;
+  function contextAlive() {
+    // Reading chrome.runtime.id returns undefined (or throws) once the context is gone.
+    try { return !!(chrome && chrome.runtime && chrome.runtime.id); } catch (e) { return false; }
+  }
+  function onScrollRaf() {
+    if (torndown || scrollPending) return;
+    scrollPending = true;
+    requestAnimationFrame(function () { scrollPending = false; onUserScroll(); });
+  }
+  function teardown() {
+    if (torndown) return;
+    torndown = true;
+    try { if (observer) observer.disconnect(); } catch (e) {}
+    try { if (scanIntervalId) clearInterval(scanIntervalId); } catch (e) {}
+    try { window.removeEventListener("scroll", onScrollRaf); } catch (e) {}
+    // Reveal everything we hid and drop our injected UI so an orphaned FeedHacker
+    // leaves LinkedIn exactly as it found it (a fresh instance re-scans on reload).
+    try { if (F) F.reset(document); } catch (e) {}
+    try { ensureLoadButton(false); } catch (e) {}
+  }
+
   function scanNow() {
-    if (!ready) return;
+    if (torndown || !ready) return;
+    if (!contextAlive()) { teardown(); return; }
     try {
       // Master switch off, or not on a scanned surface: reveal everything and idle.
       if (!settings.enabled || !isMainFeed()) { F.reset(document); ensureLoadButton(false); reportBadge(); return; }
@@ -257,6 +292,9 @@
 
   // Ask the page-world hook (inject.js) to fire LinkedIn's OWN feed-loader callback.
   function kickLoader(broad) {
+    // Never drive LinkedIn's feed loader on a dead context — that is the exact
+    // "amplification" path: extra loads => extra page fetches for a broken feed.
+    if (torndown || !contextAlive()) { teardown(); return; }
     var tok = document.documentElement.getAttribute("data-feedhacker-hook");
     if (!tok) return;   // page-world hook not present
     document.dispatchEvent(new Event((broad ? "feedhacker:kickBroad:" : "feedhacker:kick:") + tok));
@@ -276,6 +314,7 @@
   // early when visible content shows or the user scrolls away (unless forced by button).
   var pumping = false;
   function pump(force) {
+    if (torndown || !contextAlive()) { teardown(); return; }
     if (pumping || !ready || !settings.enabled || !isMainFeed() || !F.anyActive(settings)) return;
     var se = document.scrollingElement || document.documentElement;
     if (!se) return;
@@ -285,7 +324,7 @@
     (function step() {
       var e = document.scrollingElement || document.documentElement;
       var fromBottom = e ? (e.scrollHeight - (window.scrollY + window.innerHeight)) : 0;
-      if (n >= 8 || visibleCount() > startVisible || (!force && fromBottom > 1300)) { pumping = false; return; }
+      if (torndown || n >= 8 || visibleCount() > startVisible || (!force && fromBottom > 1300)) { pumping = false; return; }
       n++;
       kickLoader(false);
       setTimeout(step, 700);
@@ -307,7 +346,7 @@
       }
     }
   }
-  function onUserScroll() { pump(false); harvestImplicit(); }
+  function onUserScroll() { if (torndown) return; pump(false); harvestImplicit(); }
 
   // Grafted "Load more" bar — inline at the feed's end, spaced + boxed (a fixed button
   // was hidden behind LinkedIn's Messaging widget). Repositioned as the feed grows;
@@ -348,7 +387,7 @@
   var ric: any = self.requestIdleCallback || function (cb: any) { return setTimeout(function () { cb({ didTimeout: true }); }, 0); };
   var pending = false;
   function schedule() {
-    if (pending) return;
+    if (torndown || pending) return;
     pending = true;
     setTimeout(function () {
       pending = false;
@@ -359,22 +398,19 @@
   function start() {
     // Skip full rescans on batches that added no real content (e.g. our own stubs,
     // attribute-only churn) — the big win on large, chatty feeds.
-    var observer = new MutationObserver(function (records) {
+    observer = new MutationObserver(function (records) {
+      if (torndown) return;
+      if (!contextAlive()) { teardown(); return; }   // orphaned: stop reacting to LinkedIn's churn
       if (F.mutationsRelevant(records)) schedule();
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     scanNow();
-    setInterval(scanNow, 8000);   // slow safety net; the observer drives real-time updates
-    var scrollPending = false;
-    function onScrollRaf() {
-      if (scrollPending) return;
-      scrollPending = true;
-      requestAnimationFrame(function () { scrollPending = false; onUserScroll(); });
-    }
+    scanIntervalId = setInterval(scanNow, 8000);   // slow safety net; the observer drives real-time updates
     window.addEventListener("scroll", onScrollRaf, { passive: true });   // load as you scroll near bottom
   }
 
   function init() {
+    if (!contextAlive()) { teardown(); return; }
     fetch(chrome.runtime.getURL("claudisms.json"))
       .then(function (r) {
         if (!r.ok) throw new Error("banlist HTTP " + r.status);
