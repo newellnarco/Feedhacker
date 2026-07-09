@@ -71,9 +71,11 @@ function aggrLabel(f) {
   var word = f >= 0.4 ? "aggressive" : f <= 0.17 ? "strict" : "balanced";
   return word + " (~" + Math.round(f * 100) + "% hidden)";
 }
-chrome.storage.sync.get({ slopTargetFrac: DEFAULTS.slopTargetFrac }, function (st) {
-  aggr.value = st.slopTargetFrac;
-  aggrVal.textContent = aggrLabel(st.slopTargetFrac);
+var defaultFrac = typeof DEFAULTS.slopTargetFrac === "number" ? DEFAULTS.slopTargetFrac : 0.28;
+chrome.storage.sync.get({ slopTargetFrac: defaultFrac }, function (st) {
+  var val = typeof st.slopTargetFrac === "number" ? st.slopTargetFrac : defaultFrac;
+  aggr.value = val;
+  aggrVal.textContent = aggrLabel(val);
 });
 aggr.addEventListener("input", function () { aggrVal.textContent = aggrLabel(aggr.value); });
 aggr.addEventListener("change", function () {

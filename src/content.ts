@@ -316,11 +316,17 @@
       try {
         var list = ((o && o[OBS_KEY]) || []).concat(batch);
         if (list.length > OBS_MAX) list = list.slice(list.length - OBS_MAX);
-        var patch = {}; patch[OBS_KEY] = list; chrome.storage.local.set(patch);
         // Time-gated so a calibration's own reapply()-driven re-scan can't loop back into another.
-        if (settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL) {
+        var willCal = settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL;
+        // Persist observations in ONE write. When a calibration is about to consolidate the
+        // population into the (living) weights, reap to a fresh recent window in this same write
+        // — no separate, later overwrite that could clobber another tab's appends.
+        var patch = {}; patch[OBS_KEY] = (willCal && list.length > OBS_KEEP) ? list.slice(list.length - OBS_KEEP) : list;
+        chrome.storage.local.set(patch);
+        if (willCal) {
           lastCalAt = Date.now();   // claim the slot before the async fetch so a concurrent flush can't double-fire
-          // Only read the (larger) training buffer on the rare calibration path, not every flush.
+          // Calibration uses the FULL list for accuracy; only reads the (larger) training buffer
+          // on this rare path, not every flush.
           chrome.storage.local.get([TRAIN_KEY], function (t) { runAutoCalibrate(list, (t && t[TRAIN_KEY]) || []); });
         }
       } catch (e) { logError(e, "slopobs"); }
@@ -351,10 +357,7 @@
       var patch: any = {};
       patch[WEIGHTS_KEY] = r.weights;
       patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
-      // Consolidated: the learning now lives in the weights (the new starting point for next
-      // time), so reap the old observations and keep only a fresh recent window — the buffer
-      // stays small and doesn't keep growing/reloading.
-      if (obs.length > OBS_KEEP) patch[OBS_KEY] = obs.slice(obs.length - OBS_KEEP);
+      // (The observation buffer is reaped in flushObs' single write — see there.)
       chrome.storage.local.set(patch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
       // Soft, interaction-paused re-apply: only reveals/hides posts that actually changed and
