@@ -296,14 +296,16 @@
     obsFlushTimer = null;
     if (!obsPending.length) return;
     var batch = obsPending; obsPending = [];
-    chrome.storage.local.get([OBS_KEY, TRAIN_KEY], function (o) {
+    chrome.storage.local.get([OBS_KEY], function (o) {
       try {
         var list = ((o && o[OBS_KEY]) || []).concat(batch);
         if (list.length > OBS_MAX) list = list.slice(list.length - OBS_MAX);
         var patch = {}; patch[OBS_KEY] = list; chrome.storage.local.set(patch);
         // Time-gated so a calibration's own reapply()-driven re-scan can't loop back into another.
         if (settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL) {
-          runAutoCalibrate(list, (o && o[TRAIN_KEY]) || []);
+          lastCalAt = Date.now();   // claim the slot before the async fetch so a concurrent flush can't double-fire
+          // Only read the (larger) training buffer on the rare calibration path, not every flush.
+          chrome.storage.local.get([TRAIN_KEY], function (t) { runAutoCalibrate(list, (t && t[TRAIN_KEY]) || []); });
         }
       } catch (e) { logError(e, "slopobs"); }
     });
