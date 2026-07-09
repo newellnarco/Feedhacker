@@ -8,12 +8,17 @@ var Log = self.FeedHackerLog;
 var Authors = self.FeedHackerAuthors;
 var Update = self.FeedHackerUpdate;
 var Scorer = self.FeedHackerScorer;
+var SlopLog = self.FeedHackerSlopLog;
 var DEFAULTS = Filters.DEFAULTS;
 var WEIGHTS_KEY = "feedhacker:slopWeights";
 var STATS_KEY = "feedhacker:stats";
 var CUSTOM_KEY = "feedhacker:custom";
 var AUTHORS_KEY = "feedhacker:authors";
 var HISTORY_KEY = "feedhacker:history";
+var SLOPLOG_KEY = SlopLog ? SlopLog.STORAGE_KEY : "feedhacker:sloplog";
+var TRAIN_KEY = "feedhacker:sloptrain";
+var OBS_KEY = "feedhacker:slopobs";
+var CAL_KEY = "feedhacker:slopcal";
 
 var LABELS = {};
 Filters.FILTERS.forEach(function (f) { LABELS[f.id] = f.label; });
@@ -54,6 +59,7 @@ function renderStatus(st) {
   el.textContent = "Active filters: " + (active.length ? active.join(", ") : "none") +
     (extras.length ? " · Options: " + extras.join(", ") : "");
 
+  byId("autoCalibrate").checked = st.autoCalibrate !== false;   // default on
   byId("scanEverywhere").checked = !!st.scanEverywhere;
   byId("implicitLearning").checked = !!st.implicitLearning;
 
@@ -128,9 +134,53 @@ function renderErrors(list) {
   }
 }
 
+// AI-slop decision log: a summary line + the most recent decisions with their "why".
+function renderSlopLog(list) {
+  list = list || [];
+  var sum = SlopLog ? SlopLog.summarize(list) : { total: list.length, falsePositives: 0, confirmed: 0, unlabeled: list.length };
+  var summary = byId("slop-log-summary");
+  if (summary) {
+    summary.textContent = sum.total
+      ? sum.total + " flagged · " + sum.falsePositives + " you marked not‑slop · " + sum.confirmed + " confirmed · " + sum.unlabeled + " no verdict yet"
+      : "No decisions logged yet.";
+  }
+  var ul = byId("slop-log-list");
+  if (!ul) return;
+  ul.innerHTML = "";
+  for (var i = list.length - 1, shown = 0; i >= 0 && shown < 12; i--, shown++) {
+    var e = list[i]; if (!e) { shown--; continue; }
+    var li = document.createElement("li");
+    li.style.cssText = "display:block; padding:8px 10px; background:#f7f8fa; border-radius:8px;";
+    var verdict = e.label === 0 ? "✗ not slop" : e.label === 1 ? "✓ confirmed" : "· no verdict";
+    var head = document.createElement("div");
+    head.style.cssText = "font-size:12px; color:#5f6b7a;";
+    head.textContent = fmtWhen(e.ts) + " · p=" + (e.prob != null ? e.prob : "?") + " · " + verdict + (e.surface === "comment" ? " · comment" : "");
+    var body = document.createElement("div");
+    body.style.cssText = "font-size:13px; color:#1d2226; margin:2px 0;";
+    body.textContent = (e.author ? e.author + ": " : "") + (e.preview || "");
+    var why = document.createElement("div");
+    why.style.cssText = "font-size:12px; color:#6a7686;";
+    var tells = (e.top || []).slice(0, 4).map(function (c) { return c.label + " (" + c.contribution + ")"; }).join(", ");
+    var phr = (e.phrases || []).length ? " · phrases: " + e.phrases.slice(0, 4).join(", ") : "";
+    why.textContent = "tells: " + (tells || "—") + phr;
+    li.appendChild(head); li.appendChild(body); li.appendChild(why);
+    ul.appendChild(li);
+  }
+}
+
+// Autonomous auto-calibration status: what the model tuned itself to, on its own.
+function renderCal(cal) {
+  var el = byId("slop-cal-status");
+  if (!el) return;
+  if (!cal || !cal.at) { el.textContent = "Auto-calibration is on — it will tune the model once it has reviewed enough posts."; return; }
+  var pct = Math.round((cal.flaggedFrac || 0) * 100);
+  el.textContent = "Self-tuned " + fmtWhen(cal.at) + ": hiding ~" + pct + "% of reviewed posts (threshold " +
+    (Math.round((cal.threshold || 0) * 100) / 100) + ", from " + (cal.n || 0) + " posts reviewed).";
+}
+
 function loadAll() {
   chrome.storage.sync.get(DEFAULTS, renderStatus);
-  chrome.storage.local.get([STATS_KEY, Log.STORAGE_KEY, CUSTOM_KEY, AUTHORS_KEY, HISTORY_KEY, WEIGHTS_KEY], function (o) {
+  chrome.storage.local.get([STATS_KEY, Log.STORAGE_KEY, CUSTOM_KEY, AUTHORS_KEY, HISTORY_KEY, WEIGHTS_KEY, SLOPLOG_KEY, CAL_KEY], function (o) {
     renderActivity(o && o[STATS_KEY]);
     renderErrors(o && o[Log.STORAGE_KEY]);
     renderCustom(o && o[CUSTOM_KEY]);
@@ -138,6 +188,8 @@ function loadAll() {
     renderInsights(o && o[HISTORY_KEY]);
     renderTopSources(o && o[AUTHORS_KEY]);
     renderSlopSignals(o && o[WEIGHTS_KEY]);
+    renderSlopLog(o && o[SLOPLOG_KEY]);
+    renderCal(o && o[CAL_KEY]);
   });
 }
 
@@ -156,6 +208,68 @@ byId("reset-learning").addEventListener("click", function () {
   });
 });
 byId("refresh").addEventListener("click", loadAll);
+
+// --- AI-slop decision log: export / clear / recalibrate ---
+function slopStatus(msg) {
+  var s = byId("slop-log-status"); if (!s) return;
+  s.textContent = msg; setTimeout(function () { s.textContent = ""; }, 2200);
+}
+byId("slop-log-export").addEventListener("click", function () {
+  chrome.storage.sync.get(DEFAULTS, function (st) {
+    chrome.storage.local.get([SLOPLOG_KEY, TRAIN_KEY, WEIGHTS_KEY, OBS_KEY, CAL_KEY], function (o) {
+      try {
+        var log = (o && o[SLOPLOG_KEY]) || [];
+        var payload = {
+          app: "feedhacker",
+          kind: "slop-decision-log",
+          version: currentVersion(),
+          exportedAt: new Date().toISOString(),
+          threshold: (st && typeof st.slopThreshold === "number") ? st.slopThreshold : (Scorer ? Scorer.THRESHOLD : 0.5),
+          weights: (o && o[WEIGHTS_KEY]) || (Scorer ? Scorer.defaultWeights() : {}),
+          summary: SlopLog ? SlopLog.summarize(log) : null,
+          calibration: (o && o[CAL_KEY]) || null,
+          log: log,
+          training: (o && o[TRAIN_KEY]) || [],
+          observations: (o && o[OBS_KEY]) || []
+        };
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = "feedhacker-slop-log.json";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+        slopStatus("Exported " + payload.log.length + " decisions.");
+      } catch (e) { slopStatus("Export failed."); }
+    });
+  });
+});
+byId("slop-log-clear").addEventListener("click", function () {
+  // Clears the human-readable log only; the labeled training data that tunes the model is
+  // kept (use "Reset AI-slop learning" in the Error log panel to wipe the model itself).
+  var patch = {}; patch[SLOPLOG_KEY] = [];
+  chrome.storage.local.set(patch, function () { renderSlopLog([]); slopStatus("Log cleared (model kept)."); });
+});
+byId("slop-recalibrate").addEventListener("click", function () {
+  if (!Scorer || !Scorer.autocalibrate) { slopStatus("Scorer unavailable."); return; }
+  chrome.storage.sync.get(DEFAULTS, function (st) {
+    chrome.storage.local.get([OBS_KEY], function (o) {
+      var obs = (o && o[OBS_KEY]) || [];
+      if (obs.length < 30) { slopStatus("Reviewing posts — need ~30 (have " + obs.length + "). Scroll your feed, then retry."); return; }
+      try {
+        var r = Scorer.autocalibrate(Scorer.defaultWeights(), obs, {
+          targetFrac: typeof st.slopTargetFrac === "number" ? st.slopTargetFrac : 0.28,
+          priorThreshold: 0.5
+        });
+        if (!r || !r.calibrated) { slopStatus("Not enough data to calibrate yet."); return; }
+        var wpatch = {}; wpatch[WEIGHTS_KEY] = r.weights;
+        var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length };
+        chrome.storage.local.set(wpatch);
+        chrome.storage.local.set(cpatch, function () { renderSlopSignals(r.weights); renderCal(cpatch[CAL_KEY]); });
+        try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
+        slopStatus("Self-tuned from " + obs.length + " reviewed posts — now hiding ~" + Math.round(r.flaggedFrac * 100) + "%.");
+      } catch (e) { slopStatus("Calibration failed."); }
+    });
+  });
+});
 
 // --- update check: compare the running version against the latest GitHub release ---
 function currentVersion() { try { return chrome.runtime.getManifest().version; } catch (e) { return ""; } }
@@ -451,7 +565,7 @@ function saveAuthors(store) {
 }
 
 // --- Advanced toggles (sync) ---
-["scanEverywhere", "implicitLearning"].forEach(function (id) {
+["autoCalibrate", "scanEverywhere", "implicitLearning"].forEach(function (id) {
   var el = byId(id);
   el.addEventListener("change", function () { var p = {}; p[id] = el.checked; chrome.storage.sync.set(p); });
 });
@@ -494,6 +608,8 @@ chrome.storage.onChanged.addListener(function (changes, area) {
     if (changes[AUTHORS_KEY]) { renderAuthors(changes[AUTHORS_KEY].newValue); renderTopSources(changes[AUTHORS_KEY].newValue); }
     if (changes[HISTORY_KEY]) renderInsights(changes[HISTORY_KEY].newValue);
     if (changes[WEIGHTS_KEY]) renderSlopSignals(changes[WEIGHTS_KEY].newValue);
+    if (changes[SLOPLOG_KEY]) renderSlopLog(changes[SLOPLOG_KEY].newValue);
+    if (changes[CAL_KEY]) renderCal(changes[CAL_KEY].newValue);
   }
 });
 

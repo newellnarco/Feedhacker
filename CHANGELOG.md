@@ -13,6 +13,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.4]
 
+### Added
+- **Autonomous AI-slop self-calibration** — to fight false positives without relying on your
+  clicks. FeedHacker now reviews the whole population of posts it sees and periodically re-tunes
+  the model **on its own**, fully on-device: (1) it **down-weights any structural "tell" that
+  fires on most of your feed** — a signal that common is uninformative, which is what stopped one
+  tell (an em dash, an emoji) from flagging everything — and (2) it **sets the threshold from the
+  score distribution** so only the sloppiest slice (~the top fraction) is hidden, however the
+  absolute scores land. Both are recomputed fresh from the shipped defaults each time, so they
+  can't drift. On by default; toggle under **Advanced** ("Self-tune the AI-slop model
+  automatically").
+- **AI-slop decision log** — a local, exportable record of every post flagged and *why*: the
+  probability, the tells that fired (with weight + contribution), the matched banlist phrases,
+  the author, and a short (~280-char) preview, plus your verdict if you correct it. A new options
+  panel shows the auto-calibration status (what it tuned itself to) and recent decisions, with
+  **Export log (JSON)** (to send for a deeper, global tune), **Recalibrate model now** (force a
+  self-tune), and **Clear log**. Everything stays on your computer until you export it.
+
 ### Fixed
 - **Stub buttons no longer occasionally ignore the first click.** The action buttons on a
   hidden-post stub (AI-slop confirm, Hide, Show anyway, Mute author, Always show, Hide again)

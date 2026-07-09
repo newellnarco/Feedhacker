@@ -34,10 +34,26 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## Next release — v0.4.4 (in progress, not shipped)
 
-- **Staged so far:** fix for stub action buttons occasionally ignoring the first click — moved
-  from per-button listeners to one delegated document listener (`data-fh-act` routing), so the
-  controls survive LinkedIn's React re-rendering our injected stub. `manifest.json` +
-  `package.json` are at **0.4.4**; changes logged under `## [0.4.4]` in `CHANGELOG.md`.
+- **Staged so far** (all under `## [0.4.4]` in `CHANGELOG.md`; `manifest.json` + `package.json`
+  at **0.4.4**):
+  - Fix for stub action buttons occasionally ignoring the first click — moved from per-button
+    listeners to one delegated document listener (`data-fh-act` routing), so the controls
+    survive LinkedIn's React re-rendering our injected stub.
+  - **Autonomous AI-slop self-calibration** (`Scorer.autocalibrate`) — the PRIMARY "get smarter"
+    loop, unsupervised. Content script observes every reviewed post's feature vector
+    (`feedhacker:slopobs`, capped 400) and, time-gated (~45s), refits from the shipped prior:
+    damps tells that fire on most of the feed + sets the threshold from the score distribution so
+    only ~`slopTargetFrac` (0.28) is hidden. Writes `slopWeights` (local) + `slopThreshold` (sync)
+    + a `feedhacker:slopcal` status; then `reapply()`. `autoCalibrate` default ON (DEFAULTS); when
+    on it **owns** the weights (per-click `onFeedback` learning is gated off). Loop-guard: calibrate
+    at most once/45s so a calibration's own reapply re-scan can't re-trigger it.
+  - **AI-slop decision log** (`src/sloplog.ts`) — logs why each post was flagged (prob, tells,
+    phrases, ~280-char preview) to `feedhacker:sloplog`; corrections still logged + become labeled
+    examples (`feedhacker:sloptrain`) usable by `Scorer.retrain` (secondary/manual only, gated when
+    autoCalibrate is on). Options "AI-slop decision log" panel: auto-cal status, recent decisions,
+    Export JSON (decisions + training + observations + calibration), Recalibrate now (autonomous),
+    Clear log. Aimed at the "almost everything gets flagged" complaint; the user wants it to improve
+    on its own, not from their (unreliable, short-sample) clicks.
 - Keep accumulating further work under 0.4.4 until the user says "ship."
 - **Backlog / possible follow-ups:**
   - The best-effort **MSI** installer build still fails in CI (WiX `Build MSI` step); it's

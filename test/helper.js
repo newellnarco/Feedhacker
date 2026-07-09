@@ -11,6 +11,7 @@ const logger = require("../build/logger.js");
 const selectors = require("../build/selectors.js");
 const matcher = require("../build/matcher.js");
 const scorer = require("../build/scorer.js");
+const sloplog = require("../build/sloplog.js");
 const authors = require("../build/authors.js");
 const customfilters = require("../build/customfilters.js");
 const update = require("../build/update.js");
@@ -25,4 +26,4 @@ function makeDoc(html) {
   return dom.window.document;
 }
 
-module.exports = { filters, logger, selectors, matcher, scorer, authors, customfilters, update, feed, makeDoc, JSDOM };
+module.exports = { filters, logger, selectors, matcher, scorer, sloplog, authors, customfilters, update, feed, makeDoc, JSDOM };

@@ -38,9 +38,11 @@
     }
     for (var j = 0; j < DISPLAY_KEYS.length; j++) d[DISPLAY_KEYS[j]] = false;
     d.enabled = true;            // master on/off; pause without uninstalling
-    d.slopThreshold = 0.5;       // AI-slop confidence cutoff (0.2 lax .. 0.8 strict)
+    d.slopThreshold = 0.5;       // AI-slop confidence cutoff (0.2 lax .. 0.8 strict); auto-calibration tunes this
     d.implicitLearning = true;   // learn weak "confirmed" from posts scrolled past
     d.scanEverywhere = false;    // beyond the home feed (permalinks, search, profiles)
+    d.autoCalibrate = true;      // self-tune weights + threshold from the posts reviewed (no user labels needed)
+    d.slopTargetFrac = 0.28;     // auto-calibration aims to hide ~this fraction of reviewed posts (the sloppiest)
     return d;
   }
   var DEFAULTS = buildDefaults();

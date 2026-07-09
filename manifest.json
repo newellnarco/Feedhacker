@@ -29,6 +29,7 @@
         "selectors.js",
         "matcher.js",
         "scorer.js",
+        "sloplog.js",
         "authors.js",
         "customfilters.js",
         "feed.js",

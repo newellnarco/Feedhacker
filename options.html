@@ -230,6 +230,28 @@
   </details>
 
   <details class="panel">
+    <summary><h2>AI-slop decision log</h2></summary>
+    <div class="panel-body">
+      <p class="muted" style="margin:0 0 10px;">FeedHacker <b>tunes itself</b>: it reviews the posts you see and,
+        on its own, down‑weights “tells” that fire on most of your feed (so one common signal can’t flag everything) and
+        sets the threshold so only the sloppiest slice is hidden — no clicking required (toggle in <b>Advanced</b>). This
+        is a local record of every post it flagged and <b>why</b> — the probability, the tells that fired, and the
+        phrases matched — plus your verdict if you hit <b>Show anyway</b> / the <b>✓</b> splat. Everything stays on your
+        computer; export it to send for a deeper, global tune.</p>
+      <p id="slop-cal-status" style="margin:0 0 8px; font-size:13px; color:#0a66c2;"></p>
+      <p id="slop-log-summary" class="muted" style="margin:0 0 12px; font-size:13px;">No decisions logged yet.</p>
+      <h3 class="subhead">Most recent</h3>
+      <ul id="slop-log-list" class="chiplist" style="flex-direction:column; align-items:stretch; gap:8px;"></ul>
+      <div class="row" style="margin-top:12px;">
+        <button id="slop-log-export">Export log (JSON)</button>
+        <button id="slop-recalibrate">Recalibrate model now</button>
+        <button id="slop-log-clear" class="danger">Clear log</button>
+        <span class="muted" id="slop-log-status"></span>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel">
     <summary><h2>Custom filters</h2></summary>
     <div class="panel-body">
       <p class="muted" style="margin:0 0 10px;">Hide posts matching any of these (one per line). Applies on top of the built-in filters.</p>
@@ -265,6 +287,7 @@
   <details class="panel">
     <summary><h2>Advanced</h2></summary>
     <div class="panel-body">
+      <label class="rowline"><input type="checkbox" id="autoCalibrate"> <b>Self-tune the AI-slop model automatically</b> <span class="muted">(reviews the posts you see and adjusts weights + threshold on its own — no clicking needed)</span></label>
       <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
       <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
     </div>
@@ -310,6 +333,7 @@
   <script src="logger.js"></script>
   <script src="matcher.js"></script>
   <script src="scorer.js"></script>
+  <script src="sloplog.js"></script>
   <script src="authors.js"></script>
   <script src="update.js"></script>
   <script src="options.js"></script>

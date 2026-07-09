@@ -241,11 +241,99 @@
   }
   function clampW(x) { return x < -8 ? -8 : x > 8 ? 8 : x; }
 
+  // Batch retrain from a set of labeled corrections — the "local recalibration" loop.
+  // Unlike learn() (one online step), this fits ALL accumulated examples together, which is
+  // far more stable, and it regularizes TOWARD a prior (the current defaults) so a small or
+  // one-sided buffer — e.g. "almost everything was a false positive" — pulls the model down
+  // without collapsing it to "never slop". examples: [{ features, label }]. Returns new
+  // weights (never mutates prior). Deterministic: fixed epochs, full-batch gradient.
+  function retrain(prior, examples, opts) {
+    prior = prior || defaultWeights();
+    opts = opts || {};
+    var epochs = typeof opts.epochs === "number" ? opts.epochs : 300;
+    var lr = typeof opts.lr === "number" ? opts.lr : 0.3;
+    var lambda = typeof opts.lambda === "number" ? opts.lambda : 0.04;   // pull toward prior
+    if (!examples || !examples.length) return prior;
+    var keys = ["bias"].concat(FEATURE_IDS);
+    var w: any = {};
+    for (var k in prior) if (Object.prototype.hasOwnProperty.call(prior, k)) w[k] = prior[k];
+    for (var ki = 0; ki < keys.length; ki++) if (typeof w[keys[ki]] !== "number") w[keys[ki]] = 0;
+    var n = examples.length;
+    for (var ep = 0; ep < epochs; ep++) {
+      var grad: any = {};
+      for (var g = 0; g < keys.length; g++) grad[keys[g]] = 0;
+      for (var i = 0; i < n; i++) {
+        var f = examples[i].features || {};
+        var err = (examples[i].label ? 1 : 0) - score(f, w).prob;   // logistic gradient direction
+        grad.bias += err;
+        for (var j = 0; j < FEATURE_IDS.length; j++) {
+          var id = FEATURE_IDS[j];
+          grad[id] += err * (f[id] || 0);
+        }
+      }
+      for (var m = 0; m < keys.length; m++) {
+        var key = keys[m];
+        // mean log-likelihood gradient + a pull back toward the prior weight (ridge to prior)
+        var step = grad[key] / n - lambda * (w[key] - (typeof prior[key] === "number" ? prior[key] : 0));
+        w[key] = clampW(w[key] + lr * step);
+      }
+    }
+    return w;
+  }
+
+  // Autonomous, UNSUPERVISED calibration from the population of posts FeedHacker has actually
+  // reviewed — no user labels required. Two moves, both recomputed FRESH from the shipped prior
+  // each run so they can never drift:
+  //   1) Ubiquity damping — a structural "tell" that fires on most posts in THIS feed carries
+  //      little information, so its weight is shrunk toward zero. This is what stops one common
+  //      signal (an em dash, an emoji) from flagging everything.
+  //   2) Threshold from the score distribution — put the cutoff at the (1 - targetFrac) quantile
+  //      of the population's own scores, so only the sloppiest ~targetFrac is hidden however the
+  //      absolute numbers land. This is what fixes "almost everything gets flagged".
+  // observations: [{ features }] (numeric feature vectors of scanned posts, slop or not).
+  // Returns { weights, threshold, calibrated, flaggedFrac, freqs }.
+  function autocalibrate(prior, observations, opts) {
+    prior = prior || defaultWeights();
+    opts = opts || {};
+    var minObs = typeof opts.minObs === "number" ? opts.minObs : 30;
+    var target = typeof opts.targetFrac === "number" ? opts.targetFrac : 0.28;
+    target = target < 0.05 ? 0.05 : target > 0.6 ? 0.6 : target;
+    var priorThr = typeof opts.priorThreshold === "number" ? opts.priorThreshold : THRESHOLD;
+    var n = observations ? observations.length : 0;
+    if (n < minObs) return { weights: prior, threshold: priorThr, calibrated: false, flaggedFrac: 0, freqs: {} };
+
+    var EPS = 0.15, F0 = 0.45, DMIN = 0.25;   // active-threshold, damp-onset frequency, floor factor
+    var weights: any = {};
+    for (var k in prior) if (Object.prototype.hasOwnProperty.call(prior, k)) weights[k] = prior[k];
+    var freqs: any = {};
+    for (var fi = 0; fi < FEATURE_IDS.length; fi++) {
+      var id = FEATURE_IDS[fi];
+      var active = 0;
+      for (var i = 0; i < n; i++) { if (((observations[i].features || {})[id] || 0) >= EPS) active++; }
+      var freq = active / n;
+      freqs[id] = freq;
+      var factor = 1;
+      if (freq > F0) factor = 1 - ((freq - F0) / (1 - F0)) * (1 - DMIN);
+      if (factor < DMIN) factor = DMIN;
+      var base = typeof prior[id] === "number" ? prior[id] : 0;
+      weights[id] = base > 0 ? base * factor : base;   // only damp positive (slop-ward) weights
+    }
+    var probs: number[] = [];
+    for (var j = 0; j < n; j++) probs.push(score(observations[j].features || {}, weights).prob);
+    probs.sort(function (a, b) { return a - b; });
+    var idx = Math.floor((1 - target) * (n - 1));
+    var thr = probs[idx];
+    if (thr < 0.4) thr = 0.4; else if (thr > 0.9) thr = 0.9;   // safety clamp: never near-random, never unhittable
+    var flagged = 0;
+    for (var m = 0; m < n; m++) if (probs[m] >= thr) flagged++;
+    return { weights: weights, threshold: thr, calibrated: true, flaggedFrac: flagged / n, freqs: freqs };
+  }
+
   var api = {
     TELLS: TELLS, FEATURE_IDS: FEATURE_IDS, FEATURE_LABELS: FEATURE_LABELS, THRESHOLD: THRESHOLD,
     EMOJI_RE: EMOJI_RE, words: words, sentences: sentences,
     defaultWeights: defaultWeights, extractFeatures: extractFeatures,
-    score: score, classify: classify, learn: learn
+    score: score, classify: classify, learn: learn, retrain: retrain, autocalibrate: autocalibrate
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerScorer = api;
