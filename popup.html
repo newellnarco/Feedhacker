@@ -64,10 +64,11 @@
 
   <div class="section ai"><span>AI-slop</span></div>
   <div class="frow">
-    <span class="slabel">Sensitivity</span>
-    <input type="range" id="slopThreshold" min="0.2" max="0.8" step="0.05" style="flex:1">
-    <span id="slopThresholdVal" class="muted" style="white-space:nowrap; text-align:right"></span>
+    <span class="slabel">Aggression</span>
+    <input type="range" id="aggression" min="0.10" max="0.50" step="0.02" style="flex:1">
+    <span id="aggressionVal" class="muted" style="white-space:nowrap; text-align:right"></span>
   </div>
+  <p class="intro" style="margin:2px 0 0">How much of the feed to hide. The self‑tuning model aims for this share of the sloppiest posts; it still applies when self‑tuning is off.</p>
   <label class="row"><input type="checkbox" id="hideSlopComments"><span class="t">Hide AI-slop comments</span></label>
 
   <div class="section"><span>Feed display</span></div>

@@ -43,12 +43,17 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
     loop, unsupervised. Content script observes every reviewed post's feature vector
     (`feedhacker:slopobs`, capped 400) and, time-gated (~45s), refits from the shipped prior:
     damps tells that fire on most of the feed + sets the threshold from the score distribution so
-    only ~`slopTargetFrac` (0.28) is hidden. **Living model** (`Scorer.liveCalibrate` + `evolve`):
+    only ~`slopTargetFrac` (0.28) is hidden. After each calibration the observation buffer is
+    **reaped** to a fresh recent window (`OBS_KEEP` 150), written once by `flushObs` (a single obs
+    writer, so the reap can't clobber a concurrent tab's newer appends) — so the file doesn't keep
+    growing and the next session starts from the just-learned weights rather than re-loading a huge log. **Living model** (`Scorer.liveCalibrate` + `evolve`):
     each cycle EMAs the CURRENT running weights toward the target (`CAL_ALPHA` 0.6) so it keeps
     learning from its latest state across sessions (not resetting to defaults), and folds in a
     GENTLE nudge from labeled corrections (`Scorer.retrain` lr 0.15/40 epochs/λ 0.15) — user
     selections count but less than the autonomous signal. Writes `slopWeights` (local) +
-    `slopThreshold` (sync) + a `feedhacker:slopcal` status; then `reapply()`. `autoCalibrate`
+    `slopThreshold` (sync) + a `feedhacker:slopcal` status (records both `n` = observations the
+    calibration was computed from and `nKept` = how many survive the reap, so the exported status
+    is self-consistent with the trimmed buffer); then `reapply()`. `autoCalibrate`
     default ON (DEFAULTS); when on it **owns** the weights (per-click `onFeedback` learning is
     gated off — user impact flows through the labeled buffer into the live cycle instead).
     Loop-guard: calibrate at most once/45s so a calibration's own reapply re-scan can't

@@ -279,7 +279,7 @@
   // threshold from the score distribution so only the sloppiest ~slopTargetFrac is hidden.
   // This is the primary "get smarter" loop — it needs no clicks from the user.
   var OBS_KEY = "feedhacker:slopobs", CAL_KEY = "feedhacker:slopcal";
-  var OBS_MAX = 400, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s
+  var OBS_MAX = 400, OBS_KEEP = 150, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s; keep a fresh window after each
   var CAL_ALPHA = 0.6;   // how far the running model moves toward each new target (living EMA)
   var obsPending: any[] = [], obsFlushTimer: any = null, lastCalAt = 0;
   // Track user interaction so a background re-tune's on-screen re-apply never rebuilds a stub
@@ -316,11 +316,17 @@
       try {
         var list = ((o && o[OBS_KEY]) || []).concat(batch);
         if (list.length > OBS_MAX) list = list.slice(list.length - OBS_MAX);
-        var patch = {}; patch[OBS_KEY] = list; chrome.storage.local.set(patch);
         // Time-gated so a calibration's own reapply()-driven re-scan can't loop back into another.
-        if (settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL) {
+        var willCal = settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL;
+        // Persist observations in ONE write. When a calibration is about to consolidate the
+        // population into the (living) weights, reap to a fresh recent window in this same write
+        // — no separate, later overwrite that could clobber another tab's appends.
+        var patch = {}; patch[OBS_KEY] = (willCal && list.length > OBS_KEEP) ? list.slice(list.length - OBS_KEEP) : list;
+        chrome.storage.local.set(patch);
+        if (willCal) {
           lastCalAt = Date.now();   // claim the slot before the async fetch so a concurrent flush can't double-fire
-          // Only read the (larger) training buffer on the rare calibration path, not every flush.
+          // Calibration uses the FULL list for accuracy; only reads the (larger) training buffer
+          // on this rare path, not every flush.
           chrome.storage.local.get([TRAIN_KEY], function (t) { runAutoCalibrate(list, (t && t[TRAIN_KEY]) || []); });
         }
       } catch (e) { logError(e, "slopobs"); }
@@ -350,7 +356,10 @@
       // One local write (weights + status together) to avoid a redundant storage-change event.
       var patch: any = {};
       patch[WEIGHTS_KEY] = r.weights;
-      patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+      // n = observations this calibration was computed from; nKept = how many survive the reap
+      // (flushObs' single write) into the retained buffer, so the exported status is self-consistent.
+      patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, nKept: Math.min(obs.length, OBS_KEEP), labels: r.labelsUsed };
+      // (The observation buffer is reaped in flushObs' single write — see there.)
       chrome.storage.local.set(patch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
       // Soft, interaction-paused re-apply: only reveals/hides posts that actually changed and

@@ -56,21 +56,32 @@ byId("open-options").addEventListener("click", function () {
   if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
 });
 
-// AI-slop sensitivity slider. Lower threshold = more aggressive hiding. Label the
-// extremes so the number means something.
-var slop = byId("slopThreshold");
-var slopVal = byId("slopThresholdVal");
-function slopLabel(v) {
-  v = Number(v);
-  var word = v <= 0.35 ? "aggressive" : v >= 0.65 ? "strict" : "balanced";
-  return word + " (" + v.toFixed(2) + ")";
+// AI-slop AGGRESSION slider. It sets the TARGET FRACTION of posts to hide (slopTargetFrac),
+// which is what the self-tuning honors — moving it actually sticks, unlike a raw threshold
+// (which auto-calibration overwrites each cycle). We also write a matching static threshold so
+// it still takes effect immediately, and when self-tuning is off.
+var aggr = byId("aggression");
+var aggrVal = byId("aggressionVal");
+function fracToThreshold(frac) {
+  var t = 0.72 - Number(frac);          // more aggressive (bigger fraction) => lower cutoff
+  return t < 0.3 ? 0.3 : t > 0.75 ? 0.75 : t;
 }
-chrome.storage.sync.get({ slopThreshold: DEFAULTS.slopThreshold }, function (st) {
-  slop.value = st.slopThreshold;
-  slopVal.textContent = slopLabel(st.slopThreshold);
+function aggrLabel(f) {
+  f = Number(f);
+  var word = f >= 0.4 ? "aggressive" : f <= 0.17 ? "strict" : "balanced";
+  return word + " (~" + Math.round(f * 100) + "% hidden)";
+}
+var defaultFrac = typeof DEFAULTS.slopTargetFrac === "number" ? DEFAULTS.slopTargetFrac : 0.28;
+chrome.storage.sync.get({ slopTargetFrac: defaultFrac }, function (st) {
+  var val = typeof st.slopTargetFrac === "number" ? st.slopTargetFrac : defaultFrac;
+  aggr.value = val;
+  aggrVal.textContent = aggrLabel(val);
 });
-slop.addEventListener("input", function () { slopVal.textContent = slopLabel(slop.value); });
-slop.addEventListener("change", function () { chrome.storage.sync.set({ slopThreshold: Number(slop.value) }); });
+aggr.addEventListener("input", function () { aggrVal.textContent = aggrLabel(aggr.value); });
+aggr.addEventListener("change", function () {
+  var f = Number(aggr.value);
+  chrome.storage.sync.set({ slopTargetFrac: f, slopThreshold: fracToThreshold(f) });
+});
 
 document.querySelectorAll(".ms").forEach(function (b) {
   b.addEventListener("click", function () {
