@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "product": "FeedHacker",
+    "updated": "2026-07-09",
+    "liveVersion": "0.4.3",
+    "note": "Canonical roadmap for FeedHacker. IDs are permanent; only status/version change as work moves. Status: open = requested/idea, not built · pending = built but not yet live on the Chrome Web Store (in review or newer than the live build) · closed = shipped and live. Categories: filter, ai, ux, engine, infra, bug.",
+    "statuses": ["open", "pending", "closed"],
+    "categories": ["filter", "ai", "ux", "engine", "infra", "bug"]
+  },
+  "items": [
+    {
+      "id": "FH-001",
+      "name": "Thumb rotate-then-hide confirmation",
+      "description": "Jason's idea: the in-feed action icon points right, rotates upward on click as a confirmation, then the row hides — same motion on Mute — to cut clutter. 0.3.0 shipped an icon-button cluster (the green splat confirms + trains) but not the rotate-then-hide animation itself.",
+      "status": "open",
+      "category": "ux",
+      "source": "Discussion #2"
+    },
+    {
+      "id": "FH-002",
+      "name": "Bulk list cleanup / clear",
+      "description": "One place to clear accumulated Muted authors, Always-show authors, and learned AI-slop before the lists balloon. The options page shows each list with per-row removal, but there is no bulk manage-and-clear flow yet.",
+      "status": "open",
+      "category": "ux",
+      "source": "Discussion #4"
+    },
+    {
+      "id": "FH-003",
+      "name": "Stub-density cap for oversaturated feeds",
+      "description": "When most of the feed is filtered, even the hidden-post stubs get noisy. Cap stub density or auto-hide beyond a threshold. Partly addressed by grouping runs of hidden posts (FH-007), but there is no hard cap.",
+      "status": "open",
+      "category": "ux",
+      "source": "Discussion #5"
+    },
+    {
+      "id": "FH-004",
+      "name": "Autonomous AI-slop self-calibration",
+      "description": "A living model that reviews the posts you see and re-tunes its own weights and threshold on-device — down-weighting tells that fire on most of the feed and setting the cutoff from the score distribution — so only the sloppiest slice hides, no clicking required. Your corrections nudge it secondarily.",
+      "status": "pending",
+      "category": "ai",
+      "version": "0.4.4"
+    },
+    {
+      "id": "FH-005",
+      "name": "Aggression slider that sticks",
+      "description": "The AI-slop slider now sets the target share of the feed to hide (which the self-tuning honors) instead of a raw threshold it used to overwrite each cycle, so moving it persists.",
+      "status": "pending",
+      "category": "ai",
+      "version": "0.4.4"
+    },
+    {
+      "id": "FH-006",
+      "name": "AI-slop decision log",
+      "description": "A local, exportable record of every post flagged and why — probability, tells that fired with weights, matched banlist phrases, author, a short preview, and your verdict — plus recalibrate-now and clear-log controls.",
+      "status": "pending",
+      "category": "ai",
+      "version": "0.4.4"
+    },
+    {
+      "id": "FH-007",
+      "name": "Group runs of hidden posts",
+      "description": "3+ consecutive hidden posts fold into one summary row (\"N posts hidden · AI Slop ×8, Promoted ×3 · Show all\"); isolated hidden posts still show a normal stub. Popup toggle. Replaces the removed digest mode.",
+      "status": "pending",
+      "category": "ux",
+      "version": "0.4.4"
+    },
+    {
+      "id": "FH-008",
+      "name": "Click-safe re-apply + faster load-more",
+      "description": "Stub clicks are handled by one delegated listener so they survive LinkedIn's React re-renders; the self-tune re-applies softly and pauses after a click; load-more kicks harder until a batch of visible posts appears.",
+      "status": "pending",
+      "category": "engine",
+      "version": "0.4.4"
+    },
+    {
+      "id": "FH-009",
+      "name": "Simpler Aggression slider label",
+      "description": "The slider label reads plainly strict / balanced / aggressive instead of \"balanced (~28% hidden)\", which overflowed and clipped the popup row.",
+      "status": "pending",
+      "category": "ux",
+      "version": "0.4.5"
+    },
+    {
+      "id": "FH-010",
+      "name": "Mute / Solo per-filter mixer",
+      "description": "Each filter has independent Mute (hide this kind) and Solo (show only this kind) toggles; Solo wins over Mute.",
+      "status": "closed",
+      "category": "filter",
+      "version": "0.1.0"
+    },
+    {
+      "id": "FH-011",
+      "name": "Learning AI-slop scorer",
+      "description": "Scores structural \"tells\" of AI-written prose and learns from Show-anyway / confirm / scroll-past signals; adjustable sensitivity; export / import / reset of the on-device model.",
+      "status": "closed",
+      "category": "ai",
+      "version": "0.1.0"
+    },
+    {
+      "id": "FH-012",
+      "name": "Author memory (mute + allowlist)",
+      "description": "Mute an author (always hide) or allowlist one (always show), with a Profile quick-link and top hidden sources on the options page.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.1.0"
+    },
+    {
+      "id": "FH-013",
+      "name": "Custom filters",
+      "description": "User-defined rules — words / phrases, regexes, hashtags, and companies / authors — applied on top of the built-in filters.",
+      "status": "closed",
+      "category": "filter",
+      "version": "0.1.0"
+    },
+    {
+      "id": "FH-014",
+      "name": "\"Load more posts\" helper",
+      "description": "A grafted button that drives LinkedIn's own infinite-scroll loader so a batch that is entirely filtered doesn't dead-end the feed.",
+      "status": "closed",
+      "category": "engine",
+      "version": "0.1.0"
+    },
+    {
+      "id": "FH-015",
+      "name": "Detection-transparency panel",
+      "description": "A read-only options-page view over the scorer: each structural tell with a plain-English description and your current learned weight, plus the full curated phrase banlist, searchable.",
+      "status": "closed",
+      "category": "ai",
+      "version": "0.2.0"
+    },
+    {
+      "id": "FH-016",
+      "name": "First-run welcome page",
+      "description": "Opens once on install with instructions to pin FeedHacker to the toolbar (Chrome won't let an extension pin itself); pinning stays optional.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.2.0"
+    },
+    {
+      "id": "FH-017",
+      "name": "Collapsible options panels",
+      "description": "Options-page sections (Activity, Insights, detection panel, Custom filters, Advanced) are collapsible and default to collapsed.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.2.0"
+    },
+    {
+      "id": "FH-018",
+      "name": "Remove remote banlist",
+      "description": "Dropped the \"use the latest banlist from GitHub\" toggle, its setting, and the raw.githubusercontent.com host permission; the extension uses only its bundled banlist.",
+      "status": "closed",
+      "category": "infra",
+      "version": "0.2.0"
+    },
+    {
+      "id": "FH-019",
+      "name": "Company / brand posts filter",
+      "description": "Mute (or Solo) posts authored by a LinkedIn Company or School page — corporate content that isn't a paid \"Promoted\" ad and isn't AI slop. Off by default.",
+      "status": "closed",
+      "category": "filter",
+      "version": "0.3.0"
+    },
+    {
+      "id": "FH-020",
+      "name": "\"Always show\" (whitelist) button",
+      "description": "A one-click allowlist button on each stub — the author's posts are never filtered again — plus a removable Whitelist section on the options page.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.3.0",
+      "source": "Discussion #3"
+    },
+    {
+      "id": "FH-021",
+      "name": "Stub icon-button controls",
+      "description": "A compact icon cluster on each stub: green splat (confirm AI slop + train), grey eye-strike (hide post), red mic-slash (mute author), blue eye (always show), box-arrow (visit profile), each with a tooltip.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.3.0"
+    },
+    {
+      "id": "FH-022",
+      "name": "Muted authors soft-blocked",
+      "description": "A muted author's posts are hidden outright with no \"Muted author\" stub, so they simply stop appearing. Unmute from the options page.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.3.0"
+    },
+    {
+      "id": "FH-023",
+      "name": "Heartbeat focus-aware fix",
+      "description": "The DOM-break heartbeat only counts empty scans while the feed tab is visible and focused, so a backgrounded or unfocused tab no longer trips the \"selectors out of date\" alarm.",
+      "status": "closed",
+      "category": "bug",
+      "version": "0.3.0",
+      "source": "Discussion #6"
+    },
+    {
+      "id": "FH-024",
+      "name": "Remove per-filter Aggressive toggle",
+      "description": "Dropped the per-filter \"A\" toggle; the AI-slop sensitivity slider is now the single control for how aggressively slop is filtered, with the old aggressive rules folded in as weaker evidence.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal"
+    },
+    {
+      "id": "FH-025",
+      "name": "Popup redesign (sectioned, Enable in header)",
+      "description": "Reorganized the popup into labelled sections (Posts, AI-slop, Feed display), moved the master Enable switch into the header, and put every option's label + hint on one line.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal"
+    },
+    {
+      "id": "FH-026",
+      "name": "\"Show sample\" independent of \"Show author\"",
+      "description": "The Show-sample stub option no longer depends on Show author — every Feed-display checkbox stands alone. Names / +sample were renamed to Show author / Show sample.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal"
+    },
+    {
+      "id": "FH-027",
+      "name": "One-click Windows self-update",
+      "description": "In Advanced Settings, an Update now button drives the whole update from inside the extension via a per-user native-messaging helper — no Chrome restart. Windows sideload build only; store build unchanged.",
+      "status": "closed",
+      "category": "infra",
+      "version": "0.4.0"
+    },
+    {
+      "id": "FH-028",
+      "name": "Toggle-driven stub + splat confirms & hides",
+      "description": "The stub shows just the rule by default; Show author / Show sample add lines. The green AI-slop splat now confirms, trains, and hides the row (swaps to a checkmark).",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.2"
+    },
+    {
+      "id": "FH-029",
+      "name": "Remove digest / \"Collapse hidden content\"",
+      "description": "The digest mode (grouping runs of same-category hidden posts) was removed — its \"Show these\" button didn't reliably un-collapse. Later superseded by FH-007.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.2"
+    },
+    {
+      "id": "FH-030",
+      "name": "Sticky Hide / Show-anyway",
+      "description": "Hidden and revealed posts no longer pop back when settings re-apply — re-applies preserve your explicit per-post choices instead of doing a full reset.",
+      "status": "closed",
+      "category": "bug",
+      "version": "0.4.2"
+    },
+    {
+      "id": "FH-031",
+      "name": "Context-invalidation teardown",
+      "description": "After a Chrome update or reload, the orphaned content script shuts down cleanly — disconnects the observer, clears timers and listeners, removes injected UI, reveals hidden posts — instead of churning and logging errors for the life of the tab.",
+      "status": "closed",
+      "category": "bug",
+      "version": "0.4.3"
+    },
+    {
+      "id": "FH-032",
+      "name": "Bundled banlist / smaller page footprint",
+      "description": "The banlist ships compiled into a bundled content script instead of a web-accessible file, so web_accessible_resources is empty — no extension-origin resource a site can enumerate — and boot is slightly faster.",
+      "status": "closed",
+      "category": "infra",
+      "version": "0.4.3"
+    }
+  ]
+}
