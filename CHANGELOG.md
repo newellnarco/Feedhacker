@@ -70,6 +70,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   `data-fh-act` tag), so a rebuilt button keeps working no matter how often LinkedIn re-renders
   around it.
 
+### Documentation
+- **The in-app "How AI-slop detection works" panel now describes the real algorithm.** It used to
+  frame learning as purely click-driven and named a "sensitivity slider"; it now explains that the
+  model **self-tunes** (sets its own weights and threshold from the posts you see), that the
+  **Aggression** slider picks how big a slice is hidden, that it's a **living** model that doesn't
+  reset each session, and that your corrections nudge it secondarily. The flagged-phrases note and
+  the README were aligned to the same wording.
+
 ## [0.4.3] — 2026-07-09
 
 ### Changed

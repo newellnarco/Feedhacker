@@ -209,8 +209,13 @@
     <div class="panel-body">
       <p class="muted" style="margin:0 0 12px;">FeedHacker doesn't hide a post for a single word. It scores each post
         across the structural “tells” below plus a curated phrase list, weighs the evidence with an on‑device model,
-        and only hides once the combined score reaches the threshold (<b id="slop-threshold">0.5</b>). The weights
-        shown are your current learned values — they nudge each time you hit “Show anyway” or re‑hide a post.</p>
+        and only hides once the combined score passes the threshold (<b id="slop-threshold">0.5</b>). The weights and
+        threshold shown are what the model <b>tuned itself to</b>: it reviews the posts you see and, on its own,
+        down‑weights tells that fire on most of your feed and sets the threshold so only the sloppiest slice is hidden
+        — the <b>Aggression</b> slider in the popup picks how big that slice is. It keeps learning from its latest
+        state (it doesn't reset each session), and your <b>Show anyway</b> / <b>✓ AI slop</b> corrections nudge it too,
+        a little — less than its own learning. Self‑tuning can be turned off under <b>Advanced</b>, and then these
+        weights are what your corrections alone have learned.</p>
 
       <h3 class="subhead">Detection signals</h3>
       <table>
@@ -222,8 +227,8 @@
       <h3 class="subhead">Flagged phrases <span class="muted" id="slop-phrase-count"></span></h3>
       <p class="muted" style="margin:0 0 10px; font-size:12.5px;">The curated banlist of words and phrases that read as
         AI‑written. <b>Confirmed</b> phrases count strongly. <b>Aggressive</b> ones match common words, so they always
-        apply but count as weaker evidence — the sensitivity slider governs how much they filter. <b>Manual</b> entries
-        are guidance only and are not auto‑matched.</p>
+        apply but count as weaker evidence — the <b>Aggression</b> slider governs how much they filter. <b>Manual</b>
+        entries are guidance only and are not auto‑matched.</p>
       <input type="search" id="slop-phrase-search" placeholder="Filter phrases…" autocomplete="off">
       <ul class="phrases" id="slop-phrase-list"></ul>
     </div>

@@ -24,7 +24,7 @@ or removed entirely if you prefer.
 
 | Filter | What it catches |
 | --- | --- |
-| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. The sensitivity slider dials how aggressively it filters. |
+| **AI slop** | Posts that read as AI‑generated, scored by a structural algorithm (see below) — not just a fixed word list. The model self‑tunes to your feed; the Aggression slider sets how much of it to hide. |
 | **Promoted posts** | Sponsored/"Promoted" posts. |
 | **Newsletter signups** | Newsletter subscribe funnels. |
 | **Hiring posts** | "We're hiring", `#hiring`, "view job" cards, etc. |
@@ -57,12 +57,21 @@ Each stub shows the **rule the post violated** inline with its action buttons. T
 **Show author** to add who posted, and **Show sample** to preview a line of the post — so
 you can judge a borderline AI‑slop call in place without clicking **Show anyway**.
 
-It **learns** from you: clicking **Show anyway** teaches a false positive, the
-**👍 slop** button or **Hide again** confirms a true positive, and a post you
-simply **scroll past** (still hidden) counts as a weak confirmation. Each
-correction nudges the model's weights (a one‑step online logistic update) stored
-locally, so accuracy improves over time. Tune the cutoff with the sensitivity
-slider, and export/import or reset the model any time.
+It **tunes itself**: FeedHacker reviews the posts you see and, on its own,
+down‑weights tells that fire on most of your feed (so one common signal can't
+flag everything) and sets the threshold from the score distribution so only the
+sloppiest slice is hidden — no clicking required. The **Aggression** slider picks
+how big that slice is. The model is **living**: each cycle it evolves from its
+latest weights rather than resetting to the shipped defaults, so it keeps adapting
+to your feed across sessions (and reaps old observations after each round so the
+buffer stays small).
+
+Your own corrections still count, a little less than the autonomous signal:
+clicking **Show anyway** teaches a false positive, the **👍 slop** button or
+**Hide again** confirms a true positive, and a post you simply **scroll past**
+(still hidden) counts as a weak confirmation. Everything is stored locally;
+export/import or reset the model any time. Self‑tuning can be turned off under
+**Advanced**, and then your corrections alone drive the weights.
 
 ### Author memory
 
@@ -85,8 +94,8 @@ of the standard filters.
 
 ### More controls
 
-- **AI‑slop sensitivity slider** — dial the confidence threshold from *aggressive*
-  to *strict* in the popup.
+- **AI‑slop Aggression slider** — set how much of the feed to hide, from *strict*
+  to *aggressive*, in the popup; the self‑tuning model honors it as its target.
 - **Filter beyond the home feed** (opt‑in) — also clean permalinks, search
   results, profiles, and company pages.
 - **Insights** — the options page keeps 30 days of daily hidden counts and your
@@ -189,7 +198,7 @@ feed.js           pure DOM layer — find posts, classify, collapse/reveal
 logger.js         pure error-log ring buffer helpers
 content.js        glue — storage, banlist, learned weights, authors, errors, observer
 background.js     service worker — per-tab badge (hidden count / error state)
-popup.html/.js    Mute/Solo mixer + master switch + sensitivity slider + links
+popup.html/.js    Mute/Solo mixer + master switch + Aggression slider + links
 options.html/.js  details, activity, insights, custom filters, authors, model I/O
 styles.css        stub + load-more styling
 claudisms.json    the AI-slop phrase banlist (one signal feeding the scorer)
