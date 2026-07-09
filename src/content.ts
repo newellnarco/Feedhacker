@@ -282,6 +282,22 @@
   var OBS_MAX = 400, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s
   var CAL_ALPHA = 0.6;   // how far the running model moves toward each new target (living EMA)
   var obsPending: any[] = [], obsFlushTimer: any = null, lastCalAt = 0;
+  // Track user interaction so a background re-tune's on-screen re-apply never rebuilds a stub
+  // out from under a click (the "first click didn't register" problem).
+  var lastInteractAt = 0, softTimer: any = null;
+  settings.onInteract = function () { lastInteractAt = Date.now(); };
+  function softReapplySoon() {
+    if (softTimer) return;
+    var since = Date.now() - lastInteractAt;
+    var wait = since >= 1500 ? 0 : (1500 - since);
+    softTimer = setTimeout(function () {
+      softTimer = null;
+      if (Date.now() - lastInteractAt < 1500) { softReapplySoon(); return; }   // still clicking — hold off
+      if (!ready || dead) return;
+      try { F.recompute(document, matchers, settings); reportBadge(); ensureLoadButton(F.anyActive(settings)); }
+      catch (e) { logError(e, "recompute"); }
+    }, wait);
+  }
 
   function onSlopObserve(feats) {
     try {
@@ -337,7 +353,9 @@
       patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
       chrome.storage.local.set(patch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
-      if (ready) reapply();   // re-evaluate what's on screen with the freshly tuned model
+      // Soft, interaction-paused re-apply: only reveals/hides posts that actually changed and
+      // never rebuilds a stub mid-click (unlike the full reapply()).
+      if (ready) softReapplySoon();
     } catch (e) { logError(e, "autocalibrate"); }
   }
 
@@ -426,6 +444,7 @@
       // Master switch off, or not on a scanned surface: reveal everything and idle.
       if (!settings.enabled || !isMainFeed()) { F.reset(document); ensureLoadButton(false); reportBadge(); return; }
       F.scan(document, matchers, settings);
+      if (F.groupRuns) F.groupRuns(document, settings);   // fold consecutive hidden runs into one summary row
       reportBadge();
       recordActivitySoon();
       heartbeat();
@@ -453,20 +472,33 @@
   // filtered doesn't dead-end the feed. Bounded (<=8 kicks) so it can't run away; stops
   // early when visible content shows or the user scrolls away (unless forced by button).
   var pumping = false;
+  // Reflect a busy state on the grafted Load-more button so a heavy-filter load doesn't feel dead.
+  function setLoadBarBusy(on) {
+    try {
+      var bar = document.getElementById("feedhacker-loadmore");
+      var b: any = bar && bar.querySelector("button");
+      if (!b) return;
+      if (on) { if (!b.dataset.label) b.dataset.label = b.textContent; b.textContent = "Loading more…"; b.disabled = true; }
+      else { b.disabled = false; if (b.dataset.label) { b.textContent = b.dataset.label; delete b.dataset.label; } }
+    } catch (e) {}
+  }
   function pump(force) {
     if (pumping || !ready || !settings.enabled || !isMainFeed() || !F.anyActive(settings)) return;
     var se = document.scrollingElement || document.documentElement;
     if (!se) return;
     if (!force && (se.scrollHeight - (window.scrollY + window.innerHeight)) > 1000) return;
     pumping = true;
-    var startVisible = visibleCount(), n = 0;
+    if (force) setLoadBarBusy(true);
+    // Heavy filtering means most of each loaded batch is hidden, so aim to surface a BATCH of
+    // new visible posts (not just the first one) and kick more times, faster, before giving up.
+    var startVisible = visibleCount(), target = startVisible + 4, n = 0;
     (function step() {
       var e = document.scrollingElement || document.documentElement;
       var fromBottom = e ? (e.scrollHeight - (window.scrollY + window.innerHeight)) : 0;
-      if (n >= 8 || visibleCount() > startVisible || (!force && fromBottom > 1300)) { pumping = false; return; }
+      if (n >= 14 || visibleCount() >= target || (!force && fromBottom > 1300)) { pumping = false; setLoadBarBusy(false); return; }
       n++;
       kickLoader(false);
-      setTimeout(step, 700);
+      setTimeout(step, 450);
     })();
   }
   // Implicit learning: a slop-flagged post the user scrolled well past (without

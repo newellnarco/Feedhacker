@@ -60,6 +60,7 @@ function renderStatus(st) {
     (extras.length ? " · Options: " + extras.join(", ") : "");
 
   byId("autoCalibrate").checked = st.autoCalibrate !== false;   // default on
+  byId("groupHiddenRuns").checked = st.groupHiddenRuns !== false;   // default on
   byId("scanEverywhere").checked = !!st.scanEverywhere;
   byId("implicitLearning").checked = !!st.implicitLearning;
 
@@ -570,7 +571,7 @@ function saveAuthors(store) {
 }
 
 // --- Advanced toggles (sync) ---
-["autoCalibrate", "scanEverywhere", "implicitLearning"].forEach(function (id) {
+["autoCalibrate", "groupHiddenRuns", "scanEverywhere", "implicitLearning"].forEach(function (id) {
   var el = byId(id);
   el.addEventListener("change", function () { var p = {}; p[id] = el.checked; chrome.storage.sync.set(p); });
 });

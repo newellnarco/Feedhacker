@@ -440,8 +440,12 @@
     if (!el) return;
     var doc: any = stub.ownerDocument || document;
     var settings: any = doc.__fhSettings || {};
+    if (typeof settings.onInteract === "function") settings.onInteract();   // pause background re-tuning so it can't swallow the next click
     var flags = readReasons(el);
     switch (btn.getAttribute("data-fh-act")) {
+      case "ungroup":
+        ungroupRun(doc, el, settings);
+        break;
       case "confirm":
         if (el.dataset.feedhackerConfirmedSlop === "1") return;   // idempotent: one positive signal per post
         el.dataset.feedhackerConfirmedSlop = "1";
@@ -787,6 +791,136 @@
     el.insertBefore(stub, el.firstChild);
   }
 
+  // --- curated grouping: fold a run of consecutive hidden stubs into ONE summary row -------
+  // A long run of individual "hidden" stubs reads as clutter; when settings.groupHiddenRuns is
+  // on, a run of GROUP_MIN+ consecutive stub-showing hidden posts collapses to a single row on
+  // the run's first post ("N hidden · AI Slop ×8, Promoted ×3 · Show all"), and the rest fold
+  // away with no stub. "Show all" expands the run back to individual stubs.
+  var GROUP_MIN = 3;
+  function ensureStub(doc, el) {
+    var s = directChildStub(el);
+    if (!s) { s = doc.createElement("div"); el.insertBefore(s, el.firstChild); }
+    return s;
+  }
+  function isGroupable(el) {
+    return el.dataset.feedhackerHidden === "1"
+      && el.dataset.feedhackerReveal !== "1"
+      && el.dataset.feedhackerDismissed !== "1"
+      && el.dataset.feedhackerUngrouped !== "1"
+      && !el.dataset.feedhackerGroup && !el.dataset.feedhackerGrouphead
+      && !!directChildStub(el);
+  }
+  function postState(el) {
+    if (el.dataset.feedhackerGroup || el.dataset.feedhackerGrouphead) return "transparent";   // already grouped
+    if (isGroupable(el)) return "run";
+    if (el.classList.contains("feedhacker-gone")) return "transparent";                        // invisible, takes no space
+    if (el.dataset.feedhackerHidden === "1") return "transparent";                             // hidden without a stub
+    return "shown";                                                                            // visible post breaks the run
+  }
+  function reasonCounts(members) {
+    var counts: any = {}, order: any[] = [];
+    for (var i = 0; i < members.length; i++) {
+      var reasons = readReasons(members[i]);
+      var label = (reasons[0] && reasons[0].label) || "Hidden";
+      if (!(label in counts)) { counts[label] = 0; order.push(label); }
+      counts[label]++;
+    }
+    return order.map(function (l) { return { label: l, n: counts[l] }; });
+  }
+  function renderGroupStub(doc, head, headId, members, settings) {
+    armStub(doc, settings);
+    var stub = ensureStub(doc, head);
+    clearEl(stub);
+    stub.className = "feedhacker-stub feedhacker-group";
+    head.dataset.feedhackerGrouphead = headId;
+    var main = doc.createElement("span"); main.className = "feedhacker-stub-main";
+    var line = doc.createElement("span"); line.className = "feedhacker-stub-line1";
+    var b = doc.createElement("b"); b.className = "feedhacker-stub-author"; b.textContent = members.length + " posts hidden";
+    line.appendChild(b);
+    var detail = reasonCounts(members).map(function (c) { return c.label + " ×" + c.n; }).join(", ");
+    if (detail) { var d = doc.createElement("span"); d.className = "feedhacker-stub-rule"; d.textContent = " · " + detail; line.appendChild(d); }
+    main.appendChild(line); stub.appendChild(main);
+    var actions = doc.createElement("span"); actions.className = "feedhacker-actions";
+    var btn = twoRowButton(doc, "feedhacker-show", "Show", "all");
+    btn.setAttribute("data-fh-act", "ungroup");
+    actions.appendChild(btn); stub.appendChild(actions);
+  }
+  function groupRuns(doc, settings) {
+    if (!settings || !settings.groupHiddenRuns) return;
+    var posts = findPostContainers(doc);
+    var run: any[] = [];
+    function flush() {
+      if (run.length >= GROUP_MIN) {
+        var head = run[0];
+        var headId = head.dataset.feedhackerSlopId || (Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36));
+        for (var j = 1; j < run.length; j++) {
+          var m = run[j];
+          var s = directChildStub(m); if (s && s.parentNode) s.parentNode.removeChild(s);
+          m.classList.remove("feedhacker-hidden"); m.classList.add("feedhacker-gone");
+          m.dataset.feedhackerGroup = headId;
+        }
+        renderGroupStub(doc, head, headId, run, settings);
+      }
+      run = [];
+    }
+    for (var i = 0; i < posts.length; i++) {
+      var st = postState(posts[i]);
+      if (st === "run") run.push(posts[i]);
+      else if (st === "shown") flush();
+      // "transparent" posts neither extend nor break the run
+    }
+    flush();
+  }
+  function ungroupRun(doc, el, settings) {
+    var headId = el.dataset.feedhackerGrouphead || el.dataset.feedhackerGroup;
+    if (!headId) return;
+    var all = findPostContainers(doc);
+    for (var i = 0; i < all.length; i++) {
+      var p = all[i];
+      var isHead = p.dataset.feedhackerGrouphead === headId;
+      var isMember = p.dataset.feedhackerGroup === headId;
+      if (!isHead && !isMember) continue;
+      delete p.dataset.feedhackerGrouphead; delete p.dataset.feedhackerGroup;
+      p.dataset.feedhackerUngrouped = "1";                 // don't immediately re-group this run
+      p.classList.remove("feedhacker-gone"); p.classList.add("feedhacker-hidden");
+      renderCollapsed(doc, p, ensureStub(doc, p), readReasons(p), settings);
+    }
+  }
+
+  // Reveal a post we previously hid, clearing our state so it reads as a normal post again.
+  function uncollapse(el) {
+    var stub = directChildStub(el);
+    if (stub && stub.parentNode) stub.parentNode.removeChild(stub);
+    el.classList.remove("feedhacker-hidden", "feedhacker-gone", "feedhacker-dismissing");
+    ["feedhackerHidden", "feedhackerScanned", "feedhackerReasons", "feedhackerFeatures",
+     "feedhackerActor", "feedhackerPreview", "feedhackerSlopId", "feedhackerConfirmedSlop"].forEach(function (k) { delete el.dataset[k]; });
+  }
+  // Soft re-apply after the model changes (auto-calibration): reveal slop-hidden posts that no
+  // longer qualify and let a tightened model hide newly-qualifying shown posts — WITHOUT tearing
+  // down stubs that stay hidden, so a click in progress isn't dropped. Only the model-driven
+  // "sloppy" filter is reconsidered for un-hiding; deterministic filters and user choices, and
+  // already-grouped runs, are left intact.
+  function recompute(doc, matchers, settings) {
+    if (!anyActive(settings)) return;
+    var posts = findPostContainers(doc);
+    for (var i = 0; i < posts.length; i++) {
+      var el = posts[i];
+      if (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerDismissed === "1") continue;
+      if (el.dataset.feedhackerGroup || el.dataset.feedhackerGrouphead) continue;   // leave curated groups intact
+      var hidden = el.dataset.feedhackerHidden === "1" || el.classList.contains("feedhacker-gone");
+      if (hidden) {
+        var reasons = readReasons(el);
+        var slopOnly = reasons.length > 0 && reasons.every(function (r) { return r.id === "sloppy"; });
+        if (!slopOnly) continue;                       // hidden by a deterministic filter — leave it
+        if (!scoreSloppy(getPostText(el), matchers, settings)) uncollapse(el);   // no longer slop → reveal
+      } else {
+        delete el.dataset.feedhackerScanned;           // let a tightened model re-hide shown posts
+      }
+    }
+    scan(doc, matchers, settings);                     // hides newly-qualifying shown posts (existing stubs untouched)
+    groupRuns(doc, settings);
+  }
+
   function recordOutcome(settings, info, hidden) {
     if (settings && typeof settings.onAuthorOutcome === "function") settings.onAuthorOutcome(info, hidden);
   }
@@ -1012,7 +1146,7 @@
       hid[j].classList.remove("feedhacker-gone");
       hid[j].classList.remove("feedhacker-dismissing");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       if (kept(el)) continue;
@@ -1024,6 +1158,9 @@
       delete el.dataset.feedhackerPreview;
       delete el.dataset.feedhackerFeatures;
       delete el.dataset.feedhackerDismissing;
+      delete el.dataset.feedhackerGroup;
+      delete el.dataset.feedhackerGrouphead;
+      delete el.dataset.feedhackerUngrouped;
     }
   }
 
@@ -1032,6 +1169,7 @@
     isNewsletterSignup: isNewsletterSignup, isHiring: isHiring, isReactionReshare: isReactionReshare, isCompanyAuthor: isCompanyAuthor,
     getActor: getActor, findPostContainers: findPostContainers,
     CATEGORIES: CATEGORIES, collapse: collapse, consider: consider, scan: scan, reset: reset,
+    groupRuns: groupRuns, recompute: recompute,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
     authorInfo: authorInfo, actorAnchor: actorAnchor,
