@@ -268,7 +268,8 @@ byId("slop-recalibrate").addEventListener("click", function () {
         if (!r || !r.calibrated) { slopStatus("Not enough data to calibrate yet."); return; }
         var patch = {};   // one local write (weights + status together)
         patch[WEIGHTS_KEY] = r.weights;
-        patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+        // Manual recalibrate keeps the full observation buffer (no reap), so nKept == n here.
+        patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, nKept: obs.length, labels: r.labelsUsed };
         chrome.storage.local.set(patch, function () { renderSlopSignals(r.weights); renderCal(patch[CAL_KEY]); });
         try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
         slopStatus("Self-tuned from " + obs.length + " reviewed posts" + (r.labelsUsed ? " + " + r.labelsUsed + " of your corrections" : "") + " — now hiding ~" + Math.round(r.flaggedFrac * 100) + "%.");

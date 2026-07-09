@@ -356,7 +356,9 @@
       // One local write (weights + status together) to avoid a redundant storage-change event.
       var patch: any = {};
       patch[WEIGHTS_KEY] = r.weights;
-      patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+      // n = observations this calibration was computed from; nKept = how many survive the reap
+      // (flushObs' single write) into the retained buffer, so the exported status is self-consistent.
+      patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, nKept: Math.min(obs.length, OBS_KEEP), labels: r.labelsUsed };
       // (The observation buffer is reaped in flushObs' single write — see there.)
       chrome.storage.local.set(patch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}

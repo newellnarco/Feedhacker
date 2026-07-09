@@ -51,7 +51,9 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
     learning from its latest state across sessions (not resetting to defaults), and folds in a
     GENTLE nudge from labeled corrections (`Scorer.retrain` lr 0.15/40 epochs/λ 0.15) — user
     selections count but less than the autonomous signal. Writes `slopWeights` (local) +
-    `slopThreshold` (sync) + a `feedhacker:slopcal` status; then `reapply()`. `autoCalibrate`
+    `slopThreshold` (sync) + a `feedhacker:slopcal` status (records both `n` = observations the
+    calibration was computed from and `nKept` = how many survive the reap, so the exported status
+    is self-consistent with the trimmed buffer); then `reapply()`. `autoCalibrate`
     default ON (DEFAULTS); when on it **owns** the weights (per-click `onFeedback` learning is
     gated off — user impact flows through the labeled buffer into the live cycle instead).
     Loop-guard: calibrate at most once/45s so a calibration's own reapply re-scan can't
