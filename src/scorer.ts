@@ -329,11 +329,66 @@
     return { weights: weights, threshold: thr, calibrated: true, flaggedFrac: flagged / n, freqs: freqs };
   }
 
+  // Exponential-moving-average blend: move `current` a fraction `alpha` toward `target`.
+  // alpha=0 keeps current, alpha=1 jumps to target. This is what makes calibration "living" —
+  // the running model evolves smoothly toward each new target and accumulates across sessions,
+  // instead of resetting to a fixed model each time.
+  function evolve(current, target, alpha) {
+    if (!current) return target;
+    if (!target) return current;
+    var a = typeof alpha === "number" ? (alpha < 0 ? 0 : alpha > 1 ? 1 : alpha) : 0.5;
+    var keys: any = {}, out: any = {};
+    for (var k in current) if (Object.prototype.hasOwnProperty.call(current, k)) keys[k] = 1;
+    for (var k2 in target) if (Object.prototype.hasOwnProperty.call(target, k2)) keys[k2] = 1;
+    for (var key in keys) {
+      var c = typeof current[key] === "number" ? current[key] : 0;
+      var t = typeof target[key] === "number" ? target[key] : 0;
+      out[key] = c + a * (t - c);
+    }
+    return out;
+  }
+
+  // The "living learner": one calibration step that combines everything.
+  //   1) autonomous target from the population (ubiquity damping + distribution threshold),
+  //   2) a GENTLE nudge from the user's labeled corrections (small lr/epochs, strong pull back
+  //      to the autonomous target — so selections matter, but less than the autonomous signal),
+  //   3) an EMA from the CURRENT running model toward that target, so the model keeps evolving
+  //      from its latest state rather than snapping back to the shipped defaults.
+  // opts: { current, currentThreshold, defaults, observations, labels, targetFrac, alpha }.
+  function liveCalibrate(opts) {
+    opts = opts || {};
+    var defaults = opts.defaults || defaultWeights();
+    var obs = opts.observations || [];
+    var auto = autocalibrate(defaults, obs, { targetFrac: opts.targetFrac, priorThreshold: opts.currentThreshold });
+    if (!auto.calibrated) {
+      return {
+        calibrated: false,
+        weights: opts.current || defaults,
+        threshold: typeof opts.currentThreshold === "number" ? opts.currentThreshold : THRESHOLD,
+        flaggedFrac: 0, freqs: auto.freqs, labelsUsed: 0
+      };
+    }
+    var labels = opts.labels || [];
+    // User corrections nudge the autonomous weights but are pulled firmly back to them.
+    var target = labels.length >= 3 ? retrain(auto.weights, labels, { lr: 0.15, epochs: 40, lambda: 0.15 }) : auto.weights;
+    var alpha = typeof opts.alpha === "number" ? opts.alpha : 0.6;
+    var weights = opts.current ? evolve(opts.current, target, alpha) : target;
+    var curThr = typeof opts.currentThreshold === "number" ? opts.currentThreshold : auto.threshold;
+    var threshold = opts.current ? (curThr + alpha * (auto.threshold - curThr)) : auto.threshold;
+    var flagged = 0;
+    for (var i = 0; i < obs.length; i++) if (score(obs[i].features || {}, weights).prob >= threshold) flagged++;
+    return {
+      calibrated: true, weights: weights, threshold: threshold,
+      flaggedFrac: obs.length ? flagged / obs.length : 0, freqs: auto.freqs, labelsUsed: labels.length
+    };
+  }
+
   var api = {
     TELLS: TELLS, FEATURE_IDS: FEATURE_IDS, FEATURE_LABELS: FEATURE_LABELS, THRESHOLD: THRESHOLD,
     EMOJI_RE: EMOJI_RE, words: words, sentences: sentences,
     defaultWeights: defaultWeights, extractFeatures: extractFeatures,
-    score: score, classify: classify, learn: learn, retrain: retrain, autocalibrate: autocalibrate
+    score: score, classify: classify, learn: learn, retrain: retrain,
+    autocalibrate: autocalibrate, evolve: evolve, liveCalibrate: liveCalibrate
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerScorer = api;

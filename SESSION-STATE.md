@@ -43,10 +43,16 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
     loop, unsupervised. Content script observes every reviewed post's feature vector
     (`feedhacker:slopobs`, capped 400) and, time-gated (~45s), refits from the shipped prior:
     damps tells that fire on most of the feed + sets the threshold from the score distribution so
-    only ~`slopTargetFrac` (0.28) is hidden. Writes `slopWeights` (local) + `slopThreshold` (sync)
-    + a `feedhacker:slopcal` status; then `reapply()`. `autoCalibrate` default ON (DEFAULTS); when
-    on it **owns** the weights (per-click `onFeedback` learning is gated off). Loop-guard: calibrate
-    at most once/45s so a calibration's own reapply re-scan can't re-trigger it.
+    only ~`slopTargetFrac` (0.28) is hidden. **Living model** (`Scorer.liveCalibrate` + `evolve`):
+    each cycle EMAs the CURRENT running weights toward the target (`CAL_ALPHA` 0.6) so it keeps
+    learning from its latest state across sessions (not resetting to defaults), and folds in a
+    GENTLE nudge from labeled corrections (`Scorer.retrain` lr 0.15/40 epochs/λ 0.15) — user
+    selections count but less than the autonomous signal. Writes `slopWeights` (local) +
+    `slopThreshold` (sync) + a `feedhacker:slopcal` status; then `reapply()`. `autoCalibrate`
+    default ON (DEFAULTS); when on it **owns** the weights (per-click `onFeedback` learning is
+    gated off — user impact flows through the labeled buffer into the live cycle instead).
+    Loop-guard: calibrate at most once/45s so a calibration's own reapply re-scan can't
+    re-trigger it.
   - **AI-slop decision log** (`src/sloplog.ts`) — logs why each post was flagged (prob, tells,
     phrases, ~280-char preview) to `feedhacker:sloplog`; corrections still logged + become labeled
     examples (`feedhacker:sloptrain`) usable by `Scorer.retrain` (secondary/manual only, gated when

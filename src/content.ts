@@ -280,6 +280,7 @@
   // This is the primary "get smarter" loop — it needs no clicks from the user.
   var OBS_KEY = "feedhacker:slopobs", CAL_KEY = "feedhacker:slopcal";
   var OBS_MAX = 400, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s
+  var CAL_ALPHA = 0.6;   // how far the running model moves toward each new target (living EMA)
   var obsPending: any[] = [], obsFlushTimer: any = null, lastCalAt = 0;
 
   function onSlopObserve(feats) {
@@ -295,33 +296,42 @@
     obsFlushTimer = null;
     if (!obsPending.length) return;
     var batch = obsPending; obsPending = [];
-    chrome.storage.local.get([OBS_KEY], function (o) {
+    chrome.storage.local.get([OBS_KEY, TRAIN_KEY], function (o) {
       try {
         var list = ((o && o[OBS_KEY]) || []).concat(batch);
         if (list.length > OBS_MAX) list = list.slice(list.length - OBS_MAX);
         var patch = {}; patch[OBS_KEY] = list; chrome.storage.local.set(patch);
         // Time-gated so a calibration's own reapply()-driven re-scan can't loop back into another.
         if (settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL) {
-          runAutoCalibrate(list);
+          runAutoCalibrate(list, (o && o[TRAIN_KEY]) || []);
         }
       } catch (e) { logError(e, "slopobs"); }
     });
   }
 
-  function runAutoCalibrate(obs) {
+  // One "living" calibration step: evolve the CURRENT running model toward the autonomous
+  // target (population damping + distribution threshold), with a gentle nudge from the user's
+  // labeled corrections folded in. The model keeps learning from its latest state across
+  // sessions rather than resetting to the shipped defaults.
+  function runAutoCalibrate(obs, train) {
     try {
-      if (!Scorer || !settings.autoCalibrate || !obs) return;
+      if (!Scorer || !Scorer.liveCalibrate || !settings.autoCalibrate || !obs) return;
       lastCalAt = Date.now();   // set BEFORE reapply so the re-scan it triggers can't re-enter
-      var r = Scorer.autocalibrate(Scorer.defaultWeights(), obs, {
+      var r = Scorer.liveCalibrate({
+        current: settings.slopWeights,
+        currentThreshold: typeof settings.slopThreshold === "number" ? settings.slopThreshold : 0.5,
+        defaults: Scorer.defaultWeights(),
+        observations: obs,
+        labels: train || [],
         targetFrac: typeof settings.slopTargetFrac === "number" ? settings.slopTargetFrac : 0.28,
-        priorThreshold: 0.5
+        alpha: CAL_ALPHA
       });
       if (!r || !r.calibrated) return;
       settings.slopWeights = r.weights;
       settings.slopThreshold = r.threshold;
       var wpatch = {}; wpatch[WEIGHTS_KEY] = r.weights; chrome.storage.local.set(wpatch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
-      var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length };
+      var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
       chrome.storage.local.set(cpatch);
       if (ready) reapply();   // re-evaluate what's on screen with the freshly tuned model
     } catch (e) { logError(e, "autocalibrate"); }
