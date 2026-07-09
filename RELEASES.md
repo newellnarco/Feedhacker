@@ -27,7 +27,7 @@ at different speeds, so they're tracked separately:
 | 0.4.0 | ✅ Released (2026-07-07) | ✅ **Live** (published 2026-07-08) | 2026-07-07 | Confirmed live — Google "Item successfully published" email, Version 0.4.0, 2026-07-08 10:33 UTC. |
 | 0.4.1 | ✅ Released (2026-07-07) | ◻︎ Skipped on store | — | Store upload was blocked (`ITEM_NOT_UPDATABLE`); superseded by 0.4.2. Installer ASCII fix lives on the GitHub download. |
 | 0.4.2 | ✅ Released (2026-07-08) | ✅ **Live** (published 2026-07-08) | 2026-07-08 | Confirmed live — Google "Item successfully published" email, Version 0.4.2, 2026-07-08 21:57 UTC. Cumulative: everything since 0.4.0. |
-| 0.4.3 | ✅ Released (2026-07-09) | ⏳ In review | 2026-07-09 | Uploaded via Release workflow, "Publish successful" (auto-submitted for review). Awaiting Google's decision → **store slot BLOCKED** until then. Context-invalidation teardown + smaller page footprint (bundled banlist, no web-accessible resources). |
+| 0.4.3 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live on the store. Context-invalidation teardown + smaller page footprint (bundled banlist, no web-accessible resources). |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.

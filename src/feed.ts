@@ -357,6 +357,73 @@
     if (feats) settings.onFeedback(feats, label);
   }
 
+  // --- stub actions via ONE delegated listener per document ---------------------
+  // Each stub button carries a data-fh-act tag instead of its own click listener. A single
+  // capture-phase listener on the document routes the click. Delegating like this makes the
+  // controls resilient to the stub being re-created: LinkedIn's React re-renders a post's
+  // subtree (viewport, engagement counts, lazy media) and can drop our injected node mid-
+  // interaction — with per-button listeners, the first click after that lands on a handler-
+  // less node and appears to do nothing (so users click twice). A freshly rebuilt button
+  // still works here, because the listener lives on the document, not the button.
+  function readReasons(el) {
+    try { var r = JSON.parse(el.dataset.feedhackerReasons || "[]"); return Array.isArray(r) ? r : []; }
+    catch (e) { return []; }
+  }
+  function onStubClick(ev) {
+    var t: any = ev.target;
+    if (!t || !t.closest) return;
+    var stub: any = t.closest(".feedhacker-stub, .feedhacker-explainer");
+    if (!stub) return;                 // click landed outside our UI
+    ev.stopPropagation();              // our stub owns the click — don't let LinkedIn's row/open handlers fire
+    var btn: any = t.closest("[data-fh-act]");
+    if (!btn) return;                  // e.g. the profile link — let it navigate
+    ev.preventDefault();
+    if (btn.disabled) return;
+    var el: any = stub.parentElement;
+    if (!el) return;
+    var doc: any = stub.ownerDocument || document;
+    var settings: any = doc.__fhSettings || {};
+    var flags = readReasons(el);
+    switch (btn.getAttribute("data-fh-act")) {
+      case "confirm":
+        if (el.dataset.feedhackerConfirmedSlop === "1") return;   // idempotent: one positive signal per post
+        el.dataset.feedhackerConfirmedSlop = "1";
+        emitFeedback(el, flags, settings, 1);                     // confirm slop (trains the filter)
+        btn.disabled = true; btn.title = "Confirmed AI slop";
+        btn.classList.add("feedhacker-confirmed");
+        clearEl(btn); btn.appendChild(checkIcon(doc));            // show a checkmark…
+        dismissRow(el);                                          // …then hide the row
+        break;
+      case "hide":
+        dismissRow(el);
+        break;
+      case "mute":
+        if (typeof settings.onMuteAuthor === "function") settings.onMuteAuthor(authorInfo(el));
+        dismissRow(el);
+        break;
+      case "allow":
+        if (typeof settings.onAllowAuthor === "function") settings.onAllowAuthor(authorInfo(el));
+        revealAllowed(el, stub);
+        break;
+      case "show":
+        revealWithExplainer(doc, el, stub, flags, settings);
+        break;
+      case "rehide":
+        reHide(doc, el, stub, flags, settings);
+        break;
+    }
+  }
+  // Install the delegated listener once per document, and stash the live settings so the
+  // handler can reach the glue callbacks (onFeedback/onMuteAuthor/…). Called whenever we
+  // build a stub. Capture phase so we intercept before LinkedIn's own ancestor handlers.
+  function armStub(doc, settings) {
+    if (!doc) return;
+    (doc as any).__fhSettings = settings;
+    if ((doc as any).__fhDelegated) return;
+    try { doc.addEventListener("click", onStubClick, true); (doc as any).__fhDelegated = true; }
+    catch (e) {}
+  }
+
   function directChildStub(el) {
     for (var i = 0; i < el.children.length; i++) {
       var c = el.children[i];
@@ -506,16 +573,12 @@
     if (!info.url && !info.name) return;
     if (settings && typeof settings.onMuteAuthor === "function") {   // one-click mute author (mic-off)
       var mute = iconButton(doc, "feedhacker-muteauthor", micOffIcon(doc), "Mute");
-      mute.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); settings.onMuteAuthor(info); dismissRow(el); });
+      mute.setAttribute("data-fh-act", "mute");
       actions.appendChild(mute);
     }
     if (settings && typeof settings.onAllowAuthor === "function") {   // one-click allowlist (eye)
       var allow = iconButton(doc, "feedhacker-allow", eyeIcon(doc), "Always show");
-      allow.addEventListener("click", function (ev) {
-        ev.preventDefault(); ev.stopPropagation();
-        settings.onAllowAuthor(info);
-        revealAllowed(el, stub);
-      });
+      allow.setAttribute("data-fh-act", "allow");
       actions.appendChild(allow);
     }
     if (info.url) {
@@ -525,8 +588,7 @@
       prof.appendChild(extLinkIcon(doc));
       prof.title = "Visit profile";
       prof.setAttribute("aria-label", info.name ? "Visit " + info.name + "'s profile" : "Visit profile");
-      prof.addEventListener("click", function (ev) { ev.stopPropagation(); });
-      actions.appendChild(prof);
+      actions.appendChild(prof);   // no data-fh-act: the delegated handler lets the link navigate
     }
   }
 
@@ -538,6 +600,7 @@
   }
 
   function renderCollapsed(doc, el, stub, flags, settings) {
+    armStub(doc, settings);
     clearEl(stub);
     stub.className = "feedhacker-stub";
     stub.removeAttribute("title");
@@ -592,18 +655,8 @@
       // "done" — on click we swap it for a checkmark, then retire the row. (The splat is
       // "yes, this is slop": trains the filter AND hides the post.)
       var yes = iconButton(doc, "feedhacker-confirm", confirmed ? checkIcon(doc) : splatIcon(doc), confirmed ? "Confirmed AI slop" : "AI slop");
+      yes.setAttribute("data-fh-act", "confirm");
       if (confirmed) { yes.disabled = true; yes.classList.add("feedhacker-confirmed"); }
-      yes.addEventListener("click", function (ev) {
-        ev.preventDefault(); ev.stopPropagation();
-        // Idempotent: one positive signal per post.
-        if (el.dataset.feedhackerConfirmedSlop === "1") return;
-        el.dataset.feedhackerConfirmedSlop = "1";
-        emitFeedback(el, flags, settings, 1);   // confirm slop (trains the filter)
-        yes.disabled = true; yes.title = "Confirmed AI slop";
-        yes.classList.add("feedhacker-confirmed");
-        clearEl(yes); yes.appendChild(checkIcon(doc));   // show a checkmark…
-        dismissRow(el);                                  // …then hide the row
-      });
       actions.appendChild(yes);
     }
 
@@ -613,23 +666,18 @@
     // comment can still be cleared away. Label reads "Hide post" on posts, "Hide" on comments.
     var hide = iconButton(doc, "feedhacker-hidepost", eyeOffIcon(doc),
       markerCountWithin(el) >= 1 ? "Hide post" : "Hide");
-    hide.addEventListener("click", function (ev) {
-      ev.preventDefault(); ev.stopPropagation();
-      dismissRow(el);
-    });
+    hide.setAttribute("data-fh-act", "hide");
     actions.appendChild(hide);
 
     appendAuthorActions(doc, el, stub, actions, settings);
 
     var btn = twoRowButton(doc, "feedhacker-show", "Show", "anyway");
-    btn.addEventListener("click", function (ev) {
-      ev.preventDefault(); ev.stopPropagation();
-      revealWithExplainer(doc, el, stub, flags, settings);
-    });
+    btn.setAttribute("data-fh-act", "show");
     actions.appendChild(btn);
     stub.appendChild(actions);
   }
   function revealWithExplainer(doc, el, stub, flags, settings) {
+    armStub(doc, settings);
     // Don't emit a contradictory false-positive signal if the user already confirmed this
     // post is slop — revealing it after confirming is just "let me read it anyway".
     if (el.dataset.feedhackerConfirmedSlop !== "1") emitFeedback(el, flags, settings, 0);
@@ -644,10 +692,7 @@
     why.textContent = explainerText(flags);
     var btn = doc.createElement("button");
     btn.type = "button"; btn.className = "feedhacker-show"; btn.textContent = "Hide again";
-    btn.addEventListener("click", function (ev) {
-      ev.preventDefault(); ev.stopPropagation();
-      reHide(doc, el, stub, flags, settings);
-    });
+    btn.setAttribute("data-fh-act", "rehide");
     stub.appendChild(why); stub.appendChild(btn);
   }
   function reHide(doc, el, stub, flags, settings) {
