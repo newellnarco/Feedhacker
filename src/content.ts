@@ -279,7 +279,7 @@
   // threshold from the score distribution so only the sloppiest ~slopTargetFrac is hidden.
   // This is the primary "get smarter" loop — it needs no clicks from the user.
   var OBS_KEY = "feedhacker:slopobs", CAL_KEY = "feedhacker:slopcal";
-  var OBS_MAX = 400, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s
+  var OBS_MAX = 400, OBS_KEEP = 150, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s; keep a fresh window after each
   var CAL_ALPHA = 0.6;   // how far the running model moves toward each new target (living EMA)
   var obsPending: any[] = [], obsFlushTimer: any = null, lastCalAt = 0;
   // Track user interaction so a background re-tune's on-screen re-apply never rebuilds a stub
@@ -351,6 +351,10 @@
       var patch: any = {};
       patch[WEIGHTS_KEY] = r.weights;
       patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+      // Consolidated: the learning now lives in the weights (the new starting point for next
+      // time), so reap the old observations and keep only a fresh recent window — the buffer
+      // stays small and doesn't keep growing/reloading.
+      if (obs.length > OBS_KEEP) patch[OBS_KEY] = obs.slice(obs.length - OBS_KEEP);
       chrome.storage.local.set(patch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
       // Soft, interaction-paused re-apply: only reveals/hides posts that actually changed and

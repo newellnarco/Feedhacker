@@ -13,6 +13,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.4]
 
+### Changed
+- **The AI-slop slider is now an "Aggression" control that actually sticks.** It used to set a raw
+  confidence threshold, which the self-tuning then overwrote every cycle — so it didn't hold. It
+  now sets the **target share of the feed to hide** (what the self-tuning aims for), so moving it
+  persists; it also applies immediately and when self-tuning is off.
+- **Learning is consolidated, then old observations are reaped.** Each self-tune folds the reviewed
+  posts into the (living) weights — the new starting point for next time — and then trims the
+  observation buffer to a fresh recent window, so it doesn't keep growing/reloading.
+
 ### Added
 - **Autonomous AI-slop self-calibration** — to fight false positives without relying on your
   clicks. FeedHacker now reviews the whole population of posts it sees and periodically re-tunes
