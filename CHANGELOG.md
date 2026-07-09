@@ -34,7 +34,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   **Export log (JSON)** (to send for a deeper, global tune), **Recalibrate model now** (force a
   self-tune), and **Clear log**. Everything stays on your computer until you export it.
 
+### Added
+- **Group runs of hidden posts into one row.** A long run of individual "hidden" stubs read as
+  clutter; now 3+ consecutive hidden posts fold into a single summary row on the run's first post
+  — **"N posts hidden · AI Slop ×8, Promoted ×3 · Show all"** — and the rest collapse away. **Show
+  all** expands the run back to individual stubs. Isolated hidden posts still show their normal
+  stub. On by default; toggle it right in the **popup** ("Group flagged posts") or under
+  **Advanced** on the options page. Unchecked keeps the old one-stub-per-post behavior.
+
 ### Fixed
+- **The self-tuning no longer eats a click.** The autonomous recalibration used to rebuild every
+  on-screen stub each cycle, so a click that landed in that window could hit a button being
+  replaced ("first click didn't register"). It now re-applies *softly* — only revealing/hiding
+  posts that actually changed, never tearing down stubs that stay hidden — and it **pauses for
+  ~1.5 s after any click** so it can't rebuild a control out from under you.
+- **"Load more" at the bottom of the feed is faster.** With heavy filtering most of each loaded
+  batch is hidden, so the loader now kicks LinkedIn more times, faster, and keeps going until a
+  *batch* of new visible posts appears (not just the first one), with a "Loading more…" state on
+  the button so it doesn't feel dead.
 - **Stub buttons no longer occasionally ignore the first click.** The action buttons on a
   hidden-post stub (AI-slop confirm, Hide, Show anyway, Mute author, Always show, Hide again)
   each carried their own click listener. When LinkedIn's React re-rendered a post's subtree

@@ -8,6 +8,8 @@
 }
 .feedhacker-explainer { background: #eef3fb; color: #1d2226; flex-wrap: wrap; }
 .feedhacker-why { font-weight: 600; }
+/* Grouped run: a single summary row standing in for several consecutive hidden posts. */
+.feedhacker-group { background: #eceef2; border: 1px dashed #cfd4dc; }
 
 /* Stub content, driven by the display toggles: line 1 = [author ·] the rule(s) violated,
    inline with the action buttons; line 2 (with "Show sample") = a sample from the post. */

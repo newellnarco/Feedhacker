@@ -37,6 +37,30 @@ test("hides a Promoted post end-to-end when Promoted muting is on", { skip, time
   }
 });
 
+const RUN_FIXTURE = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
+  ${[0, 1, 2, 3].map((i) => post("promo-" + i, `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy thing ${i}</div>`)).join("\n")}
+  ${post("p-ok", `<div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}
+</div></main></body></html>`;
+
+test("folds a run of hidden posts into one group row end-to-end", { skip, timeout: 60000 }, async () => {
+  const { page, close } = await launchFeed({ fixtureHtml: RUN_FIXTURE, sync: { mutePromoted: true } });
+  try {
+    await page.waitForSelector(".feedhacker-stub.feedhacker-group", { timeout: 20000 });
+    const summary = await page.locator(".feedhacker-stub.feedhacker-group").first().innerText();
+    assert.match(summary, /4 posts hidden/, "group row summarizes the run size");
+    // The run's later members are folded away (no stub); the human post stays visible.
+    const goneStubs = await page.locator("#promo-3 .feedhacker-stub").count();
+    assert.strictEqual(goneStubs, 0, "a folded member has no individual stub");
+    const okHidden = await page.locator("#p-ok").evaluate((el) => el.classList.contains("feedhacker-hidden"));
+    assert.strictEqual(okHidden, false, "the human post that breaks the run stays visible");
+    // Expanding restores individual stubs.
+    await page.locator('.feedhacker-group [data-fh-act="ungroup"]').click();
+    await page.waitForSelector("#promo-3 .feedhacker-stub", { timeout: 10000 });
+  } finally {
+    await close();
+  }
+});
+
 test("leaves the Promoted post visible under default settings (Promoted muting off)", { skip, timeout: 60000 }, async () => {
   const { page, close } = await launchFeed({ fixtureHtml: FIXTURE, sync: {} });
   try {

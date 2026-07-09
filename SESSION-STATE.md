@@ -53,6 +53,19 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
     gated off — user impact flows through the labeled buffer into the live cycle instead).
     Loop-guard: calibrate at most once/45s so a calibration's own reapply re-scan can't
     re-trigger it.
+  - **Curated grouping** (`feed.groupRuns` / `ungroupRun`, `groupHiddenRuns` default ON): a run of
+    3+ consecutive stub-showing hidden posts folds into one summary row on the run's first post
+    ("N posts hidden · reason counts · Show all"); members become `feedhacker-gone` with
+    `data-feedhacker-group=<headId>`. "Show all" (`data-fh-act="ungroup"`) restores individual
+    stubs and marks `feedhackerUngrouped` so it isn't re-folded. Idempotent; runs in `scanNow`
+    after `F.scan`. `reset()` clears the group datasets.
+  - **Soft re-apply + click pause** (`feed.recompute`, `content.softReapplySoon`): auto-calibration
+    no longer calls the full `reapply()` (which rebuilt every stub and could swallow a click).
+    `recompute` only reveals slop-hidden posts that no longer qualify + hides newly-qualifying
+    shown posts, leaving surviving stubs intact; it's deferred ~1.5s after any stub click
+    (`settings.onInteract` sets `lastInteractAt`). Full `reapply()` still used for settings changes.
+  - **Load-more tuning** (`content.pump`): up to 14 kicks at 450ms (was 8 at 700ms), loads until a
+    batch of +4 visible posts appears, with a "Loading more…" button state.
   - **AI-slop decision log** (`src/sloplog.ts`) — logs why each post was flagged (prob, tells,
     phrases, ~280-char preview) to `feedhacker:sloplog`; corrections still logged + become labeled
     examples (`feedhacker:sloptrain`) usable by `Scorer.retrain` (secondary/manual only, gated when

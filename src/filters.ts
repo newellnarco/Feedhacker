@@ -43,6 +43,7 @@
     d.scanEverywhere = false;    // beyond the home feed (permalinks, search, profiles)
     d.autoCalibrate = true;      // self-tune weights + threshold from the posts reviewed (no user labels needed)
     d.slopTargetFrac = 0.28;     // auto-calibration aims to hide ~this fraction of reviewed posts (the sloppiest)
+    d.groupHiddenRuns = true;    // fold a run of 3+ consecutive hidden posts into one summary row
     return d;
   }
   var DEFAULTS = buildDefaults();
