@@ -19,26 +19,30 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
-## Current state — as of 2026-07-08
+## Current state — as of 2026-07-09
 
-- **Latest GitHub release:** `v0.4.2` (2026-07-08). `main` sits at 0.4.2.
-- **Chrome Web Store:** **v0.4.0 is LIVE** (published 2026-07-08 10:33 UTC). **v0.4.2 was
-  submitted 2026-07-08 ~21:13 UTC and is IN REVIEW** → **the submission slot is BLOCKED** until
-  Google publishes or rejects 0.4.2.
+- **Latest GitHub release:** `v0.4.3` (2026-07-09). `main` sits at 0.4.3.
+- **Chrome Web Store:** **v0.4.2 is LIVE** (confirmed published 2026-07-08 21:57 UTC). **v0.4.3 was
+  submitted 2026-07-09 via the Release workflow ("Publish successful", auto-publish on) and is IN
+  REVIEW** → **the submission slot is BLOCKED** until Google publishes or rejects 0.4.3.
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
-- **Monitoring:** an in-session cron watches Gmail for the 0.4.2 decision, but it dies when the
-  session ends — Google's email to newellnarco@gmail.com is the reliable notification. On a new
-  session, just re-run step 2/3 above.
+- **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
+  reliable notification of the 0.4.3 decision. On a new session, re-run steps 2/3 above (search
+  `from:chromewebstore-noreply@google.com newer_than:7d`, read the Version field of the newest
+  "published" email; slot is OPEN again once 0.4.3 is published/rejected).
 
-## Next release — v0.4.3 (not started)
+## Next release — v0.4.4 (not started)
 
-- **Nothing staged yet.** 0.4.2 just shipped; there are no new changes for 0.4.3.
-- When new work begins: bump `manifest.json` + `package.json` to **0.4.3**, and log changes under
-  a `## [0.4.3]` section in `CHANGELOG.md` (accumulate everything under that one next version).
-- **Backlog / possible follow-ups:** (none committed) — e.g. the best-effort **MSI** installer
-  build still fails in CI (WiX); it never blocks a release and isn't needed for auto-updates, so
-  it's optional to fix.
+- **Nothing staged yet.** 0.4.3 just shipped and is in review.
+- When new work begins: bump `manifest.json` + `package.json` to **0.4.4**, and log changes under
+  a `## [0.4.4]` section in `CHANGELOG.md` (accumulate everything under that one next version).
+- **Backlog / possible follow-ups:**
+  - The best-effort **MSI** installer build still fails in CI (WiX `Build MSI` step); it's
+    `continue-on-error` and never blocks a release, so it's optional to fix.
+  - The `chrome-extension://invalid/` request some users see on LinkedIn is LinkedIn-side (their
+    fetch interceptor hitting a stale reference after a context swap) — FeedHacker no longer
+    contributes an enumerable resource to it (0.4.3). Nothing further actionable on our side.
 
 ## Key facts & gotchas (so a new session doesn't relearn them)
 
