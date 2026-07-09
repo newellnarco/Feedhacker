@@ -32,6 +32,9 @@
     label.row input { margin-top: 2px; flex: 0 0 auto; }
     label.row .t { flex: 1; min-width: 0; }   /* label text + hint flow as one line, not separate flex items */
     .muted { color: #8a94a3; }
+    .intro { font-size: 11.5px; line-height: 1.45; color: #5f6b7a;
+      background: #f7f8fa; border: 1px solid #eceef1; border-radius: 7px; padding: 7px 9px; margin: 7px 0 2px; }
+    .intro b { color: #46505e; }
     #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
       background: #fdecec; border: 1px solid #f5c2c2; }
     #errors.show { display: block; }
@@ -53,6 +56,8 @@
     <label class="enable" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
   </div>
   <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
+
+  <p class="intro">How it works: <b>Mute (M)</b> hides that kind of post; <b>Solo (S)</b> shows <i>only</i> the soloed kinds. AI‑slop is scored and the model self‑tunes to your feed. The <b>Feed display</b> toggles change how hidden posts look — including whether long runs collapse into one row.</p>
 
   <div class="section"><span>Posts</span><span class="key"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo</span></div>
   <div id="filters"></div>
