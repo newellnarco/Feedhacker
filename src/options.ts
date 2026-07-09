@@ -265,10 +265,10 @@ byId("slop-recalibrate").addEventListener("click", function () {
           alpha: 0.6
         });
         if (!r || !r.calibrated) { slopStatus("Not enough data to calibrate yet."); return; }
-        var wpatch = {}; wpatch[WEIGHTS_KEY] = r.weights;
-        var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
-        chrome.storage.local.set(wpatch);
-        chrome.storage.local.set(cpatch, function () { renderSlopSignals(r.weights); renderCal(cpatch[CAL_KEY]); });
+        var patch = {};   // one local write (weights + status together)
+        patch[WEIGHTS_KEY] = r.weights;
+        patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+        chrome.storage.local.set(patch, function () { renderSlopSignals(r.weights); renderCal(patch[CAL_KEY]); });
         try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
         slopStatus("Self-tuned from " + obs.length + " reviewed posts" + (r.labelsUsed ? " + " + r.labelsUsed + " of your corrections" : "") + " — now hiding ~" + Math.round(r.flaggedFrac * 100) + "%.");
       } catch (e) { slopStatus("Calibration failed."); }

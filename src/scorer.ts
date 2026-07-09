@@ -369,9 +369,13 @@
       };
     }
     var labels = opts.labels || [];
-    // User corrections nudge the autonomous weights but are pulled firmly back to them.
-    var target = labels.length >= 3 ? retrain(auto.weights, labels, { lr: 0.15, epochs: 40, lambda: 0.15 }) : auto.weights;
-    var alpha = typeof opts.alpha === "number" ? opts.alpha : 0.6;
+    // User corrections nudge the autonomous weights but are pulled firmly back to them. Only
+    // applied with enough of them; below that they're ignored (and not reported as "used").
+    var usedLabels = labels.length >= 3 ? labels.length : 0;
+    var target = usedLabels ? retrain(auto.weights, labels, { lr: 0.15, epochs: 40, lambda: 0.15 }) : auto.weights;
+    // Clamp alpha to [0,1] here too (evolve clamps it for the weights; the threshold formula
+    // below would otherwise over/undershoot with an out-of-range value — inconsistent state).
+    var alpha = typeof opts.alpha === "number" ? (opts.alpha < 0 ? 0 : opts.alpha > 1 ? 1 : opts.alpha) : 0.6;
     var weights = opts.current ? evolve(opts.current, target, alpha) : target;
     var curThr = typeof opts.currentThreshold === "number" ? opts.currentThreshold : auto.threshold;
     var threshold = opts.current ? (curThr + alpha * (auto.threshold - curThr)) : auto.threshold;
@@ -379,7 +383,7 @@
     for (var i = 0; i < obs.length; i++) if (score(obs[i].features || {}, weights).prob >= threshold) flagged++;
     return {
       calibrated: true, weights: weights, threshold: threshold,
-      flaggedFrac: obs.length ? flagged / obs.length : 0, freqs: auto.freqs, labelsUsed: labels.length
+      flaggedFrac: obs.length ? flagged / obs.length : 0, freqs: auto.freqs, labelsUsed: usedLabels
     };
   }
 

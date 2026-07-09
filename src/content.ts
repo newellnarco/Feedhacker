@@ -329,10 +329,12 @@
       if (!r || !r.calibrated) return;
       settings.slopWeights = r.weights;
       settings.slopThreshold = r.threshold;
-      var wpatch = {}; wpatch[WEIGHTS_KEY] = r.weights; chrome.storage.local.set(wpatch);
+      // One local write (weights + status together) to avoid a redundant storage-change event.
+      var patch: any = {};
+      patch[WEIGHTS_KEY] = r.weights;
+      patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+      chrome.storage.local.set(patch);
       try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
-      var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
-      chrome.storage.local.set(cpatch);
       if (ready) reapply();   // re-evaluate what's on screen with the freshly tuned model
     } catch (e) { logError(e, "autocalibrate"); }
   }
