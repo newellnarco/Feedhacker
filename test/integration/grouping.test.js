@@ -118,6 +118,40 @@ test("recompute re-scores without polluting the calibration observations", () =>
   assert.strictEqual(typeof s.onSlopObserve, "function", "the observer is restored after recompute");
 });
 
+test("recompute re-scores from stored features, not the collapsed post's stub text", () => {
+  const doc = makeDoc(feedHtml(post(`<div class="body">${SLOP}</div>`)));
+  const s = baseSettings({ groupHiddenRuns: false });
+  feed.scan(doc, [], s);
+  const el = feed.findPostContainers(doc)[0];
+  assert.ok(el.classList.contains("feedhacker-hidden") && el.dataset.feedhackerFeatures, "hidden with features stored");
+
+  // Simulate the browser reality where a collapsed post's visible text is now the stub UI:
+  // overwrite the body with plainly-human text. recompute must ignore this and use the stored
+  // slop features, so the post STAYS hidden.
+  el.querySelector(".body").textContent = "totally normal human sentence about lunch.";
+  feed.recompute(doc, [], s);
+  assert.ok(el.classList.contains("feedhacker-hidden"), "still hidden — re-scored from stored features, not live text");
+});
+
+test("'Show all' survives a preserving reset (settings change) and isn't silently re-folded", () => {
+  const doc = makeDoc(feedHtml(slopPosts(4)));
+  const s = baseSettings({ groupHiddenRuns: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+  const posts = feed.findPostContainers(doc);
+  posts[0].querySelector('[data-fh-act="ungroup"]').click();   // expand → marks the run ungrouped
+
+  feed.reset(doc, true);   // a preserving reapply (e.g. an unrelated settings change)
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+  assert.strictEqual(doc.querySelector(".feedhacker-group"), null, "expanded run is not re-folded by a preserving reset");
+
+  feed.reset(doc);         // a FULL reset clears the preference
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+  assert.ok(doc.querySelector(".feedhacker-group"), "after a full reset the run can group again");
+});
+
 test("recompute reveals posts the loosened model no longer flags, without rebuilding surviving stubs", () => {
   const doc = makeDoc(feedHtml(slopPosts(2)));
   const s = baseSettings({ groupHiddenRuns: false });

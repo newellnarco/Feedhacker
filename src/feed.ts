@@ -921,7 +921,15 @@
           var reasons = readReasons(el);
           var slopOnly = reasons.length > 0 && reasons.every(function (r) { return r.id === "sloppy"; });
           if (!slopOnly) continue;                       // hidden by a deterministic filter — leave it
-          if (!scoreSloppy(getPostText(el), matchers, settings)) uncollapse(el);   // no longer slop → reveal
+          // Re-score from the STORED feature vector (captured from the real post body when we
+          // collapsed it) against the current model — NOT the live text: a collapsed post's
+          // innerText is now the stub UI (CSS hides every other child), which would misclassify.
+          var feats: any = null;
+          try { if (el.dataset.feedhackerFeatures) feats = JSON.parse(el.dataset.feedhackerFeatures); } catch (e) {}
+          if (feats && root.FeedHackerScorer) {
+            var thr = (settings && typeof settings.slopThreshold === "number") ? settings.slopThreshold : root.FeedHackerScorer.THRESHOLD;
+            if (root.FeedHackerScorer.score(feats, settings.slopWeights).prob < thr) uncollapse(el);   // no longer slop → reveal
+          }
         } else {
           delete el.dataset.feedhackerScanned;           // let a tightened model re-hide shown posts
         }
@@ -1172,7 +1180,10 @@
       delete el.dataset.feedhackerDismissing;
       delete el.dataset.feedhackerGroup;
       delete el.dataset.feedhackerGrouphead;
-      delete el.dataset.feedhackerUngrouped;
+      // "Show all" is a user choice: keep it through a preserving reset (a settings/author
+      // reapply) so an unrelated change can't silently re-fold a run the user expanded. A
+      // FULL reset (extension off / left the feed) still clears it.
+      if (!preserveUserActions) delete el.dataset.feedhackerUngrouped;
     }
   }
 
