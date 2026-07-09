@@ -304,13 +304,10 @@ function currentVersion() { try { return chrome.runtime.getManifest().version; }
         return;
       }
       status.textContent = "Update available: v" + res.current + " → v" + res.latest + ". ";
-      if (canSelfUpdate) {
-        status.textContent += "Click “Update now” to download and apply it — no restart.";
-        showNow(true);
-      } else {
-        status.textContent += "Chrome Web Store installs update themselves. Manual installs: " +
-          "download the latest release and reload FeedHacker on chrome://extensions.";
-      }
+      // Both builds now get an in-place "Update now": Windows via the helper, a Chrome Web Store
+      // install via Chrome's own update API — either way, no browser restart.
+      status.textContent += "Click “Update now” to apply it in place — no browser restart.";
+      showNow(true);
     }).catch(function (e) {
       status.textContent = "Couldn't check for updates: " + ((e && e.message) || e);
     }).then(function () {
@@ -319,16 +316,17 @@ function currentVersion() { try { return chrome.runtime.getManifest().version; }
     });
   });
 
-  if (now) now.addEventListener("click", function () {
-    now.disabled = true;
-    var lbl = now.textContent;
-    now.textContent = "Updating…";
+  function resetNow(lbl) { showNow(true); now.disabled = false; now.textContent = lbl; }
+
+  // Windows sideload: the native-messaging helper downloads the release, refreshes the files, and
+  // reloads the extension — no restart.
+  function windowsUpdate(lbl) {
     status.textContent = "Downloading the latest release…";
     chrome.runtime.sendMessage({ type: "feedhacker:selfUpdate" }, function (res) {
       var le = chrome.runtime.lastError;
       if (le || !res) {
         status.textContent = "Update failed: " + ((le && le.message) || "no response from the update helper.");
-        now.disabled = false; now.textContent = lbl; return;
+        resetNow(lbl); return;
       }
       if (res.ok && res.updated) {
         status.textContent = "Updated to v" + res.version + " — reloading FeedHacker…";
@@ -338,9 +336,50 @@ function currentVersion() { try { return chrome.runtime.getManifest().version; }
         showNow(false); now.disabled = false; now.textContent = lbl;
       } else {
         status.textContent = "Update failed: " + (res.error || "unknown error");
-        now.disabled = false; now.textContent = lbl;
+        resetNow(lbl);
       }
     });
+  }
+
+  // Chrome Web Store: ask Chrome to fetch + apply the published update in place (no restart). Chrome
+  // can only apply a version that's actually LIVE on the store, so if ours is still in Google review
+  // there's nothing to apply yet — say so instead of pretending it worked.
+  function storeUpdate(lbl) {
+    status.textContent = "Checking the Chrome Web Store…";
+    chrome.runtime.sendMessage({ type: "feedhacker:storeUpdate" }, function (res) {
+      var le = chrome.runtime.lastError;
+      if (le || !res) {
+        status.textContent = "Couldn't update in place: " + ((le && le.message) || "no response.") +
+          " You can install the latest from GitHub Releases, or restart Chrome to apply a pending update.";
+        resetNow(lbl); return;
+      }
+      if (res.ok && res.updated) {
+        status.textContent = "Update found — applying now, no browser restart. When FeedHacker reloads, " +
+          "refresh your LinkedIn tab to resume filtering.";
+        // The extension reloads itself momentarily; this page shows the new version on refresh.
+      } else if (res.ok && res.throttled) {
+        status.textContent = "Chrome is rate-limiting update checks right now. Try again in a few minutes, " +
+          "or restart Chrome to apply a pending update.";
+        resetNow(lbl);
+      } else if (res.ok) {
+        // no_update: the newer version isn't published on the store yet (Google review lag).
+        status.textContent = "The new version isn’t on the Chrome Web Store yet (Google is still reviewing it), " +
+          "so Chrome has nothing to apply. It’ll hot-update automatically once approved — or install the latest " +
+          "now from GitHub Releases.";
+        resetNow(lbl);
+      } else {
+        status.textContent = "Couldn’t update in place: " + (res.error || "unknown error") +
+          " You can install the latest from GitHub Releases, or restart Chrome.";
+        resetNow(lbl);
+      }
+    });
+  }
+
+  if (now) now.addEventListener("click", function () {
+    now.disabled = true;
+    var lbl = now.textContent;
+    now.textContent = "Updating…";
+    if (canSelfUpdate) windowsUpdate(lbl); else storeUpdate(lbl);
   });
 })();
 

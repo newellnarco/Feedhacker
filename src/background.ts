@@ -56,6 +56,60 @@ function runSelfUpdate(done) {
   catch (e: any) { reply({ ok: false, error: (e && e.message) || "Could not message the update helper." }); }
 }
 
+// Chrome has downloaded a newer store version and staged it; calling chrome.runtime.reload()
+// applies it with no browser restart. We record it so "Update now" can apply it instantly.
+var pendingUpdate = null;   // null = none staged; string = staged version (may be "")
+if (chrome.runtime.onUpdateAvailable) {
+  chrome.runtime.onUpdateAvailable.addListener(function (details) {
+    pendingUpdate = (details && details.version) || "";
+  });
+}
+
+// Hot-apply a pending Chrome Web Store update — no browser restart. Store installs only: Chrome
+// can only swap in a version that's actually PUBLISHED on the Web Store, so a version still in
+// Google review isn't downloadable yet (reported back as updated:false so the UI can explain).
+function runStoreUpdate(done) {
+  var replied = false;
+  var reply = function (r) { if (!replied) { replied = true; try { done(r); } catch (e) {} } };
+  var apply = function (v) {
+    reply({ ok: true, updated: true, version: v || pendingUpdate || "" });
+    // Reload once the reply has reached the options page; applying a staged update swaps in the
+    // new version in place, with no Chrome restart.
+    setTimeout(function () { try { chrome.runtime.reload(); } catch (e) {} }, 400);
+  };
+  if (pendingUpdate != null) { apply(pendingUpdate); return; }   // already downloaded — apply now
+  if (!chrome.runtime.requestUpdateCheck) { reply({ ok: false, error: "This Chrome build can't check for extension updates." }); return; }
+
+  var settled = false;
+  var settle = function (status, version) {
+    if (settled) return; settled = true;
+    if (status === "update_available") {
+      if (pendingUpdate != null) return apply(version);
+      // Chrome found one; give it a moment to finish staging (onUpdateAvailable), then apply.
+      var fired = false;
+      var go = function (v) { if (!fired) { fired = true; apply(v); } };
+      try { chrome.runtime.onUpdateAvailable.addListener(function (d) { go((d && d.version) || version); }); } catch (e) {}
+      setTimeout(function () { go(version); }, 2500);
+    } else if (status === "throttled") {
+      reply({ ok: true, updated: false, throttled: true });
+    } else {
+      reply({ ok: true, updated: false });   // "no_update": store hasn't published a newer version yet
+    }
+  };
+
+  try {
+    var ret: any = chrome.runtime.requestUpdateCheck(function (status, details) {
+      var le = chrome.runtime.lastError;
+      if (le) { reply({ ok: false, error: le.message }); return; }
+      settle(status, details && details.version);
+    });
+    // MV3 promise form (if the callback isn't honored); `settled` de-dupes if both fire.
+    if (ret && typeof ret.then === "function") ret.then(function (res) { settle(res && res.status, res && res.version); }, function (e) { reply({ ok: false, error: (e && e.message) || "Update check failed." }); });
+  } catch (e: any) {
+    reply({ ok: false, error: (e && e.message) || "Only Chrome Web Store installs can auto-update." });
+  }
+}
+
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (!sender || sender.id !== chrome.runtime.id) return;   // only our own content scripts
   if (!msg) return;
@@ -64,6 +118,11 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (msg.type === "feedhacker:selfUpdate") {
     runSelfUpdate(sendResponse);
     return true;   // keep the channel open for the async native-host reply
+  }
+
+  if (msg.type === "feedhacker:storeUpdate") {
+    runStoreUpdate(sendResponse);
+    return true;   // keep the channel open for the async update check
   }
 
   if (msg.type === "feedhacker:count") {
