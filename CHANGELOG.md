@@ -11,6 +11,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.4]
+
+### Fixed
+- **Stub buttons no longer occasionally ignore the first click.** The action buttons on a
+  hidden-post stub (AI-slop confirm, Hide, Show anyway, Mute author, Always show, Hide again)
+  each carried their own click listener. When LinkedIn's React re-rendered a post's subtree
+  (viewport changes, engagement-count updates, lazy media), it could drop our injected stub and
+  its listeners — so a click landed on a handler-less node and appeared to do nothing, and you'd
+  click again. Clicks are now handled by a single delegated listener on the document (routed by a
+  `data-fh-act` tag), so a rebuilt button keeps working no matter how often LinkedIn re-renders
+  around it.
+
 ## [0.4.3] — 2026-07-09
 
 ### Changed

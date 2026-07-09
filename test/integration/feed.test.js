@@ -156,6 +156,23 @@ test("Hide survives a settings re-apply (preserving reset) — the row does not 
   assert.ok(!el.classList.contains("feedhacker-dismissing"));
 });
 
+test("stub actions survive a re-render that drops direct listeners (event delegation)", () => {
+  // Simulates LinkedIn's React re-rendering the post subtree and swapping our injected
+  // button for a fresh node with no listeners — the class of churn that made a first click
+  // seem to do nothing. Because the click handler is delegated to the document (not the
+  // button), a listener-less clone still works.
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], baseSettings());
+
+  const hide = el.querySelector(".feedhacker-stub .feedhacker-hidepost");
+  assert.ok(hide, "stub has a Hide control");
+  const clone = hide.cloneNode(true);          // cloneNode copies attributes (data-fh-act) but NOT listeners
+  hide.parentNode.replaceChild(clone, hide);
+  clone.click();
+  assert.strictEqual(el.dataset.feedhackerDismissed, "1", "re-rendered Hide button still retires the row via delegation");
+});
+
 test("Show anyway survives a settings re-apply — the row stays revealed", () => {
   const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
   const el = feed.findPostContainers(doc)[0];

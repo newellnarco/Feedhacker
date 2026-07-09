@@ -21,22 +21,24 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## Current state — as of 2026-07-09
 
-- **Latest GitHub release:** `v0.4.3` (2026-07-09). `main` sits at 0.4.3.
-- **Chrome Web Store:** **v0.4.2 is LIVE** (confirmed published 2026-07-08 21:57 UTC). **v0.4.3 was
-  submitted 2026-07-09 via the Release workflow ("Publish successful", auto-publish on) and is IN
-  REVIEW** → **the submission slot is BLOCKED** until Google publishes or rejects 0.4.3.
+- **Latest GitHub release:** `v0.4.3` (2026-07-09). `main` is bumped to **0.4.4** (in dev — see
+  Next release).
+- **Chrome Web Store:** **v0.4.3 is LIVE** (confirmed published 2026-07-09). The submission slot
+  is **OPEN** (newest store decision is a publish, nothing in review).
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
-  reliable notification of the 0.4.3 decision. On a new session, re-run steps 2/3 above (search
+  reliable notification. On a new session, re-run steps 2/3 above (search
   `from:chromewebstore-noreply@google.com newer_than:7d`, read the Version field of the newest
-  "published" email; slot is OPEN again once 0.4.3 is published/rejected).
+  "published" email).
 
-## Next release — v0.4.4 (not started)
+## Next release — v0.4.4 (in progress, not shipped)
 
-- **Nothing staged yet.** 0.4.3 just shipped and is in review.
-- When new work begins: bump `manifest.json` + `package.json` to **0.4.4**, and log changes under
-  a `## [0.4.4]` section in `CHANGELOG.md` (accumulate everything under that one next version).
+- **Staged so far:** fix for stub action buttons occasionally ignoring the first click — moved
+  from per-button listeners to one delegated document listener (`data-fh-act` routing), so the
+  controls survive LinkedIn's React re-rendering our injected stub. `manifest.json` +
+  `package.json` are at **0.4.4**; changes logged under `## [0.4.4]` in `CHANGELOG.md`.
+- Keep accumulating further work under 0.4.4 until the user says "ship."
 - **Backlog / possible follow-ups:**
   - The best-effort **MSI** installer build still fails in CI (WiX `Build MSI` step); it's
     `continue-on-error` and never blocks a release, so it's optional to fix.
