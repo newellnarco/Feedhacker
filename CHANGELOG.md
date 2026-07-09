@@ -20,9 +20,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   fires on most of your feed** — a signal that common is uninformative, which is what stopped one
   tell (an em dash, an emoji) from flagging everything — and (2) it **sets the threshold from the
   score distribution** so only the sloppiest slice (~the top fraction) is hidden, however the
-  absolute scores land. Both are recomputed fresh from the shipped defaults each time, so they
-  can't drift. On by default; toggle under **Advanced** ("Self-tune the AI-slop model
-  automatically").
+  absolute scores land. It's a **living** model: each cycle it *evolves the current running
+  weights* toward the freshly-computed target (an EMA) and accumulates across sessions — it keeps
+  learning from its latest state instead of resetting to the shipped model — while staying
+  anchored enough that it can't drift or collapse. Your **Show anyway / confirm** corrections
+  still count: they nudge the target, but **less than** the autonomous signal (a gentle,
+  regularized pull), so the learner leads and your clicks fine-tune. On by default; toggle under
+  **Advanced** ("Self-tune the AI-slop model automatically").
 - **AI-slop decision log** — a local, exportable record of every post flagged and *why*: the
   probability, the tells that fired (with weight + contribution), the matched banlist phrases,
   the author, and a short (~280-char) preview, plus your verdict if you correct it. A new options

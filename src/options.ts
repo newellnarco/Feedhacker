@@ -249,23 +249,28 @@ byId("slop-log-clear").addEventListener("click", function () {
   chrome.storage.local.set(patch, function () { renderSlopLog([]); slopStatus("Log cleared (model kept)."); });
 });
 byId("slop-recalibrate").addEventListener("click", function () {
-  if (!Scorer || !Scorer.autocalibrate) { slopStatus("Scorer unavailable."); return; }
+  if (!Scorer || !Scorer.liveCalibrate) { slopStatus("Scorer unavailable."); return; }
   chrome.storage.sync.get(DEFAULTS, function (st) {
-    chrome.storage.local.get([OBS_KEY], function (o) {
+    chrome.storage.local.get([OBS_KEY, TRAIN_KEY, WEIGHTS_KEY], function (o) {
       var obs = (o && o[OBS_KEY]) || [];
       if (obs.length < 30) { slopStatus("Reviewing posts — need ~30 (have " + obs.length + "). Scroll your feed, then retry."); return; }
       try {
-        var r = Scorer.autocalibrate(Scorer.defaultWeights(), obs, {
+        var r = Scorer.liveCalibrate({
+          current: (o && o[WEIGHTS_KEY]) || null,     // evolve from the latest running model
+          currentThreshold: typeof st.slopThreshold === "number" ? st.slopThreshold : 0.5,
+          defaults: Scorer.defaultWeights(),
+          observations: obs,
+          labels: (o && o[TRAIN_KEY]) || [],
           targetFrac: typeof st.slopTargetFrac === "number" ? st.slopTargetFrac : 0.28,
-          priorThreshold: 0.5
+          alpha: 0.6
         });
         if (!r || !r.calibrated) { slopStatus("Not enough data to calibrate yet."); return; }
-        var wpatch = {}; wpatch[WEIGHTS_KEY] = r.weights;
-        var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length };
-        chrome.storage.local.set(wpatch);
-        chrome.storage.local.set(cpatch, function () { renderSlopSignals(r.weights); renderCal(cpatch[CAL_KEY]); });
+        var patch = {};   // one local write (weights + status together)
+        patch[WEIGHTS_KEY] = r.weights;
+        patch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length, labels: r.labelsUsed };
+        chrome.storage.local.set(patch, function () { renderSlopSignals(r.weights); renderCal(patch[CAL_KEY]); });
         try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
-        slopStatus("Self-tuned from " + obs.length + " reviewed posts — now hiding ~" + Math.round(r.flaggedFrac * 100) + "%.");
+        slopStatus("Self-tuned from " + obs.length + " reviewed posts" + (r.labelsUsed ? " + " + r.labelsUsed + " of your corrections" : "") + " — now hiding ~" + Math.round(r.flaggedFrac * 100) + "%.");
       } catch (e) { slopStatus("Calibration failed."); }
     });
   });
