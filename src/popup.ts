@@ -68,8 +68,9 @@ function fracToThreshold(frac) {
 }
 function aggrLabel(f) {
   f = Number(f);
-  var word = f >= 0.4 ? "aggressive" : f <= 0.17 ? "strict" : "balanced";
-  return word + " (~" + Math.round(f * 100) + "% hidden)";
+  // Just the word — the "~N% hidden" suffix overflowed the popup row and got clipped, and the
+  // exact fraction isn't meaningful to show (the model only aims for it). The row below explains it.
+  return f >= 0.4 ? "aggressive" : f <= 0.17 ? "strict" : "balanced";
 }
 var defaultFrac = typeof DEFAULTS.slopTargetFrac === "number" ? DEFAULTS.slopTargetFrac : 0.28;
 chrome.storage.sync.get({ slopTargetFrac: defaultFrac }, function (st) {
