@@ -16,7 +16,7 @@ process.chdir(ROOT);
 // Compiled JS (from build/) that ships in the extension.
 const JS_FILES = [
   "background.js", "inject.js", "banlist.js", "filters.js", "logger.js", "selectors.js", "matcher.js",
-  "scorer.js", "authors.js", "customfilters.js", "feed.js", "content.js", "popup.js", "options.js", "update.js",
+  "scorer.js", "sloplog.js", "authors.js", "customfilters.js", "feed.js", "content.js", "popup.js", "options.js", "update.js",
 ];
 // Static assets that ship as-is from the repo root.
 const STATIC_FILES = ["manifest.json", "popup.html", "options.html", "welcome.html", "styles.css", "claudisms.json"];

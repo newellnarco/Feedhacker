@@ -156,6 +156,56 @@ test("Hide survives a settings re-apply (preserving reset) — the row does not 
   assert.ok(!el.classList.contains("feedhacker-dismissing"));
 });
 
+test("a slop flag emits a decision log with its 'why', and corrections emit verdicts", () => {
+  const decisions = [];
+  const verdicts = [];
+  const settings = baseSettings({
+    onSlopDecision: (d) => decisions.push(d),
+    onSlopVerdict: (id, label) => verdicts.push({ id, label }),
+  });
+  const doc = makeDoc(feedHtml(post(`<a href="/in/jane">Jane Doe</a><div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], settings);
+
+  assert.strictEqual(decisions.length, 1, "one decision logged");
+  const d = decisions[0];
+  assert.ok(typeof d.prob === "number" && d.prob >= d.threshold, "decision carries prob past threshold");
+  assert.ok(d.id && el.dataset.feedhackerSlopId === d.id, "decision id stashed on the element");
+  assert.ok(Array.isArray(d.top) && d.top.length > 0, "decision carries the tells that fired");
+  assert.ok(d.preview && d.preview.length > 0, "decision carries a preview");
+
+  // "Show anyway" => false positive verdict (label 0) tied to the same id.
+  el.querySelector(".feedhacker-stub button.feedhacker-show").click();
+  assert.deepStrictEqual(verdicts[verdicts.length - 1], { id: d.id, label: 0 }, "Show anyway emits a false-positive verdict");
+});
+
+test("every reviewed post is observed for autonomous calibration (slop or not)", () => {
+  const observed = [];
+  const settings = baseSettings({ onSlopObserve: (feats) => observed.push(feats) });
+  // A sloppy post and a plain human post.
+  const slop = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  feed.consider(slop, feed.findPostContainers(slop)[0], [], settings);
+  const plain = makeDoc(feedHtml(post(`<div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)));
+  feed.consider(plain, feed.findPostContainers(plain)[0], [], settings);
+
+  assert.strictEqual(observed.length, 2, "both posts observed, including the non-slop one");
+  assert.ok(observed[0] && typeof observed[0].banlist === "number", "observation carries the feature vector");
+});
+
+test("confirming AI slop emits a positive verdict", () => {
+  const verdicts = [];
+  const settings = baseSettings({
+    onFeedback: () => {},   // required for the confirm (splat) button to render
+    onSlopVerdict: (id, label) => verdicts.push({ id, label }),
+  });
+  const doc = makeDoc(feedHtml(post(`<div>${SLOP_BODY}</div>`)));
+  const el = feed.findPostContainers(doc)[0];
+  feed.consider(doc, el, [], settings);
+  el.querySelector(".feedhacker-stub .feedhacker-confirm").click();
+  assert.strictEqual(verdicts.length, 1);
+  assert.strictEqual(verdicts[0].label, 1, "confirm emits a positive (confirmed-slop) verdict");
+});
+
 test("stub actions survive a re-render that drops direct listeners (event delegation)", () => {
   // Simulates LinkedIn's React re-rendering the post subtree and swapping our injected
   // button for a fresh node with no listeners — the class of churn that made a first click

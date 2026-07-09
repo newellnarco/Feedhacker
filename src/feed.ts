@@ -233,6 +233,22 @@
   // Score post text for AI slop via the structural-tell scorer (scorer.js), which
   // combines the phrase banlist with layout/rhetoric tells through learned weights.
   // Returns a flag with .features attached so the glue layer can learn from feedback.
+  // Pull the loggable "why" out of a scorer result: the flag's probability, the threshold it
+  // beat, the ranked tells that fired, and the matched banlist phrases. Shared by post and
+  // comment scoring so both feed the decision log identically.
+  function slopDetail(res, settings) {
+    var top = (res.contributions || []).slice(0, 8).map(function (c) {
+      return { id: c.id, label: c.label, value: c.value, weight: c.weight, contribution: c.contribution };
+    });
+    var phrases = ((res.features && res.features._hits) || []).map(function (h) {
+      return h.id === "emoji" ? (h.text + " (emoji)") : (h.text || h.id);
+    });
+    var thr = (settings && typeof settings.slopThreshold === "number")
+      ? settings.slopThreshold
+      : (root.FeedHackerScorer ? root.FeedHackerScorer.THRESHOLD : 0.5);
+    return { prob: res.prob, threshold: thr, top: top, phrases: phrases };
+  }
+
   function scoreSloppy(text, matchers, settings) {
     if (!root.FeedHackerScorer) return null;
     var res = root.FeedHackerScorer.classify(
@@ -243,8 +259,14 @@
         threshold: settings && typeof settings.slopThreshold === "number" ? settings.slopThreshold : undefined
       }
     );
+    // Feed EVERY reviewed post (slop or not) to the autonomous auto-calibration population,
+    // so it learns which tells are ubiquitous (uninformative) in this feed and where the real
+    // cutoff sits — independent of whether the user ever corrects anything.
+    try { if (settings && typeof settings.onSlopObserve === "function") settings.onSlopObserve(res.features); } catch (e) {}
     if (!res.isSlop) return null;
-    return { id: "sloppy", label: "AI Slop", detail: res.detail, features: res.features };
+    var d = slopDetail(res, settings);
+    return { id: "sloppy", label: "AI Slop", detail: res.detail, features: res.features,
+             prob: d.prob, threshold: d.threshold, top: d.top, phrases: d.phrases };
   }
 
   function matchedFlags(el, matchers, activeIds, text, settings) {
@@ -357,6 +379,41 @@
     if (feats) settings.onFeedback(feats, label);
   }
 
+  // Log WHY a post was flagged as AI slop (probability, the tells that fired, matched phrases)
+  // to the glue layer, and stash a decision id on the element so a later Show-anyway / Confirm
+  // can attach the user's verdict to the same record. Only fires for the learned "sloppy" flag.
+  function logSlopDecision(el, flags, settings) {
+    try {
+      if (!settings || typeof settings.onSlopDecision !== "function") return;
+      var sf: any = null;
+      for (var i = 0; i < flags.length; i++) if (flags[i] && flags[i].id === "sloppy") { sf = flags[i]; break; }
+      if (!sf || typeof sf.prob !== "number") return;
+      var id = Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
+      el.dataset.feedhackerSlopId = id;
+      settings.onSlopDecision({
+        id: id,
+        prob: sf.prob,
+        threshold: sf.threshold,
+        surface: markerCountWithin(el) >= 1 ? "post" : "comment",
+        author: el.dataset.feedhackerActor || "",
+        preview: el.dataset.feedhackerPreview || "",
+        top: sf.top || [],
+        phrases: sf.phrases || []
+      });
+    } catch (e) {}
+  }
+  // Record the user's verdict on a logged slop decision: 0 = false positive ("Show anyway"),
+  // 1 = confirmed ("AI slop" splat / "Hide again"). Passes the decision id (to stamp the log)
+  // and the stashed feature vector (to add a labeled example for local recalibration).
+  function emitVerdict(el, settings, label) {
+    try {
+      if (!settings || typeof settings.onSlopVerdict !== "function") return;
+      var feats: any = null;
+      try { if (el.dataset.feedhackerFeatures) feats = JSON.parse(el.dataset.feedhackerFeatures); } catch (e) {}
+      settings.onSlopVerdict(el.dataset.feedhackerSlopId || "", label ? 1 : 0, feats);
+    } catch (e) {}
+  }
+
   // --- stub actions via ONE delegated listener per document ---------------------
   // Each stub button carries a data-fh-act tag instead of its own click listener. A single
   // capture-phase listener on the document routes the click. Delegating like this makes the
@@ -389,6 +446,7 @@
         if (el.dataset.feedhackerConfirmedSlop === "1") return;   // idempotent: one positive signal per post
         el.dataset.feedhackerConfirmedSlop = "1";
         emitFeedback(el, flags, settings, 1);                     // confirm slop (trains the filter)
+        emitVerdict(el, settings, 1);                            // …and log the verdict for recalibration
         btn.disabled = true; btn.title = "Confirmed AI slop";
         btn.classList.add("feedhacker-confirmed");
         clearEl(btn); btn.appendChild(checkIcon(doc));            // show a checkmark…
@@ -680,7 +738,7 @@
     armStub(doc, settings);
     // Don't emit a contradictory false-positive signal if the user already confirmed this
     // post is slop — revealing it after confirming is just "let me read it anyway".
-    if (el.dataset.feedhackerConfirmedSlop !== "1") emitFeedback(el, flags, settings, 0);
+    if (el.dataset.feedhackerConfirmedSlop !== "1") { emitFeedback(el, flags, settings, 0); emitVerdict(el, settings, 0); }
     if (markerCountWithin(el) >= 1) recordOutcome(settings, authorInfo(el), false);  // kept: author "shown"
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;
@@ -697,6 +755,7 @@
   }
   function reHide(doc, el, stub, flags, settings) {
     emitFeedback(el, flags, settings, 1);   // user re-hid: confirmed slop
+    emitVerdict(el, settings, 1);
     delete el.dataset.feedhackerReveal;
     el.dataset.feedhackerHidden = "1";
     el.classList.add("feedhacker-hidden");
@@ -719,6 +778,7 @@
       }
     } catch (e) {}
     if (settings && typeof settings.onHidden === "function") { try { settings.onHidden(flags); } catch (e) {} }
+    logSlopDecision(el, flags, settings);
     if (forceGone || settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
     el.classList.add("feedhacker-hidden");
     if (directChildStub(el)) return;
@@ -883,7 +943,9 @@
       var cActor = getActor(el);
       el.dataset.feedhackerActor = cActor;
       el.dataset.feedhackerPreview = firstBodyLine(raw, cActor);
-      collapse(doc, el, [{ id: "sloppy", label: "AI Slop comment", detail: res.detail, features: res.features }], settings);
+      var cd = slopDetail(res, settings);
+      collapse(doc, el, [{ id: "sloppy", label: "AI Slop comment", detail: res.detail, features: res.features,
+                           prob: cd.prob, threshold: cd.threshold, top: cd.top, phrases: cd.phrases }], settings);
       hidden++;
     }
     return hidden;

@@ -103,6 +103,7 @@
   function onFeedback(features, label, lr) {
     try {
       if (!Scorer) return;
+      if (settings.autoCalibrate) return;   // autonomous calibration owns the weights; single clicks don't move them
       settings.slopWeights = Scorer.learn(settings.slopWeights, features, label, typeof lr === "number" ? lr : 0.3);
       weightsDirty = true;
       saveWeightsSoon();
@@ -189,6 +190,141 @@
         var patch = {}; patch[HISTORY_KEY] = h; chrome.storage.local.set(patch);
       } catch (e) { logError(e, "history"); }
     });
+  }
+
+  // --- AI-slop decision log + local recalibration -------------------------
+  // Every slop flag is logged with its "why" (probability, tells, phrases, preview) so the
+  // user can see what tripped it and export it; every user correction becomes a labeled
+  // example that periodically re-fits the weights locally (regularized toward the shipped
+  // defaults). Both are best-effort: they must never take filtering down.
+  var SlopLog = self.FeedHackerSlopLog;
+  var TRAIN_KEY = "feedhacker:sloptrain";
+  var TRAIN_MAX = 500, RETUNE_EVERY = 6;
+  var slopPending: any[] = [], slopFlushTimer: any = null, newLabels = 0;
+
+  function flushSlopLog() {
+    slopFlushTimer = null;
+    if (!SlopLog || !slopPending.length) return;
+    var batch = slopPending; slopPending = [];
+    chrome.storage.local.get([SlopLog.STORAGE_KEY], function (o) {
+      try {
+        var list = (o && o[SlopLog.STORAGE_KEY]) || [];
+        for (var i = 0; i < batch.length; i++) list = SlopLog.push(list, batch[i]);
+        var patch = {}; patch[SlopLog.STORAGE_KEY] = list; chrome.storage.local.set(patch);
+      } catch (e) { logError(e, "sloplog"); }
+    });
+  }
+  function onSlopDecision(d) {
+    try {
+      if (!SlopLog) return;
+      slopPending.push(SlopLog.makeEntry(d, Date.now()));
+      if (!slopFlushTimer) slopFlushTimer = setTimeout(flushSlopLog, 2000);
+    } catch (e) {}
+  }
+  settings.onSlopDecision = onSlopDecision;
+
+  // Keep only the numeric feature values (no matched text) for the training buffer.
+  function cleanFeatures(feats) {
+    var out: any = {};
+    if (!Scorer || !feats) return out;
+    for (var i = 0; i < Scorer.FEATURE_IDS.length; i++) {
+      var id = Scorer.FEATURE_IDS[i];
+      out[id] = typeof feats[id] === "number" ? feats[id] : 0;
+    }
+    return out;
+  }
+  function onSlopVerdict(id, label, feats) {
+    try {
+      if (!SlopLog) return;
+      var lab = label ? 1 : 0;
+      // Stamp any not-yet-flushed decision in memory so a fast correction isn't lost.
+      for (var p = 0; p < slopPending.length; p++) if (slopPending[p].id === id) slopPending[p].label = lab;
+      chrome.storage.local.get([SlopLog.STORAGE_KEY, TRAIN_KEY], function (o) {
+        try {
+          var list = (o && o[SlopLog.STORAGE_KEY]) || [];
+          if (id) list = SlopLog.applyVerdict(list, id, lab, Date.now());
+          var patch: any = {}; patch[SlopLog.STORAGE_KEY] = list;
+          if (feats && Scorer) {
+            var train = (o && o[TRAIN_KEY]) || [];
+            var ex = { id: id || String(Date.now()), features: cleanFeatures(feats), label: lab, ts: Date.now() };
+            var replaced = false;   // one example per decision — a changed mind overwrites
+            for (var i = 0; i < train.length; i++) if (id && train[i] && train[i].id === id) { train[i] = ex; replaced = true; break; }
+            if (!replaced) train.push(ex);
+            if (train.length > TRAIN_MAX) train = train.slice(train.length - TRAIN_MAX);
+            patch[TRAIN_KEY] = train;
+            // Label-driven retune only when the autonomous loop is OFF (otherwise it owns the model).
+            if (!settings.autoCalibrate && ++newLabels >= RETUNE_EVERY) { newLabels = 0; recalibrate(train); }
+          }
+          chrome.storage.local.set(patch);
+        } catch (e) { logError(e, "slop-verdict"); }
+      });
+    } catch (e) {}
+  }
+  settings.onSlopVerdict = onSlopVerdict;
+
+  // Batch-refit slop weights from ALL labeled corrections. Regularized toward the shipped
+  // defaults (in Scorer.retrain) so a lopsided buffer softens the model without collapsing
+  // it. Applied live and persisted.
+  function recalibrate(train) {
+    try {
+      if (!Scorer || !train || train.length < 4) return;
+      settings.slopWeights = Scorer.retrain(Scorer.defaultWeights(), train, {});
+      var patch = {}; patch[WEIGHTS_KEY] = settings.slopWeights; chrome.storage.local.set(patch);
+    } catch (e) { logError(e, "recalibrate"); }
+  }
+
+  // --- autonomous auto-calibration (no user labels) -----------------------
+  // FeedHacker watches the population of posts it reviews and periodically re-fits the model
+  // ITSELF: it down-weights tells that fire on most posts (uninformative here) and sets the
+  // threshold from the score distribution so only the sloppiest ~slopTargetFrac is hidden.
+  // This is the primary "get smarter" loop — it needs no clicks from the user.
+  var OBS_KEY = "feedhacker:slopobs", CAL_KEY = "feedhacker:slopcal";
+  var OBS_MAX = 400, CAL_MIN = 30, CAL_INTERVAL = 45000;   // recalibrate at most ~once per 45s
+  var obsPending: any[] = [], obsFlushTimer: any = null, lastCalAt = 0;
+
+  function onSlopObserve(feats) {
+    try {
+      if (!Scorer || !settings.autoCalibrate) return;
+      obsPending.push({ features: cleanFeatures(feats) });
+      if (!obsFlushTimer) obsFlushTimer = setTimeout(flushObs, 3000);
+    } catch (e) {}
+  }
+  settings.onSlopObserve = onSlopObserve;
+
+  function flushObs() {
+    obsFlushTimer = null;
+    if (!obsPending.length) return;
+    var batch = obsPending; obsPending = [];
+    chrome.storage.local.get([OBS_KEY], function (o) {
+      try {
+        var list = ((o && o[OBS_KEY]) || []).concat(batch);
+        if (list.length > OBS_MAX) list = list.slice(list.length - OBS_MAX);
+        var patch = {}; patch[OBS_KEY] = list; chrome.storage.local.set(patch);
+        // Time-gated so a calibration's own reapply()-driven re-scan can't loop back into another.
+        if (settings.autoCalibrate && list.length >= CAL_MIN && (Date.now() - lastCalAt) >= CAL_INTERVAL) {
+          runAutoCalibrate(list);
+        }
+      } catch (e) { logError(e, "slopobs"); }
+    });
+  }
+
+  function runAutoCalibrate(obs) {
+    try {
+      if (!Scorer || !settings.autoCalibrate || !obs) return;
+      lastCalAt = Date.now();   // set BEFORE reapply so the re-scan it triggers can't re-enter
+      var r = Scorer.autocalibrate(Scorer.defaultWeights(), obs, {
+        targetFrac: typeof settings.slopTargetFrac === "number" ? settings.slopTargetFrac : 0.28,
+        priorThreshold: 0.5
+      });
+      if (!r || !r.calibrated) return;
+      settings.slopWeights = r.weights;
+      settings.slopThreshold = r.threshold;
+      var wpatch = {}; wpatch[WEIGHTS_KEY] = r.weights; chrome.storage.local.set(wpatch);
+      try { chrome.storage.sync.set({ slopThreshold: r.threshold }); } catch (e) {}
+      var cpatch = {}; cpatch[CAL_KEY] = { at: Date.now(), threshold: r.threshold, flaggedFrac: r.flaggedFrac, freqs: r.freqs, n: obs.length };
+      chrome.storage.local.set(cpatch);
+      if (ready) reapply();   // re-evaluate what's on screen with the freshly tuned model
+    } catch (e) { logError(e, "autocalibrate"); }
   }
 
   // --- custom filters ----------------------------------------------------
