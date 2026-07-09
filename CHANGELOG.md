@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.4.4]
+## [0.4.4] — 2026-07-09
 
 ### Changed
 - **The AI-slop slider is now an "Aggression" control that actually sticks.** It used to set a raw

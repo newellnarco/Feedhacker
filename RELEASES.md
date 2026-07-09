@@ -28,6 +28,7 @@ at different speeds, so they're tracked separately:
 | 0.4.1 | ✅ Released (2026-07-07) | ◻︎ Skipped on store | — | Store upload was blocked (`ITEM_NOT_UPDATABLE`); superseded by 0.4.2. Installer ASCII fix lives on the GitHub download. |
 | 0.4.2 | ✅ Released (2026-07-08) | ✅ **Live** (published 2026-07-08) | 2026-07-08 | Confirmed live — Google "Item successfully published" email, Version 0.4.2, 2026-07-08 21:57 UTC. Cumulative: everything since 0.4.0. |
 | 0.4.3 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live on the store. Context-invalidation teardown + smaller page footprint (bundled banlist, no web-accessible resources). |
+| 0.4.4 | ⏳ Releasing (2026-07-09) | ⏳ Submitted → review | 2026-07-09 | Autonomous AI-slop self-calibration (living model), Aggression slider that sticks, curated grouping, click-safe re-apply, observation reaping, accurate in-app docs. Store upload via CI `webstore` job — awaiting Google review. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -35,6 +36,22 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 ## What's in each version
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
+
+### 0.4.4 — releasing on GitHub (2026-07-09); submitted to the store
+- **Autonomous AI-slop self-calibration** (living model): reviews the posts you see and, on its
+  own, down-weights structural tells that fire on most of the feed and sets the threshold from the
+  score distribution so only the sloppiest slice is hidden — no clicking required. Evolves from its
+  latest weights across sessions; your corrections nudge it secondarily.
+- **Aggression slider that sticks:** now sets the target share of the feed to hide
+  (`slopTargetFrac`), which the self-tuning honors, instead of a raw threshold it overwrote.
+- **Curated grouping:** 3+ consecutive hidden posts fold into one "N hidden … Show all" row
+  (toggle in the popup).
+- **Click-safe re-apply + faster load-more:** delegated stub clicks survive React re-renders; the
+  self-tune re-applies softly and pauses after clicks; load-more kicks harder.
+- **Consolidated, self-reaping learning:** the observation buffer is trimmed to a recent window
+  (`OBS_KEEP`) after each calibration so it doesn't keep growing.
+- **Accurate in-app documentation:** the "How AI-slop detection works" panel and README now
+  describe the self-tuning algorithm.
 
 ### 0.4.3 — released on GitHub (2026-07-09); submitted to the store
 - **Context-invalidation teardown:** after a Chrome update/reload, the orphaned content script
