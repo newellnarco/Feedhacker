@@ -811,7 +811,8 @@
       && !!directChildStub(el);
   }
   function postState(el) {
-    if (el.dataset.feedhackerGroup || el.dataset.feedhackerGrouphead) return "transparent";   // already grouped
+    if (el.dataset.feedhackerGrouphead) return "shown";                                        // the group summary row is VISIBLE → breaks a run
+    if (el.dataset.feedhackerGroup) return "transparent";                                      // a folded member is invisible
     if (isGroupable(el)) return "run";
     if (el.classList.contains("feedhacker-gone")) return "transparent";                        // invisible, takes no space
     if (el.dataset.feedhackerHidden === "1") return "transparent";                             // hidden without a stub
@@ -902,22 +903,33 @@
   // already-grouped runs, are left intact.
   function recompute(doc, matchers, settings) {
     if (!anyActive(settings)) return;
-    var posts = findPostContainers(doc);
-    for (var i = 0; i < posts.length; i++) {
-      var el = posts[i];
-      if (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerDismissed === "1") continue;
-      if (el.dataset.feedhackerGroup || el.dataset.feedhackerGrouphead) continue;   // leave curated groups intact
-      var hidden = el.dataset.feedhackerHidden === "1" || el.classList.contains("feedhacker-gone");
-      if (hidden) {
-        var reasons = readReasons(el);
-        var slopOnly = reasons.length > 0 && reasons.every(function (r) { return r.id === "sloppy"; });
-        if (!slopOnly) continue;                       // hidden by a deterministic filter — leave it
-        if (!scoreSloppy(getPostText(el), matchers, settings)) uncollapse(el);   // no longer slop → reveal
-      } else {
-        delete el.dataset.feedhackerScanned;           // let a tightened model re-hide shown posts
+    // Re-scoring existing posts here is RE-evaluation, not a fresh observation — muting
+    // onSlopObserve for the whole pass keeps it from re-adding the same posts (both the
+    // hidden ones below and the shown ones re-scanned by scan()) to the calibration
+    // population every cycle, which would bias the threshold/weights. Genuinely new posts
+    // are still observed by the regular scanNow.
+    var obs = settings.onSlopObserve;
+    settings.onSlopObserve = null;
+    try {
+      var posts = findPostContainers(doc);
+      for (var i = 0; i < posts.length; i++) {
+        var el = posts[i];
+        if (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerDismissed === "1") continue;
+        if (el.dataset.feedhackerGroup || el.dataset.feedhackerGrouphead) continue;   // leave curated groups intact
+        var hidden = el.dataset.feedhackerHidden === "1" || el.classList.contains("feedhacker-gone");
+        if (hidden) {
+          var reasons = readReasons(el);
+          var slopOnly = reasons.length > 0 && reasons.every(function (r) { return r.id === "sloppy"; });
+          if (!slopOnly) continue;                       // hidden by a deterministic filter — leave it
+          if (!scoreSloppy(getPostText(el), matchers, settings)) uncollapse(el);   // no longer slop → reveal
+        } else {
+          delete el.dataset.feedhackerScanned;           // let a tightened model re-hide shown posts
+        }
       }
+      scan(doc, matchers, settings);                     // hides newly-qualifying shown posts (existing stubs untouched)
+    } finally {
+      settings.onSlopObserve = obs;
     }
-    scan(doc, matchers, settings);                     // hides newly-qualifying shown posts (existing stubs untouched)
     groupRuns(doc, settings);
   }
 

@@ -39,7 +39,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   clutter; now 3+ consecutive hidden posts fold into a single summary row on the run's first post
   — **"N posts hidden · AI Slop ×8, Promoted ×3 · Show all"** — and the rest collapse away. **Show
   all** expands the run back to individual stubs. Isolated hidden posts still show their normal
-  stub. On by default; toggle under **Advanced** ("Group runs of hidden posts").
+  stub. On by default; toggle it right in the **popup** ("Group flagged posts") or under
+  **Advanced** on the options page. Unchecked keeps the old one-stub-per-post behavior.
 
 ### Fixed
 - **The self-tuning no longer eats a click.** The autonomous recalibration used to rebuild every

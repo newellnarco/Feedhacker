@@ -83,6 +83,41 @@ test("grouping is off when the setting is disabled", () => {
   assert.strictEqual(doc.querySelector(".feedhacker-group"), null, "no grouping when disabled");
 });
 
+test("an existing group row breaks a run — hidden posts on either side don't merge across it", () => {
+  const doc = makeDoc(feedHtml(slopPosts(7)));
+  const s = baseSettings({ groupHiddenRuns: true });
+  feed.scan(doc, [], s);
+  const posts = feed.findPostContainers(doc);
+  // Simulate a group already occupying posts[2..4] (head + two folded members),
+  // with ungrouped hidden stubs on both sides (posts 0,1 and 5,6).
+  posts[2].dataset.feedhackerGrouphead = "G";
+  [3, 4].forEach((i) => {
+    const st = posts[i].querySelector(".feedhacker-stub"); if (st) st.remove();
+    posts[i].classList.remove("feedhacker-hidden"); posts[i].classList.add("feedhacker-gone");
+    posts[i].dataset.feedhackerGroup = "G";
+  });
+
+  feed.groupRuns(doc, s);
+
+  assert.ok(!posts[0].dataset.feedhackerGrouphead, "posts before the group are NOT merged across it");
+  assert.strictEqual(posts[2].dataset.feedhackerGrouphead, "G", "the existing group head is untouched");
+  // The 2-post runs on each side stay as individual stubs (below the group minimum).
+  [0, 1, 5, 6].forEach((i) => assert.ok(posts[i].querySelector(".feedhacker-stub") && !posts[i].querySelector(".feedhacker-group"), `post ${i} kept its own stub`));
+});
+
+test("recompute re-scores without polluting the calibration observations", () => {
+  const observed = [];
+  const s = baseSettings({ groupHiddenRuns: false, onSlopObserve: (f) => observed.push(f) });
+  const doc = makeDoc(feedHtml(slopPosts(2)));
+  feed.scan(doc, [], s);                    // observes each post once, at its real first scan
+  const before = observed.length;
+  assert.ok(before >= 2, "posts observed during the initial scan");
+
+  feed.recompute(doc, [], s);
+  assert.strictEqual(observed.length, before, "recompute does not re-observe already-scored posts");
+  assert.strictEqual(typeof s.onSlopObserve, "function", "the observer is restored after recompute");
+});
+
 test("recompute reveals posts the loosened model no longer flags, without rebuilding surviving stubs", () => {
   const doc = makeDoc(feedHtml(slopPosts(2)));
   const s = baseSettings({ groupHiddenRuns: false });

@@ -44,6 +44,12 @@ chrome.storage.sync.get(DEFAULTS, function (st) {
   paintMaster(st.enabled);
   document.querySelectorAll(".ms").forEach(function (b) { paint(b, st[b.dataset.key]); });
   DISPLAY.forEach(function (id) { byId(id).checked = !!st[id]; });
+  byId("groupHiddenRuns").checked = st.groupHiddenRuns !== false;   // default on
+});
+
+// Group flagged posts: collapse a run of hidden posts into one summary row (default on).
+byId("groupHiddenRuns").addEventListener("change", function (e) {
+  chrome.storage.sync.set({ groupHiddenRuns: e.target.checked });
 });
 
 byId("open-options").addEventListener("click", function () {
