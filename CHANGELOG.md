@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.4.3]
+## [0.4.3] — 2026-07-09
 
 ### Changed
 - **Smaller page footprint on LinkedIn — the banlist now ships bundled.** Previously the
