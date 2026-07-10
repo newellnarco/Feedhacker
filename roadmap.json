@@ -1,8 +1,8 @@
 {
   "meta": {
     "product": "FeedHacker",
-    "updated": "2026-07-09",
-    "liveVersion": "0.4.3",
+    "updated": "2026-07-10",
+    "liveVersion": "0.4.4",
     "note": "Canonical roadmap for FeedHacker — committed work only (ideas not yet committed live in the Discussions doc). Status: pending = committed, in progress or upcoming · closed = shipped and live. IDs are permanent; only status/version change as work moves. Categories: filter, ai, ux, engine, infra, bug.",
     "statuses": ["pending", "closed"],
     "categories": ["filter", "ai", "ux", "engine", "infra", "bug"]
@@ -12,7 +12,7 @@
       "id": "FH-004",
       "name": "Autonomous AI-slop self-calibration",
       "description": "A living model that reviews the posts you see and re-tunes its own weights and threshold on-device — down-weighting tells that fire on most of the feed and setting the cutoff from the score distribution — so only the sloppiest slice hides, no clicking required. Your corrections nudge it secondarily.",
-      "status": "pending",
+      "status": "closed",
       "category": "ai",
       "version": "0.4.4",
       "consideration": "Do we even need the self-adjusting part? Two worries. First, the plan is to trust a slop word less if it shows up all over the feed — but when the feed really is mostly junk, that quietly switches off our best detectors right when we need them. Second, it decides what to hide by comparing posts to each other, so it always hides 'the worst of what's here.' If almost everything is slop, most of it still gets through, and the filter slowly learns to accept junk as normal. A solid word list plus a simple strength slider (that's FH-005) probably does most of the job, and you can always see why a post got hidden. If we keep the auto-adjusting, set a hard bottom line: never let it relax below 'this is slop, period.' Let's decide before we build."
@@ -21,7 +21,7 @@
       "id": "FH-005",
       "name": "Aggression slider that sticks",
       "description": "The AI-slop slider now sets the target share of the feed to hide (which the self-tuning honors) instead of a raw threshold it used to overwrite each cycle, so moving it persists.",
-      "status": "pending",
+      "status": "closed",
       "category": "ai",
       "version": "0.4.4",
       "consideration": "This one depends on FH-004. The slider works by telling the auto-tuner \"hide about this much of my feed\" — so if we don't build the auto-tuner, there's nothing to tell, and this needs a rethink. And \"hide this much\" has the same catch as FH-004: on a junky feed, hiding a set share still lets lots of junk through; on a clean feed, it may hide good posts just to hit the number. Simpler option: the slider just picks how many slop words it takes to hide a post. Let's settle FH-004 first — it decides this one."
@@ -30,7 +30,7 @@
       "id": "FH-006",
       "name": "AI-slop decision log",
       "description": "A local, exportable record of every post flagged and why — probability, tells that fired with weights, matched banlist phrases, author, a short preview, and your verdict — plus recalibrate-now and clear-log controls.",
-      "status": "pending",
+      "status": "closed",
       "category": "ai",
       "version": "0.4.4",
       "consideration": "What's this really for? Worth naming who wants a full decision log, and why, before building it. The bigger flag: it saves and exports the actual post content — author, preview, text — to a file on your machine. That's a step toward copying and keeping LinkedIn's content, which is a grayer area with their rules than just hiding a post in your own view. Let's check where the line is before we ship an export."
@@ -39,7 +39,7 @@
       "id": "FH-007",
       "name": "Group runs of hidden posts",
       "description": "3+ consecutive hidden posts fold into one summary row (\"N posts hidden · AI Slop ×8, Promoted ×3 · Show all\"); isolated hidden posts still show a normal stub. Popup toggle. Replaces the removed digest mode.",
-      "status": "pending",
+      "status": "closed",
       "category": "ux",
       "version": "0.4.4",
       "consideration": "Keep grouping optional — not the only way. Folding a run of hidden posts into one \"N hidden\" row is handy, but plenty of people would rather see each hidden post as its own small stub and choose what to open by what it is, instead of a whole screenful springing open at once. So keep the older one-at-a-time view as a choice, not a forced replacement. Needs design comps and light specs for both states — grouped and individual — on the Hidden Posts page, with requirements cross-linked. (Comps pending.)",
@@ -49,7 +49,7 @@
       "id": "FH-008",
       "name": "Click-safe re-apply + faster load-more",
       "description": "Stub clicks are handled by one delegated listener so they survive LinkedIn's React re-renders; the self-tune re-applies softly and pauses after a click; load-more kicks harder until a batch of visible posts appears.",
-      "status": "pending",
+      "status": "closed",
       "category": "engine",
       "version": "0.4.4"
     },
@@ -60,7 +60,7 @@
       "status": "pending",
       "category": "ux",
       "version": "0.4.5",
-      "consideration": "A worked-up proposal is on the hub — plain Light / Balanced / Aggressive labels sized to the slider so nothing wraps, with the percentage readout dropped. Low end is 'Light,' not 'strict': strict reads as heavy filtering, the same end of the scale as Aggressive.",
+      "consideration": "Jason's 0.4.5 (on GitHub, not yet on the store) drops the overflowing percentage — good — but keeps a single word and labels the low end 'strict,' which is backwards: strict reads as heavy filtering, the same end as Aggressive. The proposal still stands: Light / Balanced / Aggressive shown under the track, with 'Light' marking the hide-less end. See the popup proposal.",
       "doc": { "page": "popup.html#proposed", "label": "the popup proposal" }
     },
     {
@@ -336,6 +336,16 @@
       "category": "ux",
       "source": "Wes proposal",
       "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.png", "label": "Grab the logo — Fh badge (128px)" }
+    },
+    {
+      "id": "FH-041",
+      "name": "Tighten the popup help text",
+      "description": "The two 0.4.4 popup help blurbs are dense and one contradicts itself. Trim the top 'How it works' block to just Mute / Solo, and reword the slider help so the always-on target share is separated from the optional self-tuning.",
+      "status": "pending",
+      "category": "ux",
+      "source": "Wes proposal",
+      "consideration": "Shipped in 0.4.4: the slider help says the self-tuning model 'still applies when self-tuning is off,' which contradicts itself, and the intro crams four ideas into one block. Proposed rewrite is on the hub — see the popup proposal.",
+      "doc": { "page": "popup.html#proposed", "label": "the popup proposal" }
     }
   ]
 }
