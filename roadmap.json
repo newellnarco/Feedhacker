@@ -59,7 +59,9 @@
       "description": "The slider label reads plainly strict / balanced / aggressive instead of \"balanced (~28% hidden)\", which overflowed and clipped the popup row.",
       "status": "pending",
       "category": "ux",
-      "version": "0.4.5"
+      "version": "0.4.5",
+      "consideration": "A worked-up proposal is on the hub — plain Light / Balanced / Aggressive labels sized to the slider so nothing wraps, with the percentage readout dropped. Low end is 'Light,' not 'strict': strict reads as heavy filtering, the same end of the scale as Aggressive.",
+      "doc": { "page": "popup.html#fh009-labels", "label": "the popup proposal" }
     },
     {
       "id": "FH-010",
