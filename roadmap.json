@@ -3,8 +3,8 @@
     "product": "FeedHacker",
     "updated": "2026-07-09",
     "liveVersion": "0.4.3",
-    "note": "Canonical roadmap for FeedHacker — committed and active work only. Ideas still under discussion live on the Discussions page and move here once committed. IDs are permanent; only status/version change as work moves. Status: open = committed, not started · pending = built but not yet live on the Chrome Web Store (in review, or newer than the live build) · closed = shipped and live. Categories: filter, ai, ux, engine, infra, bug.",
-    "statuses": ["open", "pending", "closed"],
+    "note": "Canonical roadmap for FeedHacker — committed work only (ideas not yet committed live in the Discussions doc). Status: pending = committed, in progress or upcoming · closed = shipped and live. IDs are permanent; only status/version change as work moves. Categories: filter, ai, ux, engine, infra, bug.",
+    "statuses": ["pending", "closed"],
     "categories": ["filter", "ai", "ux", "engine", "infra", "bug"]
   },
   "items": [
