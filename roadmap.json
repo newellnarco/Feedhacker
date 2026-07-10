@@ -14,7 +14,8 @@
       "description": "A living model that reviews the posts you see and re-tunes its own weights and threshold on-device — down-weighting tells that fire on most of the feed and setting the cutoff from the score distribution — so only the sloppiest slice hides, no clicking required. Your corrections nudge it secondarily.",
       "status": "pending",
       "category": "ai",
-      "version": "0.4.4"
+      "version": "0.4.4",
+      "consideration": "Do we even need the self-adjusting part? Two worries. First, the plan is to trust a slop word less if it shows up all over the feed — but when the feed really is mostly junk, that quietly switches off our best detectors right when we need them. Second, it decides what to hide by comparing posts to each other, so it always hides 'the worst of what's here.' If almost everything is slop, most of it still gets through, and the filter slowly learns to accept junk as normal. A solid word list plus a simple strength slider (that's FH-005) probably does most of the job, and you can always see why a post got hidden. If we keep the auto-adjusting, set a hard bottom line: never let it relax below 'this is slop, period.' Let's decide before we build."
     },
     {
       "id": "FH-005",
