@@ -302,6 +302,15 @@
       "status": "pending",
       "category": "infra",
       "version": "0.4.5"
+    },
+    {
+      "id": "FH-038",
+      "name": "Refresh the first-run welcome page",
+      "description": "Update the welcome page, unchanged since 0.2.0: swap the decorative emoji (jigsaw + pushpin) for Chrome's own puzzle-piece and pin glyphs so the pinning guide matches the real toolbar, and freshen the copy (it still says \"settings\", predating the 0.4.0 \"Advanced Settings\" rename).",
+      "status": "pending",
+      "category": "ux",
+      "source": "Wes proposal",
+      "doc": { "page": "welcome.html", "label": "The welcome screen" }
     }
   ]
 }
