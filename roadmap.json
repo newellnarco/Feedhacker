@@ -311,6 +311,15 @@
       "category": "ux",
       "source": "Wes proposal",
       "doc": { "page": "welcome.html", "label": "The welcome screen" }
+    },
+    {
+      "id": "FH-039",
+      "name": "Overhaul Hidden Post UX",
+      "description": "The whole Hidden Posts design doc proposes a clean, one-line collapsed stub — category (+ Show anyway), with author and sample shown only when opted in, and Mute / Visit-profile tucked into an author menu; no icons, never wrapping. Jason hasn't taken it on and the shipped stub (the icon-button cluster) has drifted further from it. Overhaul the hidden-post stub per the doc.",
+      "status": "pending",
+      "category": "ux",
+      "source": "Wes proposal",
+      "doc": { "page": "hidden-posts.html", "label": "Hidden Posts" }
     }
   ]
 }
