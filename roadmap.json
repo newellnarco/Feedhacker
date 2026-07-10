@@ -320,6 +320,15 @@
       "category": "ux",
       "source": "Wes proposal",
       "doc": { "page": "hidden-posts.html", "label": "Hidden Posts" }
+    },
+    {
+      "id": "FH-040",
+      "name": "Restore the FeedHacker logo (LinkedIn-spoof \"Fh\")",
+      "description": "The current icon is a dark \"M\" mark; the intended brand is the original FeedHacker logo — a blue \"Fh\" badge that spoofs LinkedIn's blue \"in\". Use it across the extension icons (16/32/48/128), the Chrome Web Store listing, and the welcome page. Source file linked below (committed to the repo root).",
+      "status": "pending",
+      "category": "ux",
+      "source": "Wes proposal",
+      "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.png", "label": "Grab the logo — Fh badge (128px)" }
     }
   ]
 }
