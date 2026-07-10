@@ -32,7 +32,8 @@
       "description": "A local, exportable record of every post flagged and why — probability, tells that fired with weights, matched banlist phrases, author, a short preview, and your verdict — plus recalibrate-now and clear-log controls.",
       "status": "pending",
       "category": "ai",
-      "version": "0.4.4"
+      "version": "0.4.4",
+      "consideration": "What's this really for? Worth naming who wants a full decision log, and why, before building it. The bigger flag: it saves and exports the actual post content — author, preview, text — to a file on your machine. That's a step toward copying and keeping LinkedIn's content, which is a grayer area with their rules than just hiding a post in your own view. Let's check where the line is before we ship an export."
     },
     {
       "id": "FH-007",
@@ -40,7 +41,9 @@
       "description": "3+ consecutive hidden posts fold into one summary row (\"N posts hidden · AI Slop ×8, Promoted ×3 · Show all\"); isolated hidden posts still show a normal stub. Popup toggle. Replaces the removed digest mode.",
       "status": "pending",
       "category": "ux",
-      "version": "0.4.4"
+      "version": "0.4.4",
+      "consideration": "Keep grouping optional — not the only way. Folding a run of hidden posts into one \"N hidden\" row is handy, but plenty of people would rather see each hidden post as its own small stub and choose what to open by what it is, instead of a whole screenful springing open at once. So keep the older one-at-a-time view as a choice, not a forced replacement. Needs design comps and light specs for both states — grouped and individual — on the Hidden Posts page, with requirements cross-linked. (Comps pending.)",
+      "doc": { "page": "hidden-posts.html", "label": "Hidden Posts design doc" }
     },
     {
       "id": "FH-008",
