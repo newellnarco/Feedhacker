@@ -23,7 +23,8 @@
       "description": "The AI-slop slider now sets the target share of the feed to hide (which the self-tuning honors) instead of a raw threshold it used to overwrite each cycle, so moving it persists.",
       "status": "pending",
       "category": "ai",
-      "version": "0.4.4"
+      "version": "0.4.4",
+      "consideration": "This one depends on FH-004. The slider works by telling the auto-tuner \"hide about this much of my feed\" — so if we don't build the auto-tuner, there's nothing to tell, and this needs a rethink. And \"hide this much\" has the same catch as FH-004: on a junky feed, hiding a set share still lets lots of junk through; on a clean feed, it may hide good posts just to hit the number. Simpler option: the slider just picks how many slop words it takes to hide a post. Let's settle FH-004 first — it decides this one."
     },
     {
       "id": "FH-006",
