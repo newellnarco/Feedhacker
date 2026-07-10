@@ -339,12 +339,12 @@
     },
     {
       "id": "FH-041",
-      "name": "Tighten the popup help text",
-      "description": "The two 0.4.4 popup help blurbs are dense and one contradicts itself. Trim the top 'How it works' block to just Mute / Solo, and reword the slider help so the always-on target share is separated from the optional self-tuning.",
+      "name": "Move popup help behind a “?” button (no inline help)",
+      "description": "0.4.4 shows two help blurbs inline in the popup by default. Help is an edge case — needed only until you learn the controls, and some never need it — so it shouldn't take permanent space and visual priority. Remove the inline help; shift the Enable toggle left and add a small \"?\" help icon that reveals the help on demand.",
       "status": "pending",
       "category": "ux",
       "source": "Wes proposal",
-      "consideration": "Shipped in 0.4.4: the slider help says the self-tuning model 'still applies when self-tuning is off,' which contradicts itself, and the intro crams four ideas into one block. Proposed rewrite is on the hub — see the popup proposal.",
+      "consideration": "Nearby help is fine; inline-by-default isn't — it spends space and visual priority on something most people need only briefly, if at all. A \"?\" by the Enable toggle keeps it one click away. See the popup proposal.",
       "doc": { "page": "popup.html#proposed", "label": "the popup proposal" }
     }
   ]
