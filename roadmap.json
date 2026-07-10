@@ -177,25 +177,75 @@
       "status": "closed",
       "category": "ux",
       "version": "0.4.0",
-      "source": "Wes proposal"
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #2",
+      "doc": { "page": "popup.html", "label": "The popup" }
     },
     {
       "id": "FH-025",
-      "name": "Popup redesign (sectioned, Enable in header)",
-      "description": "Reorganized the popup into labelled sections (Posts, AI-slop, Feed display), moved the master Enable switch into the header, and put every option's label + hint on one line.",
+      "name": "Move the Enable switch into the header",
+      "description": "Moved the master Enable toggle to the top-right of the popup header — a prominent kill switch that no longer pushes the rest of the controls down.",
       "status": "closed",
       "category": "ux",
       "version": "0.4.0",
-      "source": "Wes proposal"
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #1",
+      "doc": { "page": "popup.html", "label": "The popup" }
     },
     {
       "id": "FH-026",
-      "name": "\"Show sample\" independent of \"Show author\"",
-      "description": "The Show-sample stub option no longer depends on Show author — every Feed-display checkbox stands alone. Names / +sample were renamed to Show author / Show sample.",
+      "name": "\"Show sample\" independent of \"Show author\" (+ rename)",
+      "description": "Renamed the stub option \"+ sample\" → \"Show sample\" and made it stand alone — it no longer depends on Show author; every Feed-display checkbox is independent.",
       "status": "closed",
       "category": "ux",
       "version": "0.4.0",
-      "source": "Wes proposal"
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #6",
+      "doc": { "page": "popup.html", "label": "The popup" }
+    },
+    {
+      "id": "FH-034",
+      "name": "Group the AI-slop controls into a section",
+      "description": "Gave AI slop its own section (blue header) holding the sensitivity slider and Hide AI-slop comments, instead of scattering those controls down the popup.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #3",
+      "doc": { "page": "popup.html", "label": "The popup" }
+    },
+    {
+      "id": "FH-035",
+      "name": "Fold the M / S key into the Posts header",
+      "description": "Dropped the standalone \"M mute · S solo\" legend line and folded the key into the Posts section header, so the toggles are labelled in place and the top of the popup is calmer.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #4",
+      "doc": { "page": "popup.html", "label": "The popup" }
+    },
+    {
+      "id": "FH-036",
+      "name": "Rename \"Names\" → \"Show author\"",
+      "description": "Renamed the stub display toggle from \"Names\" / \"Name names\" to \"Show author (who + category)\" so its job is obvious — it reveals who posted the suppressed item.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #5",
+      "doc": { "page": "popup.html", "label": "The popup" }
+    },
+    {
+      "id": "FH-037",
+      "name": "Rename \"Details & activity\" → \"Advanced Settings\"",
+      "description": "Renamed the popup footer link that opens the Chrome options page from \"Details & activity\" to \"Advanced Settings\", which says what it is.",
+      "status": "closed",
+      "category": "ux",
+      "version": "0.4.0",
+      "source": "Wes proposal",
+      "annotation": "The popup · proposed #7",
+      "doc": { "page": "popup.html", "label": "The popup" }
     },
     {
       "id": "FH-027",
