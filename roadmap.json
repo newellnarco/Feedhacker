@@ -3,35 +3,11 @@
     "product": "FeedHacker",
     "updated": "2026-07-09",
     "liveVersion": "0.4.3",
-    "note": "Canonical roadmap for FeedHacker. IDs are permanent; only status/version change as work moves. Status: open = requested/idea, not built · pending = built but not yet live on the Chrome Web Store (in review or newer than the live build) · closed = shipped and live. Categories: filter, ai, ux, engine, infra, bug.",
+    "note": "Canonical roadmap for FeedHacker — committed and active work only. Ideas still under discussion live on the Discussions page and move here once committed. IDs are permanent; only status/version change as work moves. Status: open = committed, not started · pending = built but not yet live on the Chrome Web Store (in review, or newer than the live build) · closed = shipped and live. Categories: filter, ai, ux, engine, infra, bug.",
     "statuses": ["open", "pending", "closed"],
     "categories": ["filter", "ai", "ux", "engine", "infra", "bug"]
   },
   "items": [
-    {
-      "id": "FH-001",
-      "name": "Thumb rotate-then-hide confirmation",
-      "description": "Jason's idea: the in-feed action icon points right, rotates upward on click as a confirmation, then the row hides — same motion on Mute — to cut clutter. 0.3.0 shipped an icon-button cluster (the green splat confirms + trains) but not the rotate-then-hide animation itself.",
-      "status": "open",
-      "category": "ux",
-      "source": "Discussion #2"
-    },
-    {
-      "id": "FH-002",
-      "name": "Bulk list cleanup / clear",
-      "description": "One place to clear accumulated Muted authors, Always-show authors, and learned AI-slop before the lists balloon. The options page shows each list with per-row removal, but there is no bulk manage-and-clear flow yet.",
-      "status": "open",
-      "category": "ux",
-      "source": "Discussion #4"
-    },
-    {
-      "id": "FH-003",
-      "name": "Stub-density cap for oversaturated feeds",
-      "description": "When most of the feed is filtered, even the hidden-post stubs get noisy. Cap stub density or auto-hide beyond a threshold. Partly addressed by grouping runs of hidden posts (FH-007), but there is no hard cap.",
-      "status": "open",
-      "category": "ux",
-      "source": "Discussion #5"
-    },
     {
       "id": "FH-004",
       "name": "Autonomous AI-slop self-calibration",
@@ -167,7 +143,7 @@
       "status": "closed",
       "category": "ux",
       "version": "0.3.0",
-      "source": "Discussion #3"
+      "source": "From Jason's feedback"
     },
     {
       "id": "FH-021",
@@ -192,7 +168,7 @@
       "status": "closed",
       "category": "bug",
       "version": "0.3.0",
-      "source": "Discussion #6"
+      "source": "From Jason's feedback"
     },
     {
       "id": "FH-024",
@@ -268,6 +244,14 @@
       "status": "closed",
       "category": "infra",
       "version": "0.4.3"
+    },
+    {
+      "id": "FH-033",
+      "name": "Update now — hot store update, no restart",
+      "description": "Extends the one-click self-update to Chrome Web Store installs: 'Check for updates' shows an 'Update now' button that applies the published store version in place via Chrome's update API (requestUpdateCheck → runtime.reload) — no reinstall, and in the following release no Chrome restart. If a newer version is on GitHub but not yet approved on the store, it says so instead of failing.",
+      "status": "pending",
+      "category": "infra",
+      "version": "0.4.5"
     }
   ]
 }
