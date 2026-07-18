@@ -87,3 +87,58 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
 18. **Keep the records in sync in the SAME PR.** A change that alters behavior updates
     `CHANGELOG.md`, and — when relevant — `SESSION-STATE.md`, `RELEASES.md`, `roadmap.json`, and
     `the_wall.md`. A behavior change with stale docs is a drift bug.
+
+## Data & parsing (persisted, imported, messaged)
+
+19. **LinkedIn's DOM is a versioned external API — match every known shape, and fail SAFE.** When a
+    selector or classifier branches on something LinkedIn emits (a class name, an `aria` string, a
+    data attribute, a "Promoted"/"Suggested" label), accept every known encoding, and when the value
+    is **unrecognized, take the least-destructive reading: do NOT hide a post you can't confidently
+    classify.** A false hide is a cry-wolf that trains the user to disable the filter, which then
+    masks real slop. Pin each accepted encoding with a test.
+20. **Parse persisted/imported storage JSON per-record — guard the field, not just the top-level
+    type, and skip a bad row instead of aborting the batch.** Settings, author lists, calibration
+    observations, and any exported-then-reimported blob in `chrome.storage` are hand-editable and
+    can carry a wrong-typed field. Wrap **each record's** parse in `try/catch → continue`, validate
+    a field's type before `Number()`/`.length`/iteration, and build the record fully before mutating
+    an accumulator — one corrupt row must degrade, never crash the scan or the options panel.
+21. **Parse boolean/enum settings explicitly — never `Boolean(value)` a stored or messaged flag.**
+    Any non-empty string is truthy, so a value of `"false"`/`"0"`/`"off"` becomes `true` and can
+    silently re-enable a filter the user turned off. Coerce: real boolean → itself; `undefined`/
+    `null` → the default; string → case-insensitive `{"true","1","on"}` vs `{"false","0","off"}`.
+22. **Export payloads omit optional fields — never serialize `null`/`undefined`.** Key-absent means
+    "unset"; add a key conditionally, and use `!= null` (not truthiness) when `0`/`false` is legal.
+
+## Runtime & network
+
+23. **No expensive/unbounded work synchronously in the MutationObserver / scan callback.** The
+    observer fires on every LinkedIn re-render; a heavy per-mutation scan stalls the page. Debounce/
+    batch into an animation-frame or idle callback, cap work per pass, and serve **cached** scores
+    rather than recomputing (generalizes the soft ~1.5 s re-apply pause, §11).
+24. **Every `fetch` gets a timeout; a stall becomes a visible error, not an endless "checking…".**
+    The update check (`update.ts`) and any version/store fetch wrap `fetch` in an `AbortController`
+    timeout — a backend that accepts the socket but never replies otherwise hangs the UI on its
+    spinner, which reads as "still working" when it's actually unreachable (the front-end false
+    green). A non-2xx or non-JSON body is a server error, not success and not "offline."
+
+## Accessibility & encapsulation
+
+25. **Injected UI carries an accessible name.** A status dot / stub control we inject into a page
+    real users navigate with screen readers needs a `role`/`aria-label` stating its meaning, not a
+    bare `title` — colour or glyph alone isn't an accessible name.
+26. **Don't reach into another module's private state via the `self.FeedHacker*` globals.** The
+    UMD-on-`self` pattern makes internals globally reachable; call a module's public surface, expose
+    a helper — don't poke a would-be-private field on `self.FeedHackerScorer` et al.
+
+## More tests & docs
+
+27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
+    `self.FeedHacker*`, the `chrome` mock, a module singleton) must **restore it on teardown**; never
+    rely on file order. (Node 22's `node:test` has no shuffle flag, so this is enforced by
+    discipline, not a runner option.)
+28. **Done means on the live feed.** A scan/scoring/filter change is finished only when a
+    **system-tier** test drives it in a real browser on LinkedIn — not merely when a pure-module unit
+    test is green. A capability that passes in isolation but isn't consumed by `content.ts` on the
+    page isn't shipped.
+29. **Change a CI workflow → groom `TEST_MATRIX.md` in the same PR** so the matrix can't drift from
+    the pipeline.

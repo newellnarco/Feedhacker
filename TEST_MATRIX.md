@@ -17,7 +17,9 @@ that catches the bug:
   Chromium and driven like a user. `npm run test:system` (builds first)
 
 CI runs the three tiers as three parallel jobs (`.github/workflows/ci.yml`), then `package`.
-The suite runs in seconds, so we deliberately **do not shard** further (best_practices §17).
+The suite runs in seconds, so we deliberately **do not shard** further (best_practices §17). CI
+fires **once per change** — the `pull_request` event is the review gate; `push` runs only on
+`main` (the post-merge gate) — and every checkout uses `persist-credentials: false`.
 
 ## Dependency cores — touch these, run everything
 
@@ -56,3 +58,11 @@ A change to a module the whole app imports has repo-wide blast radius:
    diff** — widen the row (and note the new edge here) rather than papering over it.
 5. **Every bug adds a regression test at the tier that would have caught it** (see the
    `KNOWN_ISSUES.md` "Regression test" column for the current set).
+6. **Change a CI workflow → groom this matrix in the same PR.** The matrix must never drift from
+   the pipeline (that's how a stale "N shards" line happens).
+7. **Tests are order-independent.** A test that mutates shared/global state (a `chrome` mock, a
+   `self.FeedHacker*` stub, a module singleton) restores it on teardown — don't rely on file order.
+8. **Fast-track path-gating caveat.** If we ever gate CI jobs by `paths` so docs-only PRs skip the
+   suite, that only works while those jobs are **not required status checks** in branch protection
+   — a path-skipped *required* check blocks merge forever. Today CI is not path-gated (see the
+   backlog in `the_wall.md`); we merge on a green run.

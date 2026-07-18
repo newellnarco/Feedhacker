@@ -1,8 +1,11 @@
 name: CI
 
+# Run once per change, not twice: the PR event is the review gate; the push event is
+# only the post-merge gate on main. (A feature-branch push with an open PR would
+# otherwise run the whole triad twice.)
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 concurrency:
@@ -19,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false   # jobs run PR-controlled code and never push (artipacked hardening)
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -32,6 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false   # jobs run PR-controlled code and never push (artipacked hardening)
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -44,6 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false   # jobs run PR-controlled code and never push (artipacked hardening)
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -59,6 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false   # jobs run PR-controlled code and never push (artipacked hardening)
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
