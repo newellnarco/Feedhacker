@@ -57,7 +57,7 @@
       "id": "FH-009",
       "name": "Simpler Aggression slider label",
       "description": "The slider label reads plainly strict / balanced / aggressive instead of \"balanced (~28% hidden)\", which overflowed and clipped the popup row.",
-      "status": "pending",
+      "status": "closed",
       "category": "ux",
       "version": "0.4.5",
       "consideration": "Jason's 0.4.5 (on GitHub, not yet on the store) drops the overflowing percentage — good — but keeps a single word and labels the low end 'strict,' which is backwards: strict reads as heavy filtering, the same end as Aggressive. The proposal still stands: Light / Balanced / Aggressive shown under the track, with 'Light' marking the hide-less end. See the popup proposal.",
@@ -306,7 +306,7 @@
       "id": "FH-033",
       "name": "Update now — hot store update, no restart",
       "description": "Extends the one-click self-update to Chrome Web Store installs: 'Check for updates' shows an 'Update now' button that applies the published store version in place via Chrome's update API (requestUpdateCheck → runtime.reload) — no reinstall, and in the following release no Chrome restart. If a newer version is on GitHub but not yet approved on the store, it says so instead of failing.",
-      "status": "pending",
+      "status": "closed",
       "category": "infra",
       "version": "0.4.5"
     },
@@ -341,8 +341,9 @@
       "id": "FH-041",
       "name": "Move popup help behind a “?” button (no inline help)",
       "description": "0.4.4 shows two help blurbs inline in the popup by default. Help is an edge case — needed only until you learn the controls, and some never need it — so it shouldn't take permanent space and visual priority. Remove the inline help; shift the Enable toggle left and add a small \"?\" help icon that reveals the help on demand.",
-      "status": "pending",
+      "status": "closed",
       "category": "ux",
+      "version": "0.4.5",
       "source": "Wes proposal",
       "consideration": "Nearby help is fine; inline-by-default isn't — it spends space and visual priority on something most people need only briefly, if at all. A \"?\" by the Enable toggle keeps it one click away. See the popup proposal.",
       "doc": { "page": "popup.html#proposed", "label": "the popup proposal" }

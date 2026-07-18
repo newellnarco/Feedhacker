@@ -56,6 +56,20 @@ byId("open-options").addEventListener("click", function () {
   if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
 });
 
+// On-demand help: the header "?" reveals a help card over the popup, keeping the help one click
+// away without spending permanent space on it. Close via the ×, a backdrop click, or Escape.
+(function () {
+  var overlay = byId("help-overlay");
+  var openBtn = byId("help-btn");
+  var closeBtn = byId("help-close");
+  if (!overlay || !openBtn) return;
+  function setOpen(open) { overlay.classList.toggle("show", !!open); }
+  openBtn.addEventListener("click", function () { setOpen(true); });
+  if (closeBtn) closeBtn.addEventListener("click", function () { setOpen(false); });
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) setOpen(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+})();
+
 // AI-slop AGGRESSION slider. It sets the TARGET FRACTION of posts to hide (slopTargetFrac),
 // which is what the self-tuning honors — moving it actually sticks, unlike a raw threshold
 // (which auto-calibration overwrites each cycle). We also write a matching static threshold so

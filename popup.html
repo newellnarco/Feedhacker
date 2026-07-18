@@ -32,9 +32,24 @@
     label.row input { margin-top: 2px; flex: 0 0 auto; }
     label.row .t { flex: 1; min-width: 0; }   /* label text + hint flow as one line, not separate flex items */
     .muted { color: #8a94a3; }
-    .intro { font-size: 11.5px; line-height: 1.45; color: #5f6b7a;
-      background: #f7f8fa; border: 1px solid #eceef1; border-radius: 7px; padding: 7px 9px; margin: 7px 0 2px; }
-    .intro b { color: #46505e; }
+    /* Header right cluster: Enable toggle + the "?" help icon sit together on the right. */
+    .hdr-right { display: flex; align-items: center; gap: 8px; }
+    .help-dot { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 50%; border: 1px solid #c7ccd4;
+      background: #fff; color: #6a7686; font-weight: 700; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
+    .help-dot:hover { background: #eef3fb; color: #0a66c2; border-color: #b7c6dd; }
+    /* On-demand help — hidden until the "?" is clicked; overlays the popup. */
+    .help-overlay { display: none; position: fixed; inset: 0; z-index: 20; padding: 14px;
+      align-items: center; justify-content: center; background: rgba(20,26,32,.38); }
+    .help-overlay.show { display: flex; }
+    .help-card { position: relative; background: #fff; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+      padding: 16px 16px 14px; max-height: calc(100% - 28px); overflow: auto; font-size: 12.5px; line-height: 1.5; color: #5f6b7a; }
+    .help-card h2 { font-size: 14px; margin: 0 26px 8px 0; color: #1d2226; }
+    .help-card p { margin: 0 0 8px; }
+    .help-card p:last-child { margin-bottom: 0; }
+    .help-card b { color: #46505e; }
+    .help-close { position: absolute; top: 6px; right: 8px; border: 0; background: none;
+      font-size: 20px; line-height: 1; color: #8a94a3; cursor: pointer; padding: 2px 5px; }
+    .help-close:hover { color: #1d2226; }
     #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
       background: #fdecec; border: 1px solid #f5c2c2; }
     #errors.show { display: block; }
@@ -53,11 +68,12 @@
 <body>
   <div class="hdr">
     <h1>FeedHacker</h1>
-    <label class="enable" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
+    <div class="hdr-right">
+      <label class="enable" id="master"><input type="checkbox" id="enabled"><span class="lbl">Enabled</span></label>
+      <button type="button" id="help-btn" class="help-dot" title="How FeedHacker works" aria-label="How FeedHacker works">?</button>
+    </div>
   </div>
   <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
-
-  <p class="intro">How it works: <b>Mute (M)</b> hides that kind of post; <b>Solo (S)</b> shows <i>only</i> the soloed kinds. AI‑slop is scored and the model self‑tunes to your feed. The <b>Feed display</b> toggles change how hidden posts look — including whether long runs collapse into one row.</p>
 
   <div class="section"><span>Posts</span><span class="key"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo</span></div>
   <div id="filters"></div>
@@ -68,7 +84,6 @@
     <input type="range" id="aggression" min="0.10" max="0.50" step="0.02" style="flex:1">
     <span id="aggressionVal" class="muted" style="white-space:nowrap; text-align:right"></span>
   </div>
-  <p class="intro" style="margin:2px 0 0">How much of the feed to hide. The self‑tuning model aims for this share of the sloppiest posts; it still applies when self‑tuning is off.</p>
   <label class="row"><input type="checkbox" id="hideSlopComments"><span class="t">Hide AI-slop comments</span></label>
 
   <div class="section"><span>Feed display</span></div>
@@ -86,6 +101,16 @@
   <div class="footer">
     <button type="button" class="linklike" id="open-options">Advanced Settings</button>
     <button type="button" class="linklike" id="reset-learning">Reset AI-slop learning</button>
+  </div>
+
+  <div id="help-overlay" class="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="help-card">
+      <button type="button" id="help-close" class="help-close" aria-label="Close help">×</button>
+      <h2 id="help-title">How FeedHacker works</h2>
+      <p><b>Mute (M)</b> hides that kind of post; <b>Solo (S)</b> shows <i>only</i> the soloed kinds.</p>
+      <p><b>AI‑slop</b> is scored and the model self‑tunes to your feed. <b>Aggression</b> sets how much of the feed to hide — the model aims for that share of the sloppiest posts (and it still applies when self‑tuning is off).</p>
+      <p>The <b>Feed display</b> toggles change how hidden posts look — including whether long runs of hidden posts collapse into one row.</p>
+    </div>
   </div>
 
   <script src="filters.js"></script>
