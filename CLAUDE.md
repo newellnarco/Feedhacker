@@ -11,6 +11,13 @@ Startup checklist** (review the record → check the live store version → conf
 submission slot is open → report next-release plan and ask ship-or-wait). Keep
 `SESSION-STATE.md` and [`RELEASES.md`](RELEASES.md) updated as state changes.
 
+## Pull requests (standing rule)
+
+**Always open PRs under the maintainer's GitHub username (`newellnarco`).** CodeRabbit is
+**single-user licensed** to that account, so a PR authored by any other identity won't be
+reviewed. PRs created with this session's GitHub token are already `newellnarco`'s — keep it that
+way; never open a FeedHacker PR from a different account or bot identity.
+
 ## Release policy (standing rule)
 
 **Do not cut a release until the user explicitly says "ship."**

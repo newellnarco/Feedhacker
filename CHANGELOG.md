@@ -23,6 +23,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   Chrome can only apply a version the store has actually published.
 
 ### Changed
+- **The welcome page's puzzle-piece icon now matches Chrome's.** The pinning guide showed the
+  colorful 🧩 emoji; it's now Chrome's own monochrome gray jigsaw ("Extensions") glyph, so the
+  step reads true to the real toolbar button. (Part of the welcome-page refresh, FH-038.)
 - **Popup help moved behind a "?" button — reclaiming space up top.** The two always-on help
   blurbs (the "How it works" line and the Aggression note) took permanent space for something you
   need only until you learn the controls. They're gone from the default view; a small **?** icon by

@@ -20,6 +20,9 @@
       width: 28px; height: 28px; border-radius: 50%; background: #0a66c2; color: #fff;
       font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; }
     .big { font-size: 19px; vertical-align: -2px; }
+    /* Chrome's real "Extensions" toolbar button is a monochrome gray jigsaw piece
+       (Material "extension" glyph), not the colorful 🧩 emoji — match it so the step reads true. */
+    .puzzle { width: 20px; height: 20px; vertical-align: -4px; }
     .muted { color: #8a94a3; }
     .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
     a.btn { display: inline-block; text-decoration: none; background: #0a66c2; color: #fff;
@@ -37,7 +40,7 @@
   <section>
     <h2>Pin FeedHacker for one-click access</h2>
     <ol>
-      <li>Click the <span class="big">🧩</span> <b>puzzle-piece</b> icon at the top-right of your browser toolbar.</li>
+      <li>Click the <svg class="puzzle" viewBox="0 0 24 24" role="img" aria-label="Chrome extensions puzzle-piece icon"><path fill="#5f6368" d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7 1.49 0 2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"></path></svg> <b>puzzle-piece</b> icon at the top-right of your browser toolbar.</li>
       <li>Find <b>FeedHacker</b> in the list and click the <span class="big">📌</span> <b>pin</b> next to it.</li>
       <li>The FeedHacker icon now stays in your toolbar — click it any time to open the Mute/Solo mixer.</li>
     </ol>
