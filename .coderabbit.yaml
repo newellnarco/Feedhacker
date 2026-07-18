@@ -1,0 +1,71 @@
+# CodeRabbit configuration for FeedHacker.
+# Adapted from the sibling repos MAX3 / netsniff(REEF), tuned for a small MV3
+# TypeScript extension with a fast node:test + Playwright suite.
+#
+# The one line that matters most: reviews.auto_review.drafts: true — FeedHacker
+# opens every PR as a DRAFT while CI runs, and findings must land BEFORE the PR is
+# promoted/merged. CodeRabbit skips drafts by default, so without this it would
+# never review our PRs (which is exactly what we saw: "Review skipped — Draft detected").
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill                      # low-noise — surface real issues, skip nitpicks
+  high_level_summary: true
+  poem: false
+  request_changes_workflow: false
+  auto_review:
+    enabled: true
+    drafts: true                      # CRITICAL — review our draft PRs; CodeRabbit skips drafts by default
+    auto_incremental_review: true     # re-review each push → the ✓-resolved loop
+    auto_pause_after_reviewed_commits: 0   # never pause mid autonomous-fix loop
+    base_branches: ["^main$", "^claude/.*"]
+    ignore_title_keywords: ["docs:", "docs(", "[docs]", "chore(docs)", "[skip review]", "WIP"]
+  # Path filters are ALLOWLIST-FLIPPING: a single POSITIVE pattern turns the whole
+  # list into an allowlist and skips everything unmatched. So use NEGATIVES ONLY.
+  path_filters:
+    - "!**/*.md"                      # docs reviewed by humans, not the bot
+    - "!build/**"                     # generated JS (tsc output)
+    - "!dist/**"                      # packaged zips / unpacked build
+    - "!node_modules/**"
+    - "!**/*.zip"
+  path_instructions:
+    - path: "src/**/*.ts"
+      instructions: >
+        Enforce FeedHacker's best_practices.md. In particular: honest status (never a
+        false green / silent success); guard every chrome.* call against an invalidated
+        extension context (contextAlive/teardown) so an orphaned content script can't
+        throw for the life of the tab; ONE writer per chrome.storage key (no two async
+        paths racing the same key); re-score hidden posts from STORED features, never the
+        collapsed stub's live DOM text; route injected-stub clicks through the single
+        delegated capture-phase listener (data-fh-act) so they survive LinkedIn's React
+        re-renders; never commit the model identifier, secrets, or tokens.
+    - path: "src/background.ts"
+      instructions: >
+        Service worker: reply to a message channel BEFORE chrome.runtime.reload(); keep
+        message handlers guarded by sender.id === chrome.runtime.id.
+    - path: "test/**/*.js"
+      instructions: >
+        Every bug fix must ship a regression test at the right tier (unit / integration /
+        system) — a fix without a test isn't done. Assert the honest-failure path, not
+        just the happy path.
+
+knowledge_base:
+  opt_out: false
+  code_guidelines:
+    enabled: true
+    # NOTE: code_guidelines MUST be nested under knowledge_base — a top-level
+    # code_guidelines key is rejected. filePatterns points CodeRabbit at our rulebook.
+    filePatterns: ["best_practices.md"]
+  learnings:
+    scope: local          # remember review learnings for THIS repo, apply immediately
+  pull_requests:
+    scope: local          # ground findings in this repo's prior PRs
+  web_search:
+    enabled: true
+
+tools:
+  gitleaks:
+    enabled: true         # secret scan on the diff
+  ast-grep:
+    essential_rules: true
