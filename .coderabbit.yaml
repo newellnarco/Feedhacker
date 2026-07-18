@@ -66,6 +66,7 @@ knowledge_base:
     filePatterns: ["best_practices.md"]
   learnings:
     scope: local          # remember review learnings for THIS repo, apply immediately
+    approval_delay: 0     # single-owner private repo — no hold before a learning takes effect
   pull_requests:
     scope: local          # ground findings in this repo's prior PRs
   web_search:

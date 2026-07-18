@@ -47,7 +47,9 @@ at the lowest tier that catches it. A fix without a regression test isn't done. 
 [`TEST_MATRIX.md`](TEST_MATRIX.md) to decide what a change's **blast radius** obliges: touching a
 dependency core (`filters.ts`, `selectors.ts`, `scorer.ts`, build/manifest) runs the full triad;
 presentational UI is gated by `tsc` + build; docs-/records-only changes run nothing. Don't
-over-shard a fast suite — one CI job per tier is enough.
+over-shard a fast suite — one CI job per tier is enough. **Done means on the live feed:** a
+scan/scoring/filter change is finished only when a system-tier test drives it in a real browser,
+not merely when a pure-module unit test is green.
 
 ## Release policy (standing rule)
 
