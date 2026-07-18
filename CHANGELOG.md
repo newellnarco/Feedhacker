@@ -13,6 +13,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.5]
 
+### Added
+- **"Update now" applies a Chrome Web Store update in place — no browser restart.** Before, store
+  users who hit *Check for updates* were just told updates happen automatically, so getting one
+  meant restarting Chrome. Now **Update now** works for store installs too: it asks Chrome to fetch
+  and apply the published update on the spot via Chrome's own update API (`requestUpdateCheck` →
+  `runtime.reload`), then you just refresh your LinkedIn tab. If the new version is on GitHub but
+  not yet live on the store (still in Google review), it says so plainly instead of failing —
+  Chrome can only apply a version the store has actually published.
+
 ### Changed
 - **The Aggression slider's label is just the word now.** It read "balanced (~28% hidden)", which
   overflowed the popup row and got clipped; it now shows plainly **strict / balanced / aggressive**.
