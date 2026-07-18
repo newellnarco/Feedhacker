@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit configuration for FeedHacker.
 # Adapted from the sibling repos MAX3 / netsniff(REEF), tuned for a small MV3
 # TypeScript extension with a fast node:test + Playwright suite.
@@ -49,6 +50,12 @@ reviews:
         Every bug fix must ship a regression test at the right tier (unit / integration /
         system) — a fix without a test isn't done. Assert the honest-failure path, not
         just the happy path.
+  # Tool settings live under reviews.tools (a top-level `tools:` key is rejected by the schema).
+  tools:
+    gitleaks:
+      enabled: true       # secret scan on the diff
+    ast-grep:
+      essential_rules: true
 
 knowledge_base:
   opt_out: false
