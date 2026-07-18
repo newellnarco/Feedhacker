@@ -23,6 +23,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   Chrome can only apply a version the store has actually published.
 
 ### Changed
+- **Popup help moved behind a "?" button — reclaiming space up top.** The two always-on help
+  blurbs (the "How it works" line and the Aggression note) took permanent space for something you
+  need only until you learn the controls. They're gone from the default view; a small **?** icon by
+  the Enable toggle (with a hover tooltip) now reveals the same help in a popup on demand — close it
+  with ×, a click outside, or Esc.
 - **The Aggression slider's label is just the word now.** It read "balanced (~28% hidden)", which
   overflowed the popup row and got clipped; it now shows plainly **strict / balanced / aggressive**.
   The exact fraction isn't meaningful to surface there (the model only aims for it), and the line
