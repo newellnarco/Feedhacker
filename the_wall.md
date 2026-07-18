@@ -3,6 +3,13 @@
 The running queue we work from. Each item has a short **explanation**, a **code status**
 (is it actually in the codebase?), and tracking for **Tested** and **Merged**.
 
+**Process files (adopted from the sibling repos MAX3 / netsniff):**
+[`best_practices.md`](best_practices.md) — the numbered rulebook CodeRabbit reads ·
+[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) — the bug ledger ·
+[`TEST_MATRIX.md`](TEST_MATRIX.md) — blast-radius test doctrine ·
+[`.coderabbit.yaml`](.coderabbit.yaml) — reviews drafts, learns locally. The four-part
+review loop and the testing/PR rules live in [`CLAUDE.md`](CLAUDE.md).
+
 ## Legend
 
 **Code status** — what a review of the current code shows for each proposed change:
