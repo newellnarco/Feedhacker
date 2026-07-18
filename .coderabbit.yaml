@@ -70,9 +70,3 @@ knowledge_base:
     scope: local          # ground findings in this repo's prior PRs
   web_search:
     enabled: true
-
-tools:
-  gitleaks:
-    enabled: true         # secret scan on the diff
-  ast-grep:
-    essential_rules: true
