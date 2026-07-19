@@ -14,12 +14,12 @@
     .enable.off { background: #fdecec; border-color: #f5c2c2; }
     #paused-note { display: none; font-size: 11.5px; color: #b42318; margin: 3px 0 0; }
     #paused-note.show { display: block; }
+    /* Every section header is the same light-blue rounded pill with gray label text. */
     .section { display: flex; align-items: center; justify-content: space-between;
       font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-      color: #6a7686; background: #f1f3f5; border-radius: 6px; padding: 5px 9px; margin: 13px 0 7px; }
+      color: #6a7686; background: #e8f0fe; border-radius: 6px; padding: 5px 9px; margin: 13px 0 7px; }
     .section .key { font-weight: 400; text-transform: none; letter-spacing: 0; color: #8a94a3; }
     .section .key b { color: #6a7686; }
-    .section.ai { background: #e8f0fe; color: #1a56c4; }   /* AI-slop gets its own blue header */
     .frow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
     .fname { flex: 1; }
     .slabel { color: #6a7686; }
@@ -50,16 +50,6 @@
     .help-close { position: absolute; top: 6px; right: 8px; border: 0; background: none;
       font-size: 20px; line-height: 1; color: #8a94a3; cursor: pointer; padding: 2px 5px; }
     .help-close:hover { color: #1d2226; }
-    #errors { display: none; margin: 12px 0 0; padding: 9px 11px; border-radius: 8px;
-      background: #fdecec; border: 1px solid #f5c2c2; }
-    #errors.show { display: block; }
-    .err-title { font-weight: 700; color: #b42318; font-size: 12.5px; margin: 0 0 5px; }
-    .err-list { margin: 0; padding: 0; list-style: none; max-height: 132px; overflow: auto; }
-    .err-item { font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
-      color: #7a271a; padding: 3px 0; border-top: 1px solid #f5d0d0; word-break: break-word; }
-    .err-item:first-child { border-top: 0; }
-    .err-item a { color: #b42318; text-decoration: underline; }
-    .err-actions { margin-top: 7px; display: flex; gap: 8px; }
     .linklike { background: none; border: 0; color: #0a66c2; cursor: pointer; font-size: 11.5px; padding: 0; }
     .linklike:hover { text-decoration: underline; }
     .footer { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -80,7 +70,7 @@
 
   <div class="section ai"><span>AI-slop</span></div>
   <div class="frow">
-    <span class="slabel">Aggression</span>
+    <span class="slabel">Sensitivity</span>
     <input type="range" id="aggression" min="0.10" max="0.50" step="0.02" style="flex:1">
     <span id="aggressionVal" class="muted" style="white-space:nowrap; text-align:right"></span>
   </div>
@@ -89,14 +79,8 @@
   <div class="section"><span>Feed display</span></div>
   <label class="row"><input type="checkbox" id="groupHiddenRuns"><span class="t">Group flagged posts <span class="muted">(collapse a run into one row)</span></span></label>
   <label class="row"><input type="checkbox" id="hideCompletely"><span class="t">Hide hidden content <span class="muted">(no placeholders)</span></span></label>
-  <label class="row"><input type="checkbox" id="nameNames"><span class="t">Show author <span class="muted">(who + category)</span></span></label>
-  <label class="row"><input type="checkbox" id="nameSample"><span class="t">Show sample <span class="muted">(of hidden post)</span></span></label>
-
-  <div id="errors">
-    <p class="err-title">⚠ FeedHacker hit an error</p>
-    <ul class="err-list" id="err-list"></ul>
-    <div class="err-actions"><button type="button" class="linklike" id="clear-errors">Clear errors</button></div>
-  </div>
+  <label class="row"><input type="checkbox" id="nameNames"><span class="t">Show author</span></label>
+  <label class="row"><input type="checkbox" id="nameSample"><span class="t">Show sample</span></label>
 
   <div class="footer">
     <button type="button" class="linklike" id="open-options">Advanced Settings</button>
@@ -108,13 +92,12 @@
       <button type="button" id="help-close" class="help-close" aria-label="Close help">×</button>
       <h2 id="help-title">How FeedHacker works</h2>
       <p><b>Mute (M)</b> hides that kind of post; <b>Solo (S)</b> shows <i>only</i> the soloed kinds.</p>
-      <p><b>AI‑slop</b> is scored and the model self‑tunes to your feed. <b>Aggression</b> sets how much of the feed to hide — the model aims for that share of the sloppiest posts (and it still applies when self‑tuning is off).</p>
+      <p><b>AI‑slop</b> is scored and the model self‑tunes to your feed. <b>Sensitivity</b> sets how much of the feed to hide — the model aims for that share of the sloppiest posts (and it still applies when self‑tuning is off).</p>
       <p>The <b>Feed display</b> toggles change how hidden posts look — including whether long runs of hidden posts collapse into one row.</p>
     </div>
   </div>
 
   <script src="filters.js"></script>
-  <script src="logger.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

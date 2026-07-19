@@ -17,11 +17,16 @@ recur silently. The **Found by** column keeps the AI-reviewer signal comparable.
 - **Learner overwriting a user control** — bind the control to the value the tuner honors. (§9)
 - **Injected controls losing listeners on React re-render** — delegate clicks. (§10)
 - **False green / dishonest status or counts.** (§4, §5)
+- **Health/heartbeat alarms that can't tell "empty" from "broken"** — fire on positive evidence of
+  failure, suppress during loading/paging. (§31)
 
 ## Ledger (newest first)
 
 | Status | Bug | Root cause | Found by | Fix (PR) | Regression test |
 |---|---|---|---|---|---|
+| ✅ | "Fixed" advanced behaviours (self-tune/learn-from-scroll on, filter home-feed-only) weren't actually enforced for existing users after the Advanced UI was removed | Removing the toggles didn't reset persisted `chrome.storage.sync` values; `content.ts` merges stored settings over `DEFAULTS`, so a prior non-default choice survived | CodeRabbit (PR #47) | `Filters.applyFixed` forces `autoCalibrate`/`implicitLearning` ON + `scanEverywhere` OFF on every sync load in content.ts (grouping left user-controlled) | `test/unit/filters.test.js` (`applyFixed …`) |
+| ✅ | Heartbeat "No post markers found — selectors may be out of date" false-fired during LinkedIn paging | The heartbeat treated 0 markers as a break; the feed is momentarily empty while LinkedIn pages in more posts, so absence ≠ breakage | user (this session) | Gate the alarm on positive evidence: fire only when the feed rendered posts (selector-independent `contentCount`) but none match our marker, and suppress while loading (`isLoading`) or the tab is inactive (PR #47) | `test/unit/selectors.test.js` (`heartbeatBreak`, `contentCount`, `isLoading`), `test/integration/heartbeat.test.js` |
+| ✅ | Welcome-page step icons announced twice by screen readers | Decorative puzzle/pin SVGs (redundant with the adjacent visible "puzzle-piece" / "pin" text) still carried `role="img"` + `aria-label` | CodeRabbit (PR #47) | Mark both `aria-hidden="true"`, drop role/label (welcome.html) | n/a (static welcome.html, no automated a11y tier) — codified as best_practices §30 |
 | ✅ | `.coderabbit.yaml` tool settings silently ignored ("Unrecognized key: tools") | Put `gitleaks`/`ast-grep` under a top-level `tools:`; the schema nests them under `reviews.tools` | CodeRabbit (first review, PR #45) | Move the block under `reviews.tools`; add the `$schema` language-server hint | n/a (config); CodeRabbit re-validates on the next push |
 | ✅ | CodeRabbit never reviewed our PRs ("Review skipped — Draft detected") | We open PRs as drafts; CodeRabbit skips drafts by default and had no repo config | self (this session) | Add `.coderabbit.yaml` with `auto_review.drafts: true` (+ knowledge_base wiring) | n/a (config); verified — CodeRabbit reviewed PR #45's draft |
 | 🟡 | Release `msi` job fails: `WIX7015 … OSMF EULA` | WiX Toolset bumped to v7, which gates behind an Open Source Maintenance Fee EULA in CI | release workflow run | Accepted: the MSI is best-effort; the `-win.zip` installer is the supported Windows path and builds fine. Follow-up: pin WiX v5 or accept the EULA in CI | n/a (build tooling) |

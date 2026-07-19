@@ -40,3 +40,28 @@ test("buildDefaults returns a fresh object each call", () => {
   assert.notStrictEqual(filters.buildDefaults(), filters.buildDefaults());
   assert.deepStrictEqual(filters.buildDefaults(), filters.DEFAULTS);
 });
+
+test("applyFixed forces the removed-toggle behaviours over any previously persisted values", () => {
+  // Simulate a user who had toggled the (now-removed) Advanced settings to non-defaults, plus
+  // unrelated stored settings that must be preserved.
+  const stored = {
+    autoCalibrate: false,      // user had turned self-tune OFF
+    implicitLearning: false,   // user had turned learn-from-scroll OFF
+    scanEverywhere: true,      // user had turned filter-beyond-feed ON
+    groupHiddenRuns: false,    // user's grouping choice — must be PRESERVED (popup owns it)
+    mutePromoted: true,        // unrelated setting — must be preserved
+    slopThreshold: 0.7,        // unrelated setting — must be preserved
+  };
+  const out = filters.applyFixed(stored);
+  assert.strictEqual(out.autoCalibrate, true, "self-tune forced on");
+  assert.strictEqual(out.implicitLearning, true, "learn-from-scroll forced on");
+  assert.strictEqual(out.scanEverywhere, false, "filtering forced home-feed-only");
+  assert.strictEqual(out.groupHiddenRuns, false, "grouping left as the user set it");
+  assert.strictEqual(out.mutePromoted, true, "unrelated settings preserved");
+  assert.strictEqual(out.slopThreshold, 0.7, "unrelated settings preserved");
+});
+
+test("applyFixed is defensive on a missing/invalid settings object", () => {
+  assert.strictEqual(filters.applyFixed(null), null);
+  assert.strictEqual(filters.applyFixed(undefined), undefined);
+});

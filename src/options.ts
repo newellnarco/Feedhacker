@@ -59,11 +59,6 @@ function renderStatus(st) {
   el.textContent = "Active filters: " + (active.length ? active.join(", ") : "none") +
     (extras.length ? " · Options: " + extras.join(", ") : "");
 
-  byId("autoCalibrate").checked = st.autoCalibrate !== false;   // default on
-  byId("groupHiddenRuns").checked = st.groupHiddenRuns !== false;   // default on
-  byId("scanEverywhere").checked = !!st.scanEverywhere;
-  byId("implicitLearning").checked = !!st.implicitLearning;
-
   var thr = byId("slop-threshold");
   if (thr) thr.textContent = String(typeof st.slopThreshold === "number" ? st.slopThreshold : 0.5);
 }
@@ -471,11 +466,11 @@ function renderSlopSignals(stored) {
       "<span class='wtrack'><span class='wbar' style='width:" + pct + "%'></span></span></td>";
     (tr.children[0] as any).textContent = (Scorer.FEATURE_LABELS[id] || id);
     (tr.children[1] as any).textContent = SIGNAL_DESC[id] || "";
-    (tr.querySelector(".wnum") as any).textContent = wt.toFixed(1);
+    (tr.querySelector(".wnum") as any).textContent = wt.toFixed(2);
     tb.appendChild(tr);
   });
   var note = byId("slop-model-note");
-  if (note) note.textContent = "Model bias " + (typeof w.bias === "number" ? w.bias : -1.6).toFixed(1) +
+  if (note) note.textContent = "Model bias " + (typeof w.bias === "number" ? w.bias : -1.6).toFixed(2) +
     ". A higher weight means that signal pushes harder toward hiding; evidence has to add up past the threshold before a post is hidden.";
 }
 
@@ -610,11 +605,10 @@ function saveAuthors(store) {
   chrome.storage.local.set(patch, function () { renderAuthors(store); });
 }
 
-// --- Advanced toggles (sync) ---
-["autoCalibrate", "groupHiddenRuns", "scanEverywhere", "implicitLearning"].forEach(function (id) {
-  var el = byId(id);
-  el.addEventListener("change", function () { var p = {}; p[id] = el.checked; chrome.storage.sync.set(p); });
-});
+// The advanced feature toggles were removed from the UI. content.ts enforces the fixed behaviours
+// on every settings load via Filters.applyFixed (self-tune ON, learn-from-scroll ON, filtering
+// home-feed-only) so any value a user previously persisted is overridden — there's nothing to wire
+// here. Grouping stays user-controlled from the popup.
 
 // --- Export / import learned model ---
 byId("export-model").addEventListener("click", function () {

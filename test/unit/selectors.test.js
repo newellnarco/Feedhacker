@@ -40,3 +40,40 @@ test("markerCount is defensive on a broken document", () => {
   assert.strictEqual(selectors.markerCount(null), 0);
   assert.strictEqual(selectors.markerCount({}), 0);
 });
+
+test("contentCount counts post-like containers independently of our marker", () => {
+  const doc = makeDoc(
+    "<!doctype html><body>" +
+    '<div role="article">a</div>' +
+    '<div data-urn="urn:li:activity:123">b</div>' +
+    '<div data-id="urn:li:activity:456">c</div>' +
+    "<div>not a post</div>" +
+    "</body>"
+  );
+  assert.strictEqual(selectors.contentCount(doc), 3);
+});
+
+test("contentCount is 0 on an empty/loading feed and defensive on a broken doc", () => {
+  assert.strictEqual(selectors.contentCount(makeDoc("<!doctype html><body></body>")), 0);
+  assert.strictEqual(selectors.contentCount(null), 0);
+  assert.strictEqual(selectors.contentCount({}), 0);
+});
+
+test("isLoading detects LinkedIn's paging/loading indicators", () => {
+  assert.strictEqual(selectors.isLoading(makeDoc('<!doctype html><body><div aria-busy="true"></div></body>')), true);
+  assert.strictEqual(selectors.isLoading(makeDoc('<!doctype html><body><div class="artdeco-loader"></div></body>')), true);
+  assert.strictEqual(selectors.isLoading(makeDoc('<!doctype html><body><div class="feed-skeleton"></div></body>')), true);
+  assert.strictEqual(selectors.isLoading(makeDoc("<!doctype html><body><div>loaded</div></body>")), false);
+  assert.strictEqual(selectors.isLoading({}), false);
+});
+
+test("heartbeatBreak alarms ONLY on a genuine selector break, never on paging collateral", () => {
+  // Genuine break: active tab, not loading, feed has posts, but none match our marker.
+  assert.strictEqual(selectors.heartbeatBreak({ active: true, loading: false, markers: 0, content: 4 }), true);
+  // The false-alarm cases the fix targets — all must be false:
+  assert.strictEqual(selectors.heartbeatBreak({ active: true, loading: false, markers: 0, content: 0 }), false, "empty feed between page loads");
+  assert.strictEqual(selectors.heartbeatBreak({ active: true, loading: true, markers: 0, content: 4 }), false, "still loading/paging");
+  assert.strictEqual(selectors.heartbeatBreak({ active: false, loading: false, markers: 0, content: 4 }), false, "backgrounded tab");
+  assert.strictEqual(selectors.heartbeatBreak({ active: true, loading: false, markers: 3, content: 4 }), false, "markers present — healthy");
+  assert.strictEqual(selectors.heartbeatBreak(null), false);
+});

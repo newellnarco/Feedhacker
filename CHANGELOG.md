@@ -13,6 +13,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.5]
 
+### Fixed
+- **The "No LinkedIn post markers found" alarm no longer false-fires during LinkedIn paging.** The
+  feed goes briefly empty while LinkedIn loads more posts; the heartbeat counted that as "selectors
+  may be out of date" and logged an error. It now distinguishes a **genuine break** (the feed has
+  rendered posts — detected independently of our marker, via `role="article"` / activity-URN — yet
+  none match our marker) from an **empty/loading feed** (LinkedIn paging), and only alarms on a real
+  break.
+
 ### Added
 - **"Update now" applies a Chrome Web Store update in place — no browser restart.** Before, store
   users who hit *Check for updates* were just told updates happen automatically, so getting one
@@ -26,15 +34,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - **The welcome page's puzzle-piece icon now matches Chrome's.** The pinning guide showed the
   colorful 🧩 emoji; it's now Chrome's own monochrome gray jigsaw ("Extensions") glyph, so the
   step reads true to the real toolbar button. (Part of the welcome-page refresh, FH-038.)
+- **Welcome header restyled, and the "pin" step icon de-colorized to match.** The FeedHacker logo
+  now sits in its own rounded badge to the **left** of the "Welcome to FeedHacker" title (was a
+  small icon trailing the text), and the step-2 **pin** is now the same monochrome gray glyph
+  (Material "push_pin") as the puzzle piece instead of the colorful 📌 emoji — so both inline
+  steps read true to the real browser UI.
 - **Popup help moved behind a "?" button — reclaiming space up top.** The two always-on help
   blurbs (the "How it works" line and the Aggression note) took permanent space for something you
   need only until you learn the controls. They're gone from the default view; a small **?** icon by
   the Enable toggle (with a hover tooltip) now reveals the same help in a popup on demand — close it
   with ×, a click outside, or Esc.
-- **The Aggression slider's label is just the word now.** It read "balanced (~28% hidden)", which
-  overflowed the popup row and got clipped; it now shows plainly **strict / balanced / aggressive**.
-  The exact fraction isn't meaningful to surface there (the model only aims for it), and the line
-  under the slider already explains what it does.
+- **The AI-slop slider is labelled "Sensitivity" again, and shows just the level word.** (Renamed
+  back from "Aggression".) It reads plainly **Strict / Balanced / Aggressive** instead of the old
+  "balanced (~28% hidden)", which overflowed the popup row and got clipped; the exact fraction isn't
+  meaningful to surface there (the model only aims for it), and the line under the slider explains
+  what it does.
+- **"Show author" / "Show sample" drop their parenthetical hints.** The two toggles now read just
+  **Show author** and **Show sample** (the `(who + category)` / `(of hidden post)` asides are gone),
+  keeping those rows tight; the other Feed-display hints are unchanged.
+- **All popup section headers share one light-blue rounded pill with gray label text.** POSTS and
+  FEED DISPLAY used a gray header while AI-SLOP was blue; the headers are now uniformly a light-blue
+  rounded box with gray text.
+- **The error log lives on the Advanced Settings page now, not the popup.** The popup is the quick
+  Mute/Solo mixer; any FeedHacker errors are surfaced (and cleared) on the Options page instead, so
+  the popup stays focused on the controls.
+- **Advanced Settings: the two author panels are merged into one "Authors" panel.** "Muted authors"
+  and "Whitelist" are now **Muted (always hidden)** and **Always shown** subsections under a single
+  Authors panel, with the explanatory paragraphs removed — just the removable name pills (empty
+  shows "none"), which work exactly as before.
+- **Advanced Settings: the "How AI-slop detection works" intro is trimmed**, and the signal
+  **weights now show two decimals** (e.g. `3.20`, `0.90`) — the intro is a short summary of scoring
+  + threshold and how the weights nudge, instead of the longer self-tuning write-up.
+- **Advanced Settings: the Actions and Post-controls help is de-cluttered.** The parenthetical
+  asides in those sections are removed, and the Post-controls text now refers to the merged
+  **Authors** panel (**Always shown** subsection) instead of the old "Muted authors" / "Whitelist"
+  names.
+- **The "Advanced" options panel is gone; its behaviours are now fixed.** Self-tuning and
+  learn-from-posts-you-scroll-past run **always on**, filtering stays **home-feed-only** (company
+  posts are still filterable via the popup's "Company / brand posts" and Custom filters), and
+  **grouping** is controlled solely from the popup's "Group flagged posts" toggle — so the Advanced
+  toggles were removed rather than duplicated.
+- **The options page opens tidier.** Only **Status, Properties, Actions, and Updates** are expanded
+  by default; every other panel starts collapsed (click a header to expand it).
 
 ## [0.4.4] — 2026-07-09
 

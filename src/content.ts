@@ -436,9 +436,21 @@
   }
   function heartbeat() {
     if (!SEL) return;
-    if (!tabActive()) { noMarkerRuns = 0; return; }   // tab hidden/unfocused — don't count it
-    var n = SEL.markerCount(document);
-    if (n > 0) { noMarkerRuns = 0; heartbeatLogged = false; return; }
+    var markers = SEL.markerCount(document);
+    if (markers > 0) heartbeatLogged = false;   // markers back — allow a fresh alarm if they vanish again
+    // Only a GENUINE selector break trips the alarm: tab active, LinkedIn not mid-load, the feed
+    // has actually rendered posts, yet none match our marker. An empty/paging/loading feed shows
+    // zero markers too, but that's LinkedIn paging collateral — not our bug — so it must stay quiet.
+    var state = {
+      active: tabActive(),
+      loading: SEL.isLoading ? SEL.isLoading(document) : false,
+      markers: markers,
+      content: SEL.contentCount ? SEL.contentCount(document) : 0
+    };
+    var isBreak = SEL.heartbeatBreak
+      ? SEL.heartbeatBreak(state)
+      : (state.active && !state.loading && state.markers === 0 && state.content > 0);
+    if (!isBreak) { noMarkerRuns = 0; return; }
     if (++noMarkerRuns >= 3 && !heartbeatLogged) {
       heartbeatLogged = true;
       logError(new Error("No LinkedIn post markers found on a feed page — selectors may be out of date"), "heartbeat");
@@ -613,6 +625,7 @@
   // Load settings (sync) + learned weights, custom filters, author memory (local).
   chrome.storage.sync.get(DEFAULTS, function (s) {
     Object.assign(settings, DEFAULTS, s);   // mutate in place so runtime callbacks survive
+    if (Filters.applyFixed) Filters.applyFixed(settings);   // removed-toggle behaviours stay fixed over any stale stored value
     chrome.storage.local.get([WEIGHTS_KEY, CUSTOM_KEY, AUTHORS_KEY], function (o) {
       var stored = o && o[WEIGHTS_KEY];
       settings.slopWeights = (stored && typeof stored === "object") ? stored : (Scorer ? Scorer.defaultWeights() : null);
@@ -641,6 +654,7 @@
         touched = true;
       }
     }
+    if (Filters.applyFixed) Filters.applyFixed(settings);   // keep the removed-toggle behaviours fixed on any sync change
     if (touched) reapply();
   });
 

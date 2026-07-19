@@ -48,6 +48,21 @@
   }
   var DEFAULTS = buildDefaults();
 
+  // The advanced toggles were removed from the UI, so these three behaviours are FIXED for
+  // everyone regardless of any value a user persisted via the old toggles (merging stored sync over
+  // DEFAULTS would otherwise keep a stale choice): self-tune + learn-from-scroll stay ON, and
+  // filtering stays home-feed-only. Grouping is deliberately left alone — the popup still owns it.
+  // Applied in content.ts to the live settings after every sync load, so the "fixed" claim is real.
+  function applyFixed(s) {
+    if (!s || typeof s !== "object") return s;
+    // Derive from the canonical DEFAULTS (not duplicated literals) so enforcement can't drift if a
+    // default ever changes: autoCalibrate ON, implicitLearning ON, scanEverywhere OFF.
+    s.autoCalibrate = DEFAULTS.autoCalibrate;
+    s.implicitLearning = DEFAULTS.implicitLearning;
+    s.scanEverywhere = DEFAULTS.scanEverywhere;
+    return s;
+  }
+
   // Keys the content script tracks live (everything in DEFAULTS). slopWeights is
   // handled separately (it lives in storage.local and is large/learned).
   var api = {
@@ -56,6 +71,7 @@
     DISPLAY_KEYS: DISPLAY_KEYS,
     DEFAULTS: DEFAULTS,
     buildDefaults: buildDefaults,
+    applyFixed: applyFixed,
     cap: cap
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
