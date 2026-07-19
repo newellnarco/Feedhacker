@@ -471,11 +471,11 @@ function renderSlopSignals(stored) {
       "<span class='wtrack'><span class='wbar' style='width:" + pct + "%'></span></span></td>";
     (tr.children[0] as any).textContent = (Scorer.FEATURE_LABELS[id] || id);
     (tr.children[1] as any).textContent = SIGNAL_DESC[id] || "";
-    (tr.querySelector(".wnum") as any).textContent = wt.toFixed(1);
+    (tr.querySelector(".wnum") as any).textContent = wt.toFixed(2);
     tb.appendChild(tr);
   });
   var note = byId("slop-model-note");
-  if (note) note.textContent = "Model bias " + (typeof w.bias === "number" ? w.bias : -1.6).toFixed(1) +
+  if (note) note.textContent = "Model bias " + (typeof w.bias === "number" ? w.bias : -1.6).toFixed(2) +
     ". A higher weight means that signal pushes harder toward hiding; evidence has to add up past the threshold before a post is hidden.";
 }
 

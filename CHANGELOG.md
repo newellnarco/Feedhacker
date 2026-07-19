@@ -58,6 +58,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - **The error log lives on the Advanced Settings page now, not the popup.** The popup is the quick
   Mute/Solo mixer; any FeedHacker errors are surfaced (and cleared) on the Options page instead, so
   the popup stays focused on the controls.
+- **Advanced Settings: the two author panels are merged into one "Authors" panel.** "Muted authors"
+  and "Whitelist" are now **Muted (always hidden)** and **Always shown** subsections under a single
+  Authors panel, with the explanatory paragraphs removed — just the removable name pills (empty
+  shows "none"), which work exactly as before.
+- **Advanced Settings: the "How AI-slop detection works" intro is trimmed**, and the signal
+  **weights now show two decimals** (e.g. `3.20`, `0.90`) — the intro is a short summary of scoring
+  + threshold and how the weights nudge, instead of the longer self-tuning write-up.
 
 ## [0.4.4] — 2026-07-09
 

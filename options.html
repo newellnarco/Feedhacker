@@ -209,13 +209,8 @@
     <div class="panel-body">
       <p class="muted" style="margin:0 0 12px;">FeedHacker doesn't hide a post for a single word. It scores each post
         across the structural “tells” below plus a curated phrase list, weighs the evidence with an on‑device model,
-        and only hides once the combined score passes the threshold (<b id="slop-threshold">0.5</b>). The weights and
-        threshold shown are what the model <b>tuned itself to</b>: it reviews the posts you see and, on its own,
-        down‑weights tells that fire on most of your feed and sets the threshold so only the sloppiest slice is hidden
-        — the <b>Aggression</b> slider in the popup picks how big that slice is. It keeps learning from its latest
-        state (it doesn't reset each session), and your <b>Show anyway</b> / <b>✓ AI slop</b> corrections nudge it too,
-        a little — less than its own learning. Self‑tuning can be turned off under <b>Advanced</b>, and then these
-        weights are what your corrections alone have learned.</p>
+        and only hides once the combined score reaches the threshold (<b id="slop-threshold">0.5</b>). The weights shown
+        are your current learned values — they nudge each time you hit <b>Show anyway</b> or re‑hide a post.</p>
 
       <h3 class="subhead">Detection signals</h3>
       <table>
@@ -272,20 +267,11 @@
   </details>
 
   <details class="panel" open>
-    <summary><h2>Muted authors</h2></summary>
+    <summary><h2>Authors</h2></summary>
     <div class="panel-body">
-      <p class="muted" style="margin:0 0 8px;">Soft‑blocked — people, companies, or schools whose posts are
-        filtered out of your feed completely. Click the <b>×</b> next to a name to unmute and start seeing
-        their posts again.</p>
+      <h3 class="subhead" style="margin-top:0;">Muted (always hidden)</h3>
       <ul class="chiplist" id="muted-list"></ul>
-    </div>
-  </details>
-
-  <details class="panel">
-    <summary><h2>Whitelist</h2></summary>
-    <div class="panel-body">
-      <p class="muted" style="margin:0 0 8px;">Authors you chose <b>Always show</b> for — their posts are never
-        filtered, and FeedHacker won't ask again. Remove one to filter their posts normally.</p>
+      <h3 class="subhead">Always shown</h3>
       <ul class="chiplist" id="allowed-list"></ul>
     </div>
   </details>
