@@ -45,7 +45,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   the Enable toggle (with a hover tooltip) now reveals the same help in a popup on demand — close it
   with ×, a click outside, or Esc.
 - **The AI-slop slider is labelled "Sensitivity" again, and shows just the level word.** (Renamed
-  back from "Aggression".) It reads plainly **strict / balanced / aggressive** instead of the old
+  back from "Aggression".) It reads plainly **Strict / Balanced / Aggressive** instead of the old
   "balanced (~28% hidden)", which overflowed the popup row and got clipped; the exact fraction isn't
   meaningful to surface there (the model only aims for it), and the line under the slider explains
   what it does.
