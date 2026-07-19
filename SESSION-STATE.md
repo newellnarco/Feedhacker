@@ -19,12 +19,13 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
-## Current state — as of 2026-07-09
+## Current state — as of 2026-07-19
 
-- **Latest GitHub release:** `v0.4.3` (2026-07-09). `main` is bumped to **0.4.4** (in dev — see
+- **Latest GitHub release:** `v0.4.4` (2026-07-09). `main` is bumped to **0.4.5** (in dev — see
   Next release).
-- **Chrome Web Store:** **v0.4.3 is LIVE** (confirmed published 2026-07-09). The submission slot
-  is **OPEN** (newest store decision is a publish, nothing in review).
+- **Chrome Web Store:** **v0.4.4 is LIVE** (confirmed published 2026-07-09 20:56 UTC — Google
+  "Item successfully published" email, Version 0.4.4). The submission slot is **OPEN** (newest
+  store decision is a publish, nothing in review).
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
@@ -32,53 +33,27 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   `from:chromewebstore-noreply@google.com newer_than:7d`, read the Version field of the newest
   "published" email).
 
-## Next release — v0.4.4 (in progress, not shipped)
+## Next release — v0.4.5 (in progress, not shipped)
 
-- **Staged so far** (all under `## [0.4.4]` in `CHANGELOG.md`; `manifest.json` + `package.json`
-  at **0.4.4**):
-  - Fix for stub action buttons occasionally ignoring the first click — moved from per-button
-    listeners to one delegated document listener (`data-fh-act` routing), so the controls
-    survive LinkedIn's React re-rendering our injected stub.
-  - **Autonomous AI-slop self-calibration** (`Scorer.autocalibrate`) — the PRIMARY "get smarter"
-    loop, unsupervised. Content script observes every reviewed post's feature vector
-    (`feedhacker:slopobs`, capped 400) and, time-gated (~45s), refits from the shipped prior:
-    damps tells that fire on most of the feed + sets the threshold from the score distribution so
-    only ~`slopTargetFrac` (0.28) is hidden. After each calibration the observation buffer is
-    **reaped** to a fresh recent window (`OBS_KEEP` 150), written once by `flushObs` (a single obs
-    writer, so the reap can't clobber a concurrent tab's newer appends) — so the file doesn't keep
-    growing and the next session starts from the just-learned weights rather than re-loading a huge log. **Living model** (`Scorer.liveCalibrate` + `evolve`):
-    each cycle EMAs the CURRENT running weights toward the target (`CAL_ALPHA` 0.6) so it keeps
-    learning from its latest state across sessions (not resetting to defaults), and folds in a
-    GENTLE nudge from labeled corrections (`Scorer.retrain` lr 0.15/40 epochs/λ 0.15) — user
-    selections count but less than the autonomous signal. Writes `slopWeights` (local) +
-    `slopThreshold` (sync) + a `feedhacker:slopcal` status (records both `n` = observations the
-    calibration was computed from and `nKept` = how many survive the reap, so the exported status
-    is self-consistent with the trimmed buffer); then `reapply()`. `autoCalibrate`
-    default ON (DEFAULTS); when on it **owns** the weights (per-click `onFeedback` learning is
-    gated off — user impact flows through the labeled buffer into the live cycle instead).
-    Loop-guard: calibrate at most once/45s so a calibration's own reapply re-scan can't
-    re-trigger it.
-  - **Curated grouping** (`feed.groupRuns` / `ungroupRun`, `groupHiddenRuns` default ON): a run of
-    3+ consecutive stub-showing hidden posts folds into one summary row on the run's first post
-    ("N posts hidden · reason counts · Show all"); members become `feedhacker-gone` with
-    `data-feedhacker-group=<headId>`. "Show all" (`data-fh-act="ungroup"`) restores individual
-    stubs and marks `feedhackerUngrouped` so it isn't re-folded. Idempotent; runs in `scanNow`
-    after `F.scan`. `reset()` clears the group datasets.
-  - **Soft re-apply + click pause** (`feed.recompute`, `content.softReapplySoon`): auto-calibration
-    no longer calls the full `reapply()` (which rebuilt every stub and could swallow a click).
-    `recompute` only reveals slop-hidden posts that no longer qualify + hides newly-qualifying
-    shown posts, leaving surviving stubs intact; it's deferred ~1.5s after any stub click
-    (`settings.onInteract` sets `lastInteractAt`). Full `reapply()` still used for settings changes.
-  - **Load-more tuning** (`content.pump`): up to 14 kicks at 450ms (was 8 at 700ms), loads until a
-    batch of +4 visible posts appears, with a "Loading more…" button state.
-  - **AI-slop decision log** (`src/sloplog.ts`) — logs why each post was flagged (prob, tells,
-    phrases, ~280-char preview) to `feedhacker:sloplog`; corrections still logged + become labeled
-    examples (`feedhacker:sloptrain`) usable by `Scorer.retrain` (secondary/manual only, gated when
-    autoCalibrate is on). Options "AI-slop decision log" panel: auto-cal status, recent decisions,
-    Export JSON (decisions + training + observations + calibration), Recalibrate now (autonomous),
-    Clear log. Aimed at the "almost everything gets flagged" complaint; the user wants it to improve
-    on its own, not from their (unreliable, short-sample) clicks.
-- Keep accumulating further work under 0.4.4 until the user says "ship."
+- **Staged so far** (all under `## [0.4.5]` in `CHANGELOG.md`; `manifest.json` + `package.json`
+  at **0.4.5**; merged to `main` via PRs #42–#46):
+  - **In-place "Update now" for Chrome Web Store installs** (#42) — store users who hit *Check for
+    updates* can now fetch and apply a published update on the spot via Chrome's own update API
+    (`requestUpdateCheck` → `runtime.reload`), then just refresh the LinkedIn tab — no browser
+    restart. If the new version is on GitHub but not yet live on the store (still in Google review),
+    it says so plainly instead of failing.
+  - **Popup help moved behind a "?" button** (#43) — the two always-on help blurbs (the "How it
+    works" line and the Aggression note) are gone from the default view; a small **?** by the Enable
+    toggle reveals the same help in a popup on demand (close with ×, click-outside, or Esc). Also:
+    the Aggression slider label now shows plainly **strict / balanced / aggressive** (the
+    "(~28% hidden)" fraction overflowed the row and got clipped).
+  - **Welcome-page refresh** (#44) — the pinning-guide puzzle-piece icon now uses Chrome's own
+    monochrome gray "Extensions" glyph (was the colorful 🧩), so the step reads true to the real
+    toolbar button.
+  - **MAX3/netsniff engineering discipline adopted** (#45, #46) — CodeRabbit config, numbered
+    `best_practices.md` rules (§19–29), a tree-integrity ledger, a test matrix, and CI hardening
+    from applying the PR-review findings.
+- Keep accumulating further work under 0.4.5 until the user says "ship."
 - **Backlog / possible follow-ups:**
   - The best-effort **MSI** installer build still fails in CI (WiX `Build MSI` step); it's
     `continue-on-error` and never blocks a release, so it's optional to fix.
@@ -93,9 +68,10 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 - **Release mechanism:** run the **Release** workflow via `workflow_dispatch` with `publish: true`
   from `main` (the sandbox token can't push tags, so the workflow tags `v<manifest version>`
   itself, cuts the GitHub Release, and uploads to the store).
-- **Designated dev branch:** `claude/push-v3-chrome-store-9m193x`. Its PRs keep getting merged, so
-  reset it from `origin/main` for each new change; force-with-lease is fine (it only ever carries
-  already-merged history).
+- **Designated dev branch:** the session harness assigns a per-session `claude/*` branch (this
+  session: `claude/new-session-asycej`). Its PRs keep getting merged, so reset the branch from
+  `origin/main` for each new change; force-with-lease is fine (it only ever carries already-merged
+  history).
 - **Store rejects a new upload while one is in review** (`ITEM_NOT_UPDATABLE`). Don't try to ship
   a new store version until the pending one clears.
 - **Installer scripts must be pure ASCII.** Windows PowerShell 5.1 reads a UTF-8-no-BOM `.ps1` as

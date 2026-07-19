@@ -28,7 +28,8 @@ at different speeds, so they're tracked separately:
 | 0.4.1 | ✅ Released (2026-07-07) | ◻︎ Skipped on store | — | Store upload was blocked (`ITEM_NOT_UPDATABLE`); superseded by 0.4.2. Installer ASCII fix lives on the GitHub download. |
 | 0.4.2 | ✅ Released (2026-07-08) | ✅ **Live** (published 2026-07-08) | 2026-07-08 | Confirmed live — Google "Item successfully published" email, Version 0.4.2, 2026-07-08 21:57 UTC. Cumulative: everything since 0.4.0. |
 | 0.4.3 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live on the store. Context-invalidation teardown + smaller page footprint (bundled banlist, no web-accessible resources). |
-| 0.4.4 | ✅ Released (2026-07-09) | ⏳ Submitted → review | 2026-07-09 | Autonomous AI-slop self-calibration (living model), Aggression slider that sticks, curated grouping, click-safe re-apply, observation reaping, accurate in-app docs. GitHub Release + assets published; `webstore` upload succeeded → awaiting Google review. (Best-effort `msi` job failed — WiX v7 OSMF EULA gate; `-win.zip` installer unaffected.) |
+| 0.4.4 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live — Google "Item successfully published" email, Version 0.4.4, 2026-07-09 20:56 UTC. Autonomous AI-slop self-calibration (living model), Aggression slider that sticks, curated grouping, click-safe re-apply, observation reaping, accurate in-app docs. (Best-effort `msi` job failed — WiX v7 OSMF EULA gate; `-win.zip` installer unaffected.) |
+| 0.4.5 | 🚧 Unreleased (in dev) | 🚧 Unreleased | — | Accumulating on `main` (`manifest.json`/`package.json` at 0.4.5). In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). Not shipped — awaiting an explicit "ship". |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -37,7 +38,20 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 
-### 0.4.4 — released on GitHub (2026-07-09); submitted to the store
+### 0.4.5 — unreleased (in dev on `main`)
+- **"Update now" applies a Chrome Web Store update in place** — no browser restart. Store installs
+  can now fetch and apply a published update on the spot (`requestUpdateCheck` → `runtime.reload`),
+  then just refresh the LinkedIn tab; if the new version isn't live on the store yet it says so
+  plainly instead of failing.
+- **Welcome-page puzzle icon matches Chrome's** monochrome "Extensions" glyph (was the colorful 🧩).
+- **Popup help moved behind a "?" button** — the two always-on help blurbs no longer take permanent
+  space; a small "?" by the Enable toggle reveals the same help on demand.
+- **Aggression slider label simplified** to just **strict / balanced / aggressive** (the
+  "(~28% hidden)" fraction overflowed and got clipped).
+- **MAX3/netsniff engineering discipline adopted:** CodeRabbit config, numbered `best_practices.md`
+  rules (§19–29), tree-integrity ledger, and a test matrix.
+
+### 0.4.4 — released on GitHub (2026-07-09); LIVE on the store (2026-07-09)
 - **Autonomous AI-slop self-calibration** (living model): reviews the posts you see and, on its
   own, down-weights structural tells that fire on most of the feed and sets the threshold from the
   score distribution so only the sloppiest slice is hidden — no clicking required. Evolves from its
