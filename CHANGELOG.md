@@ -36,15 +36,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   need only until you learn the controls. They're gone from the default view; a small **?** icon by
   the Enable toggle (with a hover tooltip) now reveals the same help in a popup on demand — close it
   with ×, a click outside, or Esc.
-- **The Aggression slider's label is just the word now.** It read "balanced (~28% hidden)", which
-  overflowed the popup row and got clipped; it now shows plainly **strict / balanced / aggressive**.
-  The exact fraction isn't meaningful to surface there (the model only aims for it), and the line
-  under the slider already explains what it does.
+- **The AI-slop slider is labelled "Sensitivity" again, and shows just the level word.** (Renamed
+  back from "Aggression".) It reads plainly **strict / balanced / aggressive** instead of the old
+  "balanced (~28% hidden)", which overflowed the popup row and got clipped; the exact fraction isn't
+  meaningful to surface there (the model only aims for it), and the line under the slider explains
+  what it does.
 - **"Show author" / "Show sample" drop their parenthetical hints.** The two toggles now read just
   **Show author** and **Show sample** (the `(who + category)` / `(of hidden post)` asides are gone),
   keeping those rows tight; the other Feed-display hints are unchanged.
-- **All popup section headers share one light-blue rounded pill.** POSTS and FEED DISPLAY used a
-  gray header while AI-SLOP was blue; the headers are now uniformly the light-blue rounded box.
+- **All popup section headers share one light-blue rounded pill with gray label text.** POSTS and
+  FEED DISPLAY used a gray header while AI-SLOP was blue; the headers are now uniformly a light-blue
+  rounded box with gray text.
 
 ## [0.4.4] — 2026-07-09
 
