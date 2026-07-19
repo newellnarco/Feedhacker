@@ -22,6 +22,12 @@ reviews:
     auto_pause_after_reviewed_commits: 0   # never pause mid autonomous-fix loop
     base_branches: ["^main$", "^claude/.*"]
     ignore_title_keywords: ["docs:", "docs(", "[docs]", "chore(docs)", "[skip review]", "WIP"]
+  # Pre-merge checks: turn OFF docstring coverage. This is a small MV3 TypeScript extension that
+  # intentionally documents intent with inline comments, not JSDoc docstrings — the default 80%
+  # coverage gate flags 0.00% on every PR and is pure noise here.
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
   # Path filters are ALLOWLIST-FLIPPING: a single POSITIVE pattern turns the whole
   # list into an allowlist and skips everything unmatched. So use NEGATIVES ONLY.
   path_filters:
