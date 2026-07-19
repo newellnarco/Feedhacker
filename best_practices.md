@@ -143,6 +143,12 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     state (`aria-busy`, skeleton/loaders) or the tab is inactive. An alarm that can't tell "empty"
     from "broken" is a false-positive generator (this is the diagnostic-side sibling of §4/§5's
     false-green rule).
+32. **Removing a setting's UI does not reset its persisted value.** `content.ts` merges stored
+    `chrome.storage.sync` over `DEFAULTS`, so a user who previously toggled a control keeps that
+    value even after the control is gone. If a behaviour is now *fixed*, ENFORCE it in code — override
+    the stored value on every settings load (see `Filters.applyFixed`) or run a one-time migration —
+    and don't claim "fixed"/"always on" in a comment while merged storage can still override it. (The
+    persisted-state sibling of §4/§5's false-claim rule.)
 
 ## More tests & docs
 

@@ -605,9 +605,10 @@ function saveAuthors(store) {
   chrome.storage.local.set(patch, function () { renderAuthors(store); });
 }
 
-// The advanced feature toggles were removed from the UI: self-tune and learn-from-scroll run
-// always-on (their defaults), filtering stays home-feed-only, and grouping is controlled from the
-// popup. The underlying settings keep their defaults in filters.ts; there's nothing to wire here.
+// The advanced feature toggles were removed from the UI. content.ts enforces the fixed behaviours
+// on every settings load via Filters.applyFixed (self-tune ON, learn-from-scroll ON, filtering
+// home-feed-only) so any value a user previously persisted is overridden — there's nothing to wire
+// here. Grouping stays user-controlled from the popup.
 
 // --- Export / import learned model ---
 byId("export-model").addEventListener("click", function () {

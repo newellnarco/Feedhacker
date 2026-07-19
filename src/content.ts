@@ -625,6 +625,7 @@
   // Load settings (sync) + learned weights, custom filters, author memory (local).
   chrome.storage.sync.get(DEFAULTS, function (s) {
     Object.assign(settings, DEFAULTS, s);   // mutate in place so runtime callbacks survive
+    if (Filters.applyFixed) Filters.applyFixed(settings);   // removed-toggle behaviours stay fixed over any stale stored value
     chrome.storage.local.get([WEIGHTS_KEY, CUSTOM_KEY, AUTHORS_KEY], function (o) {
       var stored = o && o[WEIGHTS_KEY];
       settings.slopWeights = (stored && typeof stored === "object") ? stored : (Scorer ? Scorer.defaultWeights() : null);
@@ -653,6 +654,7 @@
         touched = true;
       }
     }
+    if (Filters.applyFixed) Filters.applyFixed(settings);   // keep the removed-toggle behaviours fixed on any sync change
     if (touched) reapply();
   });
 
