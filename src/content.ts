@@ -436,9 +436,21 @@
   }
   function heartbeat() {
     if (!SEL) return;
-    if (!tabActive()) { noMarkerRuns = 0; return; }   // tab hidden/unfocused — don't count it
-    var n = SEL.markerCount(document);
-    if (n > 0) { noMarkerRuns = 0; heartbeatLogged = false; return; }
+    var markers = SEL.markerCount(document);
+    if (markers > 0) heartbeatLogged = false;   // markers back — allow a fresh alarm if they vanish again
+    // Only a GENUINE selector break trips the alarm: tab active, LinkedIn not mid-load, the feed
+    // has actually rendered posts, yet none match our marker. An empty/paging/loading feed shows
+    // zero markers too, but that's LinkedIn paging collateral — not our bug — so it must stay quiet.
+    var state = {
+      active: tabActive(),
+      loading: SEL.isLoading ? SEL.isLoading(document) : false,
+      markers: markers,
+      content: SEL.contentCount ? SEL.contentCount(document) : 0
+    };
+    var isBreak = SEL.heartbeatBreak
+      ? SEL.heartbeatBreak(state)
+      : (state.active && !state.loading && state.markers === 0 && state.content > 0);
+    if (!isBreak) { noMarkerRuns = 0; return; }
     if (++noMarkerRuns >= 3 && !heartbeatLogged) {
       heartbeatLogged = true;
       logError(new Error("No LinkedIn post markers found on a feed page — selectors may be out of date"), "heartbeat");

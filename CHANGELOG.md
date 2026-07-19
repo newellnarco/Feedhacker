@@ -13,6 +13,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.5]
 
+### Fixed
+- **The "No LinkedIn post markers found" alarm no longer false-fires during LinkedIn paging.** The
+  feed goes briefly empty while LinkedIn loads more posts; the heartbeat counted that as "selectors
+  may be out of date" and logged an error. It now distinguishes a **genuine break** (the feed has
+  rendered posts — detected independently of our marker, via `role="article"` / activity-URN — yet
+  none match our marker) from an **empty/loading feed** (LinkedIn paging), and only alarms on a real
+  break.
+
 ### Added
 - **"Update now" applies a Chrome Web Store update in place — no browser restart.** Before, store
   users who hit *Check for updates* were just told updates happen automatically, so getting one
@@ -47,6 +55,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - **All popup section headers share one light-blue rounded pill with gray label text.** POSTS and
   FEED DISPLAY used a gray header while AI-SLOP was blue; the headers are now uniformly a light-blue
   rounded box with gray text.
+- **The error log lives on the Advanced Settings page now, not the popup.** The popup is the quick
+  Mute/Solo mixer; any FeedHacker errors are surfaced (and cleared) on the Options page instead, so
+  the popup stays focused on the controls.
 
 ## [0.4.4] — 2026-07-09
 

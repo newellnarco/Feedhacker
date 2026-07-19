@@ -5,7 +5,6 @@
 "use strict";
 var byId = function (id) { return document.getElementById(id) as any; };
 var Filters = self.FeedHackerFilters;
-var Log = self.FeedHackerLog;
 var FILTERS = Filters.FILTERS;                 // [{id, key, label}]
 var DISPLAY = Filters.DISPLAY_KEYS;
 var DEFAULTS = Filters.DEFAULTS;
@@ -117,32 +116,8 @@ DISPLAY.forEach(function (id) {
   });
 });
 
-// --- error log ------------------------------------------------------------
-var errBox = byId("errors");
-var errList = byId("err-list");
-function renderErrors(list) {
-  list = list || [];
-  errList.innerHTML = "";
-  if (!list.length) { errBox.classList.remove("show"); return; }
-  errBox.classList.add("show");
-  // newest first
-  for (var i = list.length - 1; i >= 0; i--) {
-    var li = document.createElement("li");
-    li.className = "err-item";
-    li.textContent = Log.format(list[i]);
-    errList.appendChild(li);
-  }
-}
-chrome.storage.local.get([Log.STORAGE_KEY], function (o) {
-  renderErrors(o && o[Log.STORAGE_KEY]);
-});
-byId("clear-errors").addEventListener("click", function () {
-  var patch = {}; patch[Log.STORAGE_KEY] = [];
-  chrome.storage.local.set(patch, function () {
-    renderErrors([]);
-    try { chrome.runtime.sendMessage({ type: "feedhacker:clearError" }); } catch (e) {}
-  });
-});
+// The error log is surfaced on the Options page (Advanced Settings), not here — the popup
+// is the quick Mute/Solo mixer and shouldn't double as an error console. See options.ts.
 
 // --- reset learning -------------------------------------------------------
 byId("reset-learning").addEventListener("click", function () {

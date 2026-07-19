@@ -135,6 +135,14 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     **not** carry `role="img"` + `aria-label`, or a screen reader announces the same thing twice.
     Give an icon an accessible name only when it is the *sole* carrier of its meaning (§25);
     otherwise mark it decorative.
+31. **A health/heartbeat alarm fires on positive evidence of failure, not on mere absence.** On a
+    SPA feed, "we see nothing" happens constantly and harmlessly — the page is paging/loading. Don't
+    treat absence as breakage: gate the alarm on a selector-INDEPENDENT signal that the thing you
+    expect is actually there but unrecognized (e.g. the feed rendered posts via `role="article"` /
+    activity-URN, yet none match our marker), and suppress it while the app is in a known loading
+    state (`aria-busy`, skeleton/loaders) or the tab is inactive. An alarm that can't tell "empty"
+    from "broken" is a false-positive generator (this is the diagnostic-side sibling of §4/§5's
+    false-green rule).
 
 ## More tests & docs
 
