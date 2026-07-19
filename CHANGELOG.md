@@ -69,6 +69,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   asides in those sections are removed, and the Post-controls text now refers to the merged
   **Authors** panel (**Always shown** subsection) instead of the old "Muted authors" / "Whitelist"
   names.
+- **The "Advanced" options panel is gone; its behaviours are now fixed.** Self-tuning and
+  learn-from-posts-you-scroll-past run **always on**, filtering stays **home-feed-only** (company
+  posts are still filterable via the popup's "Company / brand posts" and Custom filters), and
+  **grouping** is controlled solely from the popup's "Group flagged posts" toggle — so the Advanced
+  toggles were removed rather than duplicated.
+- **The options page opens tidier.** Only **Status, Properties, Actions, and Updates** are expanded
+  by default; every other panel starts collapsed (click a header to expand it).
 
 ## [0.4.4] — 2026-07-09
 

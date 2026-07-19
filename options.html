@@ -132,7 +132,7 @@
     </div>
   </details>
 
-  <details class="panel" open>
+  <details class="panel">
     <summary><h2>Post controls</h2></summary>
     <div class="panel-body">
       <p class="muted" style="margin:0 0 12px;">The icon buttons on each hidden‑post stub.
@@ -233,7 +233,7 @@
     <div class="panel-body">
       <p class="muted" style="margin:0 0 10px;">FeedHacker <b>tunes itself</b>: it reviews the posts you see and,
         on its own, down‑weights “tells” that fire on most of your feed (so one common signal can’t flag everything) and
-        sets the threshold so only the sloppiest slice is hidden — no clicking required (toggle in <b>Advanced</b>). This
+        sets the threshold so only the sloppiest slice is hidden — no clicking required. This
         is a local record of every post it flagged and <b>why</b> — the probability, the tells that fired, and the
         phrases matched. It keeps <b>learning from its latest state</b> (not resetting), and your <b>Show anyway</b> /
         <b>✓</b> corrections nudge it too — a little, less than its own learning. Everything stays on your computer;
@@ -265,7 +265,7 @@
     </div>
   </details>
 
-  <details class="panel" open>
+  <details class="panel">
     <summary><h2>Authors</h2></summary>
     <div class="panel-body">
       <h3 class="subhead" style="margin-top:0;">Muted (always hidden)</h3>
@@ -276,16 +276,6 @@
   </details>
 
   <details class="panel">
-    <summary><h2>Advanced</h2></summary>
-    <div class="panel-body">
-      <label class="rowline"><input type="checkbox" id="autoCalibrate"> <b>Self-tune the AI-slop model automatically</b> <span class="muted">(reviews the posts you see and adjusts weights + threshold on its own — no clicking needed)</span></label>
-      <label class="rowline"><input type="checkbox" id="groupHiddenRuns"> <b>Group runs of hidden posts</b> <span class="muted">(fold 3+ hidden posts in a row into one “N hidden … Show all” row for a cleaner feed)</span></label>
-      <label class="rowline"><input type="checkbox" id="scanEverywhere"> Also filter beyond the home feed <span class="muted">(permalinks, search, profiles, company pages)</span></label>
-      <label class="rowline"><input type="checkbox" id="implicitLearning"> Learn from posts you scroll past <span class="muted">(weak confirmation)</span></label>
-    </div>
-  </details>
-
-  <details class="panel" open>
     <summary><h2>Learned model</h2></summary>
     <div class="panel-body">
       <p class="muted" style="margin:0 0 8px;">Your on-device AI-slop weights. Export to back up or move to another browser.</p>
@@ -298,7 +288,7 @@
     </div>
   </details>
 
-  <details class="panel" open>
+  <details class="panel">
     <summary><h2>Error log</h2></summary>
     <div class="panel-body">
       <ul class="errs" id="errs"></ul>
@@ -311,7 +301,7 @@
     </div>
   </details>
 
-  <details class="panel" open>
+  <details class="panel">
     <summary><h2>Manage</h2></summary>
     <div class="panel-body">
       <p style="margin:0 0 6px;">Disable or remove FeedHacker any time from Chrome's extensions page:

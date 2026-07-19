@@ -9,6 +9,13 @@ const test = require("node:test");
 const assert = require("node:assert");
 const { JSDOM } = require("jsdom");
 
+// Snapshot every process-wide value we mutate so teardown can restore it — this test replaces
+// globals, timer APIs, the chrome mock and the self-attached FeedHacker singletons, and later
+// test files must see the originals (order-independence, best_practices §27).
+const MUTATED = ["self", "window", "document", "location", "MutationObserver", "fetch", "setInterval", "clearInterval", "setTimeout", "chrome"];
+const ORIG = {};
+for (const k of MUTATED) ORIG[k] = Object.getOwnPropertyDescriptor(globalThis, k);
+
 const EXT_ID = "feedhacker-ext-id";
 // Boot on an EMPTY feed (paging / between page loads): no post markers AND no post content.
 const dom = new JSDOM(
@@ -46,9 +53,8 @@ global.chrome = {
   },
 };
 
-for (const m of ["filters", "logger", "selectors", "matcher", "scorer", "authors", "customfilters", "feed"]) {
-  require(`../../build/${m}.js`);
-}
+const MODULES = ["filters", "logger", "selectors", "matcher", "scorer", "authors", "customfilters", "feed"];
+for (const m of MODULES) require(`../../build/${m}.js`);
 require("../../build/content.js");
 
 const ERR_KEY = require("../../build/logger.js").STORAGE_KEY;
@@ -57,6 +63,27 @@ function heartbeatErrors() {
   return (localStore[ERR_KEY] || []).filter((e) => e && e.context === "heartbeat");
 }
 function pump(n) { for (let i = 0; i < n; i++) { if (scanCb) scanCb(); } }
+// Build a post container the way LinkedIn's markup exposes one (role=article / activity-URN),
+// via the DOM rather than innerHTML so we never assign markup to innerHTML.
+function addPost(attr, val) {
+  const el = dom.window.document.createElement("div");
+  el.setAttribute(attr, val);
+  const body = dom.window.document.createElement("div");
+  body.textContent = "a real post the marker no longer matches";
+  el.appendChild(body);
+  dom.window.document.getElementById("feed").appendChild(el);
+}
+
+test.after(() => {
+  for (const k of MUTATED) {
+    if (ORIG[k]) Object.defineProperty(globalThis, k, ORIG[k]);
+    else delete globalThis[k];
+  }
+  for (const k of Object.keys(globalThis)) if (k.startsWith("FeedHacker")) delete globalThis[k];
+  for (const id of Object.keys(require.cache)) {
+    if (/[\\/]build[\\/](filters|logger|selectors|matcher|scorer|authors|customfilters|feed|content)\.js$/.test(id)) delete require.cache[id];
+  }
+});
 
 test("an empty/paging feed never trips the heartbeat, however many scans run", async () => {
   await flush();
@@ -68,10 +95,9 @@ test("an empty/paging feed never trips the heartbeat, however many scans run", a
 test("a genuine selector break (posts present, none match our marker) still alarms", async () => {
   // Feed now has rendered posts (role=article / activity-URN) but NONE carry our "Feed post"
   // marker heading — the real "selectors out of date" condition.
-  dom.window.document.getElementById("feed").innerHTML =
-    '<div role="article"><div>a real post the marker no longer matches</div></div>' +
-    '<div data-urn="urn:li:activity:2"><div>another post</div></div>' +
-    '<div data-urn="urn:li:activity:3"><div>and another</div></div>';
+  addPost("role", "article");
+  addPost("data-urn", "urn:li:activity:2");
+  addPost("data-urn", "urn:li:activity:3");
   pump(3);   // three consecutive break scans reach the alarm threshold
   assert.strictEqual(heartbeatErrors().length, 1, "the genuine break is surfaced exactly once");
   assert.match(heartbeatErrors()[0].msg, /post markers/);

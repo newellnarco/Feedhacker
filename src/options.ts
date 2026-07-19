@@ -59,11 +59,6 @@ function renderStatus(st) {
   el.textContent = "Active filters: " + (active.length ? active.join(", ") : "none") +
     (extras.length ? " · Options: " + extras.join(", ") : "");
 
-  byId("autoCalibrate").checked = st.autoCalibrate !== false;   // default on
-  byId("groupHiddenRuns").checked = st.groupHiddenRuns !== false;   // default on
-  byId("scanEverywhere").checked = !!st.scanEverywhere;
-  byId("implicitLearning").checked = !!st.implicitLearning;
-
   var thr = byId("slop-threshold");
   if (thr) thr.textContent = String(typeof st.slopThreshold === "number" ? st.slopThreshold : 0.5);
 }
@@ -610,11 +605,9 @@ function saveAuthors(store) {
   chrome.storage.local.set(patch, function () { renderAuthors(store); });
 }
 
-// --- Advanced toggles (sync) ---
-["autoCalibrate", "groupHiddenRuns", "scanEverywhere", "implicitLearning"].forEach(function (id) {
-  var el = byId(id);
-  el.addEventListener("change", function () { var p = {}; p[id] = el.checked; chrome.storage.sync.set(p); });
-});
+// The advanced feature toggles were removed from the UI: self-tune and learn-from-scroll run
+// always-on (their defaults), filtering stays home-feed-only, and grouping is controlled from the
+// popup. The underlying settings keep their defaults in filters.ts; there's nothing to wire here.
 
 // --- Export / import learned model ---
 byId("export-model").addEventListener("click", function () {
