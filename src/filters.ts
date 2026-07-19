@@ -55,9 +55,11 @@
   // Applied in content.ts to the live settings after every sync load, so the "fixed" claim is real.
   function applyFixed(s) {
     if (!s || typeof s !== "object") return s;
-    s.autoCalibrate = true;
-    s.implicitLearning = true;
-    s.scanEverywhere = false;
+    // Derive from the canonical DEFAULTS (not duplicated literals) so enforcement can't drift if a
+    // default ever changes: autoCalibrate ON, implicitLearning ON, scanEverywhere OFF.
+    s.autoCalibrate = DEFAULTS.autoCalibrate;
+    s.implicitLearning = DEFAULTS.implicitLearning;
+    s.scanEverywhere = DEFAULTS.scanEverywhere;
     return s;
   }
 
