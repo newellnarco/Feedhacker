@@ -129,6 +129,12 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
 26. **Don't reach into another module's private state via the `self.FeedHacker*` globals.** The
     UMD-on-`self` pattern makes internals globally reachable; call a module's public surface, expose
     a helper — don't poke a would-be-private field on `self.FeedHackerScorer` et al.
+30. **A decorative icon that just repeats adjacent visible text is `aria-hidden="true"`, not
+    labeled** (the complement to §25). An inline glyph sitting right beside the word it depicts —
+    the welcome page's puzzle-piece / pin next to the literal "puzzle-piece" / "pin" text — must
+    **not** carry `role="img"` + `aria-label`, or a screen reader announces the same thing twice.
+    Give an icon an accessible name only when it is the *sole* carrier of its meaning (§25);
+    otherwise mark it decorative.
 
 ## More tests & docs
 
