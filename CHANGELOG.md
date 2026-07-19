@@ -65,6 +65,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 - **Advanced Settings: the "How AI-slop detection works" intro is trimmed**, and the signal
   **weights now show two decimals** (e.g. `3.20`, `0.90`) — the intro is a short summary of scoring
   + threshold and how the weights nudge, instead of the longer self-tuning write-up.
+- **Advanced Settings: the Actions and Post-controls help is de-cluttered.** The parenthetical
+  asides in those sections are removed, and the Post-controls text now refers to the merged
+  **Authors** panel (**Always shown** subsection) instead of the old "Muted authors" / "Whitelist"
+  names.
 
 ## [0.4.4] — 2026-07-09
 
