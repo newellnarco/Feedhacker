@@ -40,6 +40,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   overflowed the popup row and got clipped; it now shows plainly **strict / balanced / aggressive**.
   The exact fraction isn't meaningful to surface there (the model only aims for it), and the line
   under the slider already explains what it does.
+- **"Show author" / "Show sample" drop their parenthetical hints.** The two toggles now read just
+  **Show author** and **Show sample** (the `(who + category)` / `(of hidden post)` asides are gone),
+  keeping those rows tight; the other Feed-display hints are unchanged.
+- **All popup section headers share one light-blue rounded pill.** POSTS and FEED DISPLAY used a
+  gray header while AI-SLOP was blue; the headers are now uniformly the light-blue rounded box.
 
 ## [0.4.4] — 2026-07-09
 
