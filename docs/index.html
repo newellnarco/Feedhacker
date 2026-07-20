@@ -6,32 +6,130 @@
   <title>FeedHacker</title>
   <meta name="description" content="FeedHacker — mute the noise in your LinkedIn feed: AI slop, promoted posts, engagement bait, and more.">
   <style>
-    :root { color-scheme: light dark; }
-    body { max-width: 640px; margin: 0 auto; padding: 56px 22px;
-      font: 16px/1.6 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; background: #f6f7f9; text-align: center; }
-    h1 { font-size: 30px; margin: 0 0 8px; }
-    p { color: #4a5560; margin: 0 0 28px; }
-    .links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-    a.btn { text-decoration: none; border: 1px solid #c7ccd4; border-radius: 10px;
-      padding: 10px 18px; color: #0a66c2; font-weight: 600; background: #fff; }
-    a.btn.primary { background: #0a66c2; color: #fff; border-color: #0a66c2; }
-    a.btn:hover { filter: brightness(0.97); }
-    @media (prefers-color-scheme: dark) {
-      body { color: #e7e9ec; background: #14171a; }
-      p { color: #9aa4b0; }
-      a.btn { background: #1e242a; border-color: #2b3138; }
-      a.btn.primary { background: #2f6fd0; border-color: #2f6fd0; color: #fff; }
+    :root {
+      color-scheme: light dark;
+      --page-bg: #eef1f5;
+      --card-bg: #ffffff;
+      --card-border: #e2e6ec;
+      --ink: #1d2226;
+      --ink-soft: #4a5560;
+      --ink-faint: #6a7686;
+      --brand: #0a66c2;
+      --brand-ink: #ffffff;
+      --chip-bg: #eef4fc;
+      --chip-ink: #345680;
+      --chip-border: #dbe6f5;
+      --btn-bg: #ffffff;
+      --btn-border: #c7ccd4;
+      --shadow: 0 18px 48px -20px rgba(16, 42, 76, .35);
+      --ring: rgba(10, 102, 194, .18);
     }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page-bg: #0e1114;
+        --card-bg: #171b1f;
+        --card-border: #262c33;
+        --ink: #e7e9ec;
+        --ink-soft: #b3bcc7;
+        --ink-faint: #8b95a1;
+        --brand: #2f6fd0;
+        --chip-bg: #1b2530;
+        --chip-ink: #9bc0ee;
+        --chip-border: #29323d;
+        --btn-bg: #1e242a;
+        --btn-border: #2b3138;
+        --shadow: 0 20px 50px -22px rgba(0, 0, 0, .7);
+        --ring: rgba(94, 158, 240, .28);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px; background: var(--page-bg); color: var(--ink);
+      font: 16px/1.6 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    }
+    .card {
+      width: 100%; max-width: 420px; background: var(--card-bg);
+      border: 1px solid var(--card-border); border-radius: 20px;
+      box-shadow: var(--shadow); padding: 34px 30px 26px; text-align: center;
+    }
+    .mark {
+      width: 68px; height: 68px; margin: 0 auto 16px; border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0a66c2, #084b91);
+      box-shadow: 0 8px 20px -8px rgba(10, 102, 194, .7);
+    }
+    .mark svg { width: 40px; height: 40px; display: block; }
+    h1 { font-size: 27px; line-height: 1.15; margin: 0 0 4px; letter-spacing: -.01em; }
+    .tag { color: var(--brand); font-weight: 600; font-size: 14px; margin: 0 0 16px; }
+    .lede { color: var(--ink-soft); margin: 0 0 20px; font-size: 15px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 22px; }
+    .chip {
+      font-size: 12.5px; font-weight: 600; color: var(--chip-ink);
+      background: var(--chip-bg); border: 1px solid var(--chip-border);
+      border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+    }
+    .privacy {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      color: var(--ink-faint); font-size: 13px; margin: 0 0 22px;
+    }
+    .privacy svg { width: 15px; height: 15px; flex: 0 0 auto; }
+    .links { display: flex; flex-direction: column; gap: 10px; }
+    a.btn {
+      text-decoration: none; border: 1px solid var(--btn-border); border-radius: 11px;
+      padding: 11px 18px; color: var(--brand); font-weight: 600; background: var(--btn-bg);
+      transition: filter .12s ease, transform .12s ease;
+    }
+    a.btn.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+    a.btn:hover { filter: brightness(0.97); transform: translateY(-1px); }
+    a.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+    .row { display: flex; gap: 10px; }
+    .row a.btn { flex: 1; }
+    .foot { margin: 20px 0 0; font-size: 12px; color: var(--ink-faint); }
   </style>
 </head>
 <body>
-  <h1>FeedHacker</h1>
-  <p>Mute the noise in your LinkedIn feed — AI slop, promoted posts, engagement bait,
-     hiring posts, and more. Runs entirely in your browser; nothing is sent to any server.</p>
-  <div class="links">
-    <a class="btn primary" href="https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb">Chrome Web Store</a>
-    <a class="btn" href="https://github.com/newellnarco/Feedhacker">Source on GitHub</a>
-    <a class="btn" href="privacy-policy.html">Privacy Policy</a>
-  </div>
+  <main class="card">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 5h16M4 12h10M4 19h6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="18" cy="16" r="4.4" stroke="#fff" stroke-width="2.2"/>
+        <path d="M21.2 19.2 24 22" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <h1>FeedHacker</h1>
+    <p class="tag">Quiet the LinkedIn feed</p>
+    <p class="lede">Mute the low-signal noise on your LinkedIn home feed with a simple
+       Mute / Solo mixer — so what's left is worth reading.</p>
+
+    <div class="chips">
+      <span class="chip">AI slop</span>
+      <span class="chip">Promoted</span>
+      <span class="chip">Engagement bait</span>
+      <span class="chip">Hiring posts</span>
+      <span class="chip">Corporate &amp; brand</span>
+    </div>
+
+    <p class="privacy">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 2.5 4.5 5.5v5c0 4.6 3.1 8.4 7.5 9.9 4.4-1.5 7.5-5.3 7.5-9.9v-5L12 2.5Z"
+              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M9 12l2 2 4-4.5" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Runs entirely in your browser — nothing is sent to any server.
+    </p>
+
+    <div class="links">
+      <a class="btn primary" href="https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb">Add to Chrome — it's free</a>
+      <div class="row">
+        <a class="btn" href="https://github.com/newellnarco/Feedhacker">Source on GitHub</a>
+        <a class="btn" href="privacy-policy.html">Privacy Policy</a>
+      </div>
+    </div>
+
+    <p class="foot">Open source · Manifest V3 · No account required</p>
+  </main>
 </body>
 </html>
