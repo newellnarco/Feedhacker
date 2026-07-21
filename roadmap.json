@@ -335,7 +335,7 @@
       "status": "pending",
       "category": "ux",
       "source": "Wes proposal",
-      "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.png", "label": "Grab the logo — Fh badge (128px)" }
+      "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.svg", "label": "Grab the logo — Fh badge (scalable SVG)" }
     },
     {
       "id": "FH-041",
