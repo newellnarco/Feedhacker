@@ -19,13 +19,20 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
-## Current state — as of 2026-07-19
+## Current state — as of 2026-07-21
 
-- **Latest GitHub release:** `v0.4.4` (2026-07-09). `main` is bumped to **0.4.5** (in dev — see
-  Next release).
-- **Chrome Web Store:** **v0.4.4 is LIVE** (confirmed published 2026-07-09 20:56 UTC — Google
-  "Item successfully published" email, Version 0.4.4). The submission slot is **OPEN** (newest
-  store decision is a publish, nothing in review).
+- **Latest GitHub release:** `v0.4.5` (2026-07-21) — published via the Release workflow, tag
+  `v0.4.5` on `main` @ `bb9e512`, with the prebuilt zips attached. `main`/`manifest.json`/
+  `package.json` are at **0.4.5** (= the shipped version). **Bump to 0.4.6 with the first commit of
+  the next dev cycle** (as 0.4.5 itself was bumped in its first PR), so accumulation never lands
+  under an already-shipped version — the store rejects a re-upload of the same version
+  (`ITEM_NOT_UPDATABLE`).
+- **Chrome Web Store:** **v0.4.4 is still LIVE**; **v0.4.5 was uploaded + auto-published 2026-07-21
+  and is now IN GOOGLE REVIEW**. The submission slot is therefore **BLOCKED** until v0.4.5 clears —
+  do not attempt another store upload until Google publishes (or rejects) it. Watch for the "Item
+  successfully published" email (Version 0.4.5); mark v0.4.5 **Live** in `RELEASES.md` only then.
+  (The best-effort `msi` job failed as usual — WiX gate — and never blocks the release; the
+  `-win.zip` installer is unaffected.)
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
@@ -33,10 +40,11 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   `from:chromewebstore-noreply@google.com newer_than:7d`, read the Version field of the newest
   "published" email).
 
-## Next release — v0.4.5 (in progress, not shipped)
+## Shipped — v0.4.5 (2026-07-21)
 
-- **Staged so far** (all under `## [0.4.5]` in `CHANGELOG.md`; `manifest.json` + `package.json`
-  at **0.4.5**; merged to `main` via PRs #42–#46):
+- **Released** on GitHub (tag `v0.4.5`) and **uploaded to the Chrome Web Store** (auto-published →
+  in review). Full change list under `## [0.4.5] — 2026-07-21` in `CHANGELOG.md`.
+- **What shipped** (merged to `main` via PRs #42–#47, plus the `Fh` logo SVG):
   - **In-place "Update now" for Chrome Web Store installs** (#42) — store users who hit *Check for
     updates* can now fetch and apply a published update on the spot via Chrome's own update API
     (`requestUpdateCheck` → `runtime.reload`), then just refresh the LinkedIn tab — no browser
@@ -53,7 +61,10 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   - **MAX3/netsniff engineering discipline adopted** (#45, #46) — CodeRabbit config, numbered
     `best_practices.md` rules (§19–29), a tree-integrity ledger, a test matrix, and CI hardening
     from applying the PR-review findings.
-- Keep accumulating further work under 0.4.5 until the user says "ship."
+  - **v0.4.5 UI refresh + heartbeat paging fix + Advanced removal** (#47) — the "No LinkedIn post
+    markers found" alarm no longer false-fires during LinkedIn paging (distinguishes a genuine
+    selector break from an empty/loading feed).
+  - **Scalable `Fh` logo** — a `feedhacker-logo.svg` app icon (FH-040).
 - **Backlog / possible follow-ups:**
   - The best-effort **MSI** installer build still fails in CI (WiX `Build MSI` step); it's
     `continue-on-error` and never blocks a release, so it's optional to fix.

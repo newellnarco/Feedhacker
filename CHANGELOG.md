@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.4.5]
+## [0.4.5] — 2026-07-21
 
 ### Fixed
 - **The "No LinkedIn post markers found" alarm no longer false-fires during LinkedIn paging.** The
