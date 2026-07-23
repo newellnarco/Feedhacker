@@ -24,16 +24,18 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 - **Latest GitHub release:** `v0.4.5` (2026-07-21) — tag `v0.4.5` on `main` @ `bb9e512`. The next
   dev cycle has begun: `manifest.json`/`package.json` are now bumped to **0.4.6** and all 0.4.6 work
   accumulates under that version.
-- **In dev — v0.4.6 (branding):** new FeedHacker **"Fh" element-mark** identity across the extension
-  and store icons (LinkedIn blue, transparent rounded corners), a simplified `Fh`-only 16/32px
-  toolbar variant, and a brand lockup carrying "created by www.MaxResearchCollective.com".
-  `feedhacker-logo.svg` is the source of truth; all icon PNGs regenerated from it. On branch
-  `claude/new-session-0vfy1o` / PR #50.
-- **Chrome Web Store:** **v0.4.5 is LIVE** (confirmed 2026-07-21 18:54 UTC). The submission slot is
-  **OPEN**. Per the maintainer's request, the **0.4.6 store package was built and handed off for a
-  manual upload** (`dist/feedhacker-0.4.6-store.zip` → Developer Dashboard); no GitHub tag/Release was
-  cut for 0.4.6 (not a "ship" via the Release workflow). (The best-effort `msi` job still fails on the
-  WiX gate and never blocks anything.)
+- **v0.4.6 (branding) — merged to `main`:** new FeedHacker **"Fh" element-mark** identity across the
+  extension and store icons (LinkedIn blue; toolbar icons transparent-cornered, **store icon opaque**
+  because the store rejects a transparent store icon), a simplified `Fh`-only 16/32px toolbar variant,
+  refreshed screenshots + promo tiles, and a brand lockup carrying "created by
+  www.MaxResearchCollective.com". `feedhacker-logo.svg` is the source of truth. Merged via PR #50
+  (`ee0cc11`).
+- **Chrome Web Store:** **v0.4.5 is LIVE** (confirmed 2026-07-21). **v0.4.6 was submitted to the store
+  by manual upload on 2026-07-23 and is now IN GOOGLE REVIEW** — the submission slot is therefore
+  **BLOCKED** until it clears. Watch for the "Item successfully published" email (Version 0.4.6); mark
+  it **Live** in `RELEASES.md` only then. **No GitHub tag/Release was cut for 0.4.6** (manual store
+  upload, not the Release workflow) — offer to cut one if the maintainer wants GitHub/store in lockstep.
+  (The best-effort `msi` job still fails on the WiX gate and never blocks anything.)
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
