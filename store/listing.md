@@ -60,15 +60,20 @@ network requests — its curated AI-slop phrase list ships inside the package.
 
 ## Graphics — all provided in this repo
 
-- [x] **Store icon 128×128** — `store/brand/store-icon-128.png` (white background). A
-      120×120 variant is at `store/brand/store-icon-120.png`. The in-package toolbar icon
-      is `icons/128.png`.
+- [x] **Store icon 128×128** — `store/brand/store-icon-128.png` (FeedHacker **Fh** element
+      mark on LinkedIn blue, transparent rounded corners). A 120×120 variant is at
+      `store/brand/store-icon-120.png`. The in-package toolbar icon is `icons/128.png`.
+- [x] **Brand logo / lockup** — `store/brand/logo-1024.png` (the square Fh mark) and
+      `store/brand/logo-lockup-1024.png` (the Fh mark beside the *FeedHacker* wordmark and
+      **"created by www.MaxResearchCollective.com"**). Use the lockup wherever the store shows a
+      brand image, so the MAX Research Collective credit is visible.
 - [x] **Screenshots 1280×800** — `store/screenshot-1-mixer.png` (the Mute/Solo popup),
       `store/screenshot-2-detection.png` (the AI-slop detection panel), and
       `store/screenshot-3-stub.png` (a hidden post collapsed to its stub).
 - [x] **Small promo tile 440×280** — `store/promo-small-440x280.jpg`.
 - [x] **Marquee promo tile 1400×560** — `store/promo-marquee-1400x560.jpg`.
 
-All graphics are opaque JPEG/PNG (no alpha), as the store requires. `npm run build` also
+Screenshots and the promo tiles are opaque JPEG/PNG (no alpha), as the store requires; the
+icon/brand PNGs intentionally use transparency for the rounded corners. `npm run build` also
 bundles this listing text, the privacy policy, and every graphic above into
 `dist/feedhacker-<version>-store-submission.zip` (listing assets only — no manifest).

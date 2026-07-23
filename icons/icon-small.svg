@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="FeedHacker (Fh)">
+  <!-- Small-size variant (16/32): the Fh symbol only, enlarged. The atomic number and
+       element name are dropped because they turn to mush below ~48px. Full periodic-cell
+       tile (icons/icon.svg) is used at 48px and up. -->
+  <rect width="128" height="128" rx="16" fill="#0A66C2"/>
+  <rect x="5.5" y="5.5" width="117" height="117" rx="11.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="2.5"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"
+     transform="translate(64 66) scale(1.42) translate(-64.5 -60)">
+    <path d="M39 40 V86"/><path d="M39 45 H60"/><path d="M39 61 H55"/>
+    <path d="M70 34 V86"/><path d="M70 62 C70 51 90 51 90 66 V86"/>
+  </g>
+</svg>

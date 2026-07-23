@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="300" viewBox="0 0 940 300" role="img" aria-label="FeedHacker — created by MAX Research Collective">
+  <rect width="940" height="300" fill="#ffffff"/>
+  <svg x="48" y="58" width="184" height="184" viewBox="0 0 128 128">
+    <rect width="128" height="128" rx="16" fill="#0A66C2"/>
+    <rect x="5.5" y="5.5" width="117" height="117" rx="11.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="2.5"/>
+    <text x="15" y="33" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">42</text>
+    <g fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M39 40 V86"/><path d="M39 45 H60"/><path d="M39 61 H55"/>
+      <path d="M70 34 V86"/><path d="M70 62 C70 51 90 51 90 66 V86"/>
+    </g>
+    <text x="64" y="110" text-anchor="middle" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="13" font-weight="600" letter-spacing="0.3" fill="#FFFFFF">FeedHacker</text>
+  </svg>
+  <text x="276" y="152" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="84" font-weight="800" letter-spacing="-1.5" fill="#0A66C2">FeedHacker</text>
+  <text x="280" y="198" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="26" font-weight="500" fill="#5B6B82">created by www.MaxResearchCollective.com</text>
+</svg>

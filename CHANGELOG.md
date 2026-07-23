@@ -11,6 +11,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.6] — unreleased
+
+### Changed
+- **New FeedHacker brand identity across the extension and the Chrome Web Store.** The app
+  icon and store icon are now the FeedHacker **"Fh" element mark** — a periodic-table-style
+  cell (atomic number `42`, large **Fh** symbol, the name *FeedHacker*) on LinkedIn blue with
+  transparent rounded corners — replacing the previous generic "MAX Research Collective M"
+  placeholder. `feedhacker-logo.svg` is the source of truth; `icons/icon.svg` and
+  `store/brand/logo.svg` now render from it, and every icon PNG (`icons/{16,32,48,128}.png`,
+  the store icons, and the large brand logo) was regenerated from it.
+  - **Small toolbar sizes (16/32px) use a simplified `Fh`-only variant** (`icons/icon-small.svg`):
+    the atomic number and name turn to mush below ~48px, so those sizes drop them and enlarge the
+    symbol for legibility. 48px and up use the full periodic cell.
+- **Brand lockup with attribution.** Added `store/brand/logo-lockup.svg` (rendered to
+  `store/brand/logo-lockup-1024.png`) — the Fh tile beside the *FeedHacker* wordmark and
+  **"created by www.MaxResearchCollective.com"** — for use as the store's brand image, since the
+  square icon is too small to carry a URL.
+
 ## [0.4.5] — 2026-07-21
 
 ### Fixed

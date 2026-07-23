@@ -229,6 +229,7 @@ const SUBMISSION_ASSETS = [
   ["store/brand/store-icon-128.png", "store-icon-128.png"],
   ["store/brand/store-icon-120.png", "store-icon-120.png"],
   ["store/brand/logo-1024.png", "logo-1024.png"],
+  ["store/brand/logo-lockup-1024.png", "logo-lockup-1024.png"],
 ];
 for (const [src, dest] of SUBMISSION_ASSETS) if (fs.existsSync(src)) copyFile(src, path.join(SUB_STAGE, dest));
 fs.writeFileSync(path.join(SUB_STAGE, "README.txt"), `FeedHacker — Chrome Web Store listing assets
@@ -246,9 +247,10 @@ Then, in the Developer Dashboard, use the files here:
   screenshot-1-mixer.png       - Screenshot: Mute/Solo mixer (1280x800)
   screenshot-2-detection.png   - Screenshot: AI-slop detection panel (1280x800)
   screenshot-3-stub.png        - Screenshot: hidden-post stub (1280x800)
-  store-icon-128.png           - 128x128 store icon (white background)
-  store-icon-120.png           - 120x120 store icon (white background)
-  logo-1024.png                - brand logo
+  store-icon-128.png           - 128x128 store icon (Fh mark, transparent corners)
+  store-icon-120.png           - 120x120 store icon (Fh mark, transparent corners)
+  logo-1024.png                - brand logo (square Fh mark)
+  logo-lockup-1024.png         - brand lockup: Fh mark + FeedHacker wordmark + credit line
 `);
 zipDir(SUB_STAGE, subZip);
 
