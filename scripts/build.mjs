@@ -247,8 +247,8 @@ Then, in the Developer Dashboard, use the files here:
   screenshot-1-mixer.png       - Screenshot: Mute/Solo mixer (1280x800)
   screenshot-2-detection.png   - Screenshot: AI-slop detection panel (1280x800)
   screenshot-3-stub.png        - Screenshot: hidden-post stub (1280x800)
-  store-icon-128.png           - 128x128 store icon (Fh mark, transparent corners)
-  store-icon-120.png           - 120x120 store icon (Fh mark, transparent corners)
+  store-icon-128.png           - 128x128 opaque store icon (Fh mark)
+  store-icon-120.png           - 120x120 opaque store icon (Fh mark)
   logo-1024.png                - brand logo (square Fh mark)
   logo-lockup-1024.png         - brand lockup: Fh mark + FeedHacker wordmark + credit line
 `);
