@@ -19,7 +19,7 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
-## Current state — as of 2026-07-21
+## Current state — as of 2026-07-23
 
 - **Latest GitHub release:** `v0.4.5` (2026-07-21) — published via the Release workflow, tag
   `v0.4.5` on `main` @ `bb9e512`, with the prebuilt zips attached. `main`/`manifest.json`/
@@ -27,12 +27,11 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   the next dev cycle** (as 0.4.5 itself was bumped in its first PR), so accumulation never lands
   under an already-shipped version — the store rejects a re-upload of the same version
   (`ITEM_NOT_UPDATABLE`).
-- **Chrome Web Store:** **v0.4.4 is still LIVE**; **v0.4.5 was uploaded + auto-published 2026-07-21
-  and is now IN GOOGLE REVIEW**. The submission slot is therefore **BLOCKED** until v0.4.5 clears —
-  do not attempt another store upload until Google publishes (or rejects) it. Watch for the "Item
-  successfully published" email (Version 0.4.5); mark v0.4.5 **Live** in `RELEASES.md` only then.
-  (The best-effort `msi` job failed as usual — WiX gate — and never blocks the release; the
-  `-win.zip` installer is unaffected.)
+- **Chrome Web Store:** **v0.4.5 is now LIVE** — confirmed published 2026-07-21 18:54 UTC (Google
+  "Item successfully published" email, Version 0.4.5). The submission slot is therefore **OPEN**
+  again: the next release can be uploaded to the store once the user says "ship." (The best-effort
+  `msi` job failed as usual — WiX gate — and never blocks the release; the `-win.zip` installer is
+  unaffected.)
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
