@@ -60,9 +60,11 @@ network requests — its curated AI-slop phrase list ships inside the package.
 
 ## Graphics — all provided in this repo
 
-- [x] **Store icon 128×128** — `store/brand/store-icon-128.png` (FeedHacker **Fh** element
-      mark on LinkedIn blue, transparent rounded corners). A 120×120 variant is at
-      `store/brand/store-icon-120.png`. The in-package toolbar icon is `icons/128.png`.
+- [x] **Store icon 128×128** — `store/brand/store-icon-128.png` (the FeedHacker **Fh** element
+      mark on a **solid white background — no alpha**, which the store's store-icon field
+      requires; a transparent-corner icon is rejected). A 120×120 variant is at
+      `store/brand/store-icon-120.png`. The in-package toolbar icon is `icons/128.png` (that one
+      keeps transparent corners — correct for the toolbar).
 - [x] **Brand logo / lockup** — `store/brand/logo-1024.png` (the square Fh mark) and
       `store/brand/logo-lockup-1024.png` (the Fh mark beside the *FeedHacker* wordmark and
       **"created by www.MaxResearchCollective.com"**). Use the lockup wherever the store shows a
@@ -73,7 +75,8 @@ network requests — its curated AI-slop phrase list ships inside the package.
 - [x] **Small promo tile 440×280** — `store/promo-small-440x280.jpg`.
 - [x] **Marquee promo tile 1400×560** — `store/promo-marquee-1400x560.jpg`.
 
-Screenshots and the promo tiles are opaque JPEG/PNG (no alpha), as the store requires; the
-icon/brand PNGs intentionally use transparency for the rounded corners. `npm run build` also
+Screenshots, promo tiles, and the store icon are opaque (no alpha), as the store requires; only
+the in-package toolbar icons (`icons/*.png`) use transparency for their rounded corners.
+`npm run build` also
 bundles this listing text, the privacy policy, and every graphic above into
 `dist/feedhacker-<version>-store-submission.zip` (listing assets only — no manifest).
