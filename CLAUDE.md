@@ -14,9 +14,16 @@ submission slot is open → report next-release plan and ask ship-or-wait). Keep
 ## Pull requests (standing rule)
 
 **Always open PRs under the maintainer's GitHub username (`newellnarco`).** CodeRabbit is
-**single-user licensed** to that account, so a PR authored by any other identity won't be
-reviewed. PRs created with this session's GitHub token are already `newellnarco`'s — keep it that
-way; never open a FeedHacker PR from a different account or bot identity.
+**single-user licensed** to that account, so a PR authored by any other identity **won't be
+reviewed at all** — the whole learning loop below depends on the PR being `newellnarco`'s. Never
+open a FeedHacker PR from a different account or bot identity.
+
+- **Verify the identity before you open a PR** — don't assume. Call `get_me` (GitHub MCP) and
+  confirm `login` is `newellnarco`. If it returns any other login, **stop and tell the user**
+  instead of opening the PR: a PR from the wrong identity silently skips CodeRabbit review.
+- PRs created with this session's GitHub token are normally already `newellnarco`'s, so the check
+  usually just passes — but run it anyway, because a PR opened under the wrong account can't be
+  reassigned after the fact.
 
 - **Open PRs as drafts** while CI runs. CodeRabbit is configured to review drafts
   ([`.coderabbit.yaml`](.coderabbit.yaml) → `auto_review.drafts: true`) — without that it would
