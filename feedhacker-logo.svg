@@ -1,4 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="FeedHacker">
-  <rect width="128" height="128" rx="24" ry="24" fill="#0A66C2"/>
-  <path d="M 35.491 44.434 L 35.491 60.891 L 62.694 60.891 L 62.694 69.488 L 35.491 69.488 L 35.491 89.0 L 24.358 89.0 L 24.358 35.837 L 63.563 35.837 L 63.563 44.434 L 35.491 44.434 Z M 82.246 56.327 Q 84.396 51.643 87.631 49.53 Q 90.879 47.417 95.371 47.417 Q 101.867 47.417 105.332 51.425 Q 108.81 55.422 108.81 63.113 L 108.81 89.0 L 98.245 89.0 L 98.245 66.132 Q 98.245 55.386 90.952 55.386 Q 87.112 55.386 84.746 58.682 Q 82.391 61.978 82.391 67.158 L 82.391 89.0 L 71.79 89.0 L 71.79 33.0 L 82.391 33.0 L 82.391 48.286 Q 82.391 52.403 82.089 56.327 L 82.246 56.327 Z" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="FeedHacker — element Fh">
+  <!-- FeedHacker brand mark, styled as a periodic-table element cell: atomic number,
+       large "Fh" symbol, element name. Fh symbol is outlined (stroke) so it renders
+       font-independently; the number/name use a system sans stack. -->
+  <rect width="128" height="128" rx="16" fill="#0A66C2"/>
+  <rect x="5.5" y="5.5" width="117" height="117" rx="11.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="2.5"/>
+
+  <!-- atomic number -->
+  <text x="15" y="33" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">42</text>
+
+  <!-- element symbol: Fh -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M39 40 V86"/>
+    <path d="M39 45 H60"/>
+    <path d="M39 61 H55"/>
+    <path d="M70 34 V86"/>
+    <path d="M70 62 C70 51 90 51 90 66 V86"/>
+  </g>
+
+  <!-- element name -->
+  <text x="64" y="110" text-anchor="middle" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="13" font-weight="600" letter-spacing="0.3" fill="#FFFFFF">FeedHacker</text>
 </svg>

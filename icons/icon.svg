@@ -1,37 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- MAX Research Collective mark: a geometric "M" (steel + cyan legs, red-orange
-       accent spike/dot) on a dark tech badge. Source of truth; icons/{16,32,48,128}.png
-       are rendered from this. Provide the exact raster to swap in pixel-for-pixel. -->
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#17223c"/>
-      <stop offset="1" stop-color="#0b1120"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="FeedHacker — element Fh">
+  <!-- FeedHacker brand mark, styled as a periodic-table element cell: atomic number,
+       large "Fh" symbol, element name. Fh symbol is outlined (stroke) so it renders
+       font-independently; the number/name use a system sans stack. -->
+  <rect width="128" height="128" rx="16" fill="#0A66C2"/>
+  <rect x="5.5" y="5.5" width="117" height="117" rx="11.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="2.5"/>
 
-  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>
-  <rect x="4" y="4" width="120" height="60" rx="28" fill="url(#sheen)"/>
+  <!-- atomic number -->
+  <text x="15" y="33" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">42</text>
 
-  <!-- faint circuit accents -->
-  <g stroke="#33507e" stroke-width="1.6" fill="none" opacity="0.55" stroke-linecap="round">
-    <path d="M14 100 h12 l7 7"/><path d="M114 30 h-12 l-7 -7"/>
-  </g>
-  <circle cx="33" cy="107" r="2.2" fill="#35c6ee" opacity="0.7"/>
-  <circle cx="95" cy="21" r="2.2" fill="#f2543b" opacity="0.7"/>
-
-  <!-- the M: steel-blue left leg + cyan right leg -->
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="15">
-    <path d="M34 99 V43 L64 73" stroke="#4a5c82"/>
-    <path d="M64 73 L94 43 V99" stroke="#35c6ee"/>
+  <!-- element symbol: Fh -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M39 40 V86"/>
+    <path d="M39 45 H60"/>
+    <path d="M39 61 H55"/>
+    <path d="M70 34 V86"/>
+    <path d="M70 62 C70 51 90 51 90 66 V86"/>
   </g>
 
-  <!-- red-orange accent spike rising off the right peak -->
-  <path d="M92 45 L101 15 L110 44 Z" fill="#f2543b"/>
-  <!-- detached accent square + signal dot -->
-  <rect x="55" y="28" width="12" height="12" rx="2" fill="#3b4a6b"/>
-  <circle cx="75" cy="90" r="5" fill="#f2543b"/>
+  <!-- element name -->
+  <text x="64" y="110" text-anchor="middle" font-family="Arial, 'Helvetica Neue', Helvetica, sans-serif" font-size="13" font-weight="600" letter-spacing="0.3" fill="#FFFFFF">FeedHacker</text>
 </svg>

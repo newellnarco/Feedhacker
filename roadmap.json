@@ -331,11 +331,12 @@
     {
       "id": "FH-040",
       "name": "Restore the FeedHacker logo (LinkedIn-spoof \"Fh\")",
-      "description": "The current icon is a dark \"M\" mark; the intended brand is the original FeedHacker logo — a blue \"Fh\" badge that spoofs LinkedIn's blue \"in\". Use it across the extension icons (16/32/48/128), the Chrome Web Store listing, and the welcome page. Source file linked below (committed to the repo root).",
-      "status": "pending",
+      "description": "Done in 0.4.6: the generic dark \"M\" mark is replaced by the FeedHacker \"Fh\" brand mark, styled as a periodic-table element cell (atomic number 42, large Fh, name) on LinkedIn blue with transparent rounded corners. feedhacker-logo.svg is the source of truth; icons/icon.svg + store/brand/logo.svg render from it and all icon PNGs (16/32/48/128, store icons, brand logo) were regenerated. Small sizes (16/32) use a simplified Fh-only variant (icons/icon-small.svg). The welcome page inherits it via icons/128.png. A brand lockup (store/brand/logo-lockup.svg) carries the 'created by www.MaxResearchCollective.com' credit for store use.",
+      "status": "closed",
       "category": "ux",
+      "version": "0.4.6",
       "source": "Wes proposal",
-      "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.svg", "label": "Grab the logo — Fh badge (scalable SVG)" }
+      "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.svg", "label": "Grab the logo — Fh element mark (scalable SVG)" }
     },
     {
       "id": "FH-041",

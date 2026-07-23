@@ -29,7 +29,9 @@ at different speeds, so they're tracked separately:
 | 0.4.2 | ✅ Released (2026-07-08) | ✅ **Live** (published 2026-07-08) | 2026-07-08 | Confirmed live — Google "Item successfully published" email, Version 0.4.2, 2026-07-08 21:57 UTC. Cumulative: everything since 0.4.0. |
 | 0.4.3 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live on the store. Context-invalidation teardown + smaller page footprint (bundled banlist, no web-accessible resources). |
 | 0.4.4 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live — Google "Item successfully published" email, Version 0.4.4, 2026-07-09 20:56 UTC. Autonomous AI-slop self-calibration (living model), Aggression slider that sticks, curated grouping, click-safe re-apply, observation reaping, accurate in-app docs. (Best-effort `msi` job failed — WiX v7 OSMF EULA gate; `-win.zip` installer unaffected.) |
-| 0.4.5 | ✅ Released (2026-07-21) | ⏳ Submitted → review | 2026-07-21 | Uploaded to the store (auto-published → Google review); slot now blocked until it clears. In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified, heartbeat paging false-alarm fix, Advanced removal, scalable `Fh` logo SVG. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). (Best-effort `msi` job failed — WiX gate; `-win.zip` installer unaffected.) |
+| 0.4.5 | ✅ Released (2026-07-21) | ✅ **Live** (published 2026-07-21) | 2026-07-21 | Confirmed live — Google "Item successfully published" email, Version 0.4.5, 2026-07-21 18:54 UTC. In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified, heartbeat paging false-alarm fix, Advanced removal, scalable `Fh` logo SVG. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). (Best-effort `msi` job failed — WiX gate; `-win.zip` installer unaffected.) |
+
+| 0.4.6 | 🚧 Unreleased (staged) | ◻︎ package handed off for manual upload | — | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue, transparent rounded corners), simplified `Fh`-only 16/32px toolbar variant, and a brand lockup carrying "created by www.MaxResearchCollective.com". Not yet GitHub-released/tagged; `dist/feedhacker-0.4.6-store.zip` built and handed to the maintainer for manual store upload (slot is OPEN — v0.4.5 is live). |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -38,7 +40,17 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 
-### 0.4.5 — released on GitHub (2026-07-21); submitted to the store (in review)
+### 0.4.6 — unreleased (staged); package handed off for manual store upload
+- **New FeedHacker brand identity** across the extension and store: the app/store icon is now the
+  **"Fh" element mark** (periodic-table cell — atomic number `42`, big `Fh`, name *FeedHacker*) on
+  LinkedIn blue with transparent rounded corners, replacing the generic "MAX M" placeholder.
+  `feedhacker-logo.svg` is the source of truth; all icon PNGs were regenerated from it.
+- **Simplified `Fh`-only 16/32px toolbar variant** (`icons/icon-small.svg`) for legibility at small
+  sizes; 48/128px keep the full cell.
+- **Brand lockup with attribution** (`store/brand/logo-lockup.svg` → `logo-lockup-1024.png`): Fh mark
+  + *FeedHacker* wordmark + **"created by www.MaxResearchCollective.com"** for the store brand image.
+
+### 0.4.5 — released on GitHub (2026-07-21); LIVE on the store (2026-07-21)
 - **"Update now" applies a Chrome Web Store update in place** — no browser restart. Store installs
   can now fetch and apply a published update on the spot (`requestUpdateCheck` → `runtime.reload`),
   then just refresh the LinkedIn tab; if the new version isn't live on the store yet it says so

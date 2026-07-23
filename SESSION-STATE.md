@@ -19,20 +19,21 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
-## Current state — as of 2026-07-21
+## Current state — as of 2026-07-23
 
-- **Latest GitHub release:** `v0.4.5` (2026-07-21) — published via the Release workflow, tag
-  `v0.4.5` on `main` @ `bb9e512`, with the prebuilt zips attached. `main`/`manifest.json`/
-  `package.json` are at **0.4.5** (= the shipped version). **Bump to 0.4.6 with the first commit of
-  the next dev cycle** (as 0.4.5 itself was bumped in its first PR), so accumulation never lands
-  under an already-shipped version — the store rejects a re-upload of the same version
-  (`ITEM_NOT_UPDATABLE`).
-- **Chrome Web Store:** **v0.4.4 is still LIVE**; **v0.4.5 was uploaded + auto-published 2026-07-21
-  and is now IN GOOGLE REVIEW**. The submission slot is therefore **BLOCKED** until v0.4.5 clears —
-  do not attempt another store upload until Google publishes (or rejects) it. Watch for the "Item
-  successfully published" email (Version 0.4.5); mark v0.4.5 **Live** in `RELEASES.md` only then.
-  (The best-effort `msi` job failed as usual — WiX gate — and never blocks the release; the
-  `-win.zip` installer is unaffected.)
+- **Latest GitHub release:** `v0.4.5` (2026-07-21) — tag `v0.4.5` on `main` @ `bb9e512`. The next
+  dev cycle has begun: `manifest.json`/`package.json` are now bumped to **0.4.6** and all 0.4.6 work
+  accumulates under that version.
+- **In dev — v0.4.6 (branding):** new FeedHacker **"Fh" element-mark** identity across the extension
+  and store icons (LinkedIn blue, transparent rounded corners), a simplified `Fh`-only 16/32px
+  toolbar variant, and a brand lockup carrying "created by www.MaxResearchCollective.com".
+  `feedhacker-logo.svg` is the source of truth; all icon PNGs regenerated from it. On branch
+  `claude/new-session-0vfy1o` / PR #50.
+- **Chrome Web Store:** **v0.4.5 is LIVE** (confirmed 2026-07-21 18:54 UTC). The submission slot is
+  **OPEN**. Per the maintainer's request, the **0.4.6 store package was built and handed off for a
+  manual upload** (`dist/feedhacker-0.4.6-store.zip` → Developer Dashboard); no GitHub tag/Release was
+  cut for 0.4.6 (not a "ship" via the Release workflow). (The best-effort `msi` job still fails on the
+  WiX gate and never blocks anything.)
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
