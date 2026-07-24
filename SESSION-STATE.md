@@ -19,6 +19,17 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
+## ⏳ Next session — check first
+
+- **Did v0.4.6 get published on the Chrome Web Store?** It was submitted 2026-07-23 (manual upload)
+  and was in Google review. Check Gmail for the "Item successfully published" email (Version 0.4.6);
+  if it's live, mark 0.4.6 **✅ Live** in [`RELEASES.md`](RELEASES.md) and note the submission slot is
+  OPEN again. If still in review, the slot stays blocked — don't upload anything newer until it clears.
+- **Confirm PR #51 (records) merged** — it was records-only and merging on green when this session ended.
+- **Optional:** v0.4.6 has **no GitHub tag/Release** (the store upload was manual, not the Release
+  workflow). If the maintainer wants GitHub + store in lockstep, offer to cut `v0.4.6` via the Release
+  workflow (tag → GitHub Release with prebuilt zips). Only on an explicit "ship".
+
 ## Current state — as of 2026-07-23
 
 - **Latest GitHub release:** `v0.4.5` (2026-07-21) — tag `v0.4.5` on `main` @ `bb9e512`. The next
