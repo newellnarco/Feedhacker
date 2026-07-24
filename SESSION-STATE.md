@@ -19,21 +19,34 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
    **ask the user: ship these changes now, or wait for more?** Never release without an explicit
    "ship"/"push" (see `CLAUDE.md`).
 
+## ⏳ Next session — check first
+
+- **Did v0.4.6 get published on the Chrome Web Store?** It was submitted 2026-07-23 (manual upload)
+  and was in Google review. Check Gmail for the "Item successfully published" email (Version 0.4.6);
+  if it's live, mark 0.4.6 **✅ Live** in [`RELEASES.md`](RELEASES.md) and note the submission slot is
+  OPEN again. If still in review, the slot stays blocked — don't upload anything newer until it clears.
+- **Confirm PR #51 (records) merged** — it was records-only and merging on green when this session ended.
+- **Optional:** v0.4.6 has **no GitHub tag/Release** (the store upload was manual, not the Release
+  workflow). If the maintainer wants GitHub + store in lockstep, offer to cut `v0.4.6` via the Release
+  workflow (tag → GitHub Release with prebuilt zips). Only on an explicit "ship".
+
 ## Current state — as of 2026-07-23
 
 - **Latest GitHub release:** `v0.4.5` (2026-07-21) — tag `v0.4.5` on `main` @ `bb9e512`. The next
   dev cycle has begun: `manifest.json`/`package.json` are now bumped to **0.4.6** and all 0.4.6 work
   accumulates under that version.
-- **In dev — v0.4.6 (branding):** new FeedHacker **"Fh" element-mark** identity across the extension
-  and store icons (LinkedIn blue, transparent rounded corners), a simplified `Fh`-only 16/32px
-  toolbar variant, and a brand lockup carrying "created by www.MaxResearchCollective.com".
-  `feedhacker-logo.svg` is the source of truth; all icon PNGs regenerated from it. On branch
-  `claude/new-session-0vfy1o` / PR #50.
-- **Chrome Web Store:** **v0.4.5 is LIVE** (confirmed 2026-07-21 18:54 UTC). The submission slot is
-  **OPEN**. Per the maintainer's request, the **0.4.6 store package was built and handed off for a
-  manual upload** (`dist/feedhacker-0.4.6-store.zip` → Developer Dashboard); no GitHub tag/Release was
-  cut for 0.4.6 (not a "ship" via the Release workflow). (The best-effort `msi` job still fails on the
-  WiX gate and never blocks anything.)
+- **v0.4.6 (branding) — merged to `main`:** new FeedHacker **"Fh" element-mark** identity across the
+  extension and store icons (LinkedIn blue; toolbar icons transparent-cornered, **store icon opaque**
+  because the store rejects a transparent store icon), a simplified `Fh`-only 16/32px toolbar variant,
+  refreshed screenshots + promo tiles, and a brand lockup carrying "created by
+  www.MaxResearchCollective.com". `feedhacker-logo.svg` is the source of truth. Merged via PR #50
+  (`ee0cc11`).
+- **Chrome Web Store:** **v0.4.5 is LIVE** (confirmed 2026-07-21). **v0.4.6 was submitted to the store
+  by manual upload on 2026-07-23 and is now IN GOOGLE REVIEW** — the submission slot is therefore
+  **BLOCKED** until it clears. Watch for the "Item successfully published" email (Version 0.4.6); mark
+  it **Live** in `RELEASES.md` only then. **No GitHub tag/Release was cut for 0.4.6** (manual store
+  upload, not the Release workflow) — offer to cut one if the maintainer wants GitHub/store in lockstep.
+  (The best-effort `msi` job still fails on the WiX gate and never blocks anything.)
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
