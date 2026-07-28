@@ -1,0 +1,22 @@
+{
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax"],
+  "triggerOnUpdates": true,
+  "includeBranches": ["main"],
+  "excludeAuthors": ["github-actions"],
+  "ignorePatterns": [
+    "*.lock",
+    "*.log",
+    "MANIFEST.sha256",
+    "**/__pycache__/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.venv/**",
+    "**/node_modules/**"
+  ],
+  "customContext": {
+    "files": [
+      { "path": "best_practices.md", "scope": ["**"] }
+    ]
+  }
+}
