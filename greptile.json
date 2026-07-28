@@ -1,6 +1,7 @@
 {
   "strictness": 2,
   "commentTypes": ["logic", "syntax"],
+  "triggerOnDrafts": true,
   "triggerOnUpdates": true,
   "includeBranches": ["main"],
   "excludeAuthors": ["github-actions"],
