@@ -291,6 +291,20 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     and don't claim "fixed"/"always on" in a comment while merged storage can still override it. (The
     persisted-state sibling of §4/§5's false-claim rule.)
 
+33. **The store listing and the shipped package are two separate publish channels — never call a
+    user-visible change "shipped" because the listing shows it.** Chrome Web Store listing assets
+    (icon, screenshots, promo tiles, description) go live on their own; what a user's browser
+    actually renders — the toolbar/extensions icon, the popup, the filters — comes from
+    `manifest.icons` and the code inside the **uploaded package**, which only reaches users after
+    Google approves that version. So the listing can advertise a rebrand while every install still
+    shows the old one. Two obligations: (a) **verify the published *package* version**, not the
+    listing (Google's "Item successfully published" email states the `Version` — that's the only
+    proof, per `SESSION-STATE.md` step 2), and (b) **anchor both channels to one constant in
+    tests** so a half-done rebrand fails CI — see `BRAND_BLUE` shared by
+    `test/unit/brand-assets.test.js` and `test/system/build.system.test.js`. Corollary: brand
+    assets get exactly **one home** (`icons/` for packaged, `store/` for listing). A stale copy
+    parked elsewhere under an upload-target name is a loaded gun at the Dashboard's file picker.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

@@ -13,6 +13,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.6] — unreleased
 
+### Fixed
+- **The store listing showed the new `Fh` icon while installed copies still showed the old
+  "M" icon.** The two come from different places: the listing's icon is a Dashboard asset that
+  publishes on its own, while the icon Chrome paints for an install comes from `manifest.icons`
+  inside the *uploaded package*. The listing's new assets went live on 2026-07-24, but the store's
+  published **package** was still 0.4.5 — so every install kept the pre-rebrand icon. The packaged
+  icons in this repo were already correct (verified byte-identical into the store zip); the fix is
+  publishing the 0.4.6 package, now guarded so the halves can't drift again:
+  - `test/unit/brand-assets.test.js` requires every packaged icon **and** the store-listing icons
+    to be predominantly the one brand blue (`#0A66C2`, read from `icons/icon.svg`), scans every
+    brand raster for the superseded "M"-mark palette, and fails on a loose image file at the repo
+    root — the kind of stale look-alike that gets picked by hand in the Dashboard.
+  - `test/system/build.system.test.js` asserts the icons **inside the built package** are
+    byte-identical to the repo's and pass the same brand check.
+
+### Removed
+- **Six unreferenced pre-rebrand images at the repo root** (`storeicon128.png`, `storeicon120.png`,
+  `128x128.jpg`, `Store image.jpg`, `screenshot1feed.jpg`, `screenshot2popup.jpg`). All carried the
+  old "M" mark or a superseded screenshot, nothing in the build or docs referenced them, and their
+  names read like store-upload targets. Brand assets now live in exactly one place each: `icons/`
+  for what ships, `store/` for the listing.
+
 ### Changed
 - **New FeedHacker brand identity across the extension and the Chrome Web Store.** The app
   icon and store icon are now the FeedHacker **"Fh" element mark** — a periodic-table-style

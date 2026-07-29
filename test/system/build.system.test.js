@@ -7,6 +7,10 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
 const { EXT, ROOT } = require("./helper");
+const { decodePng, colorShare } = require("../png");
+
+// The brand blue the store-listing icon and every packaged icon must share (icons/icon.svg).
+const BRAND_BLUE = [0x0a, 0x66, 0xc2];
 
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8"));
 
@@ -63,6 +67,22 @@ test("each packaged icon PNG's pixel size matches its manifest key (128x128 requ
     const h = buf.readUInt32BE(20);
     assert.strictEqual(w, Number(size), `${rel} is ${w}px wide, expected ${size}`);
     assert.strictEqual(h, Number(size), `${rel} is ${h}px tall, expected ${size}`);
+  }
+});
+
+test("the icons that ship in the package are the current brand mark, byte-for-byte", () => {
+  // `test/unit/brand-assets.test.js` checks the repo's artwork; this checks what actually
+  // lands in the package a user installs, which is the half that decides the toolbar icon.
+  // Both tiers are anchored to the same brand blue as the store-listing icon, so a rebrand
+  // that only reaches the listing can't pass.
+  for (const rel of Object.values(manifest.icons || {})) {
+    const packaged = fs.readFileSync(path.join(EXT, rel));
+    assert.ok(
+      packaged.equals(fs.readFileSync(path.join(ROOT, rel))),
+      `${rel} in dist/feedhacker differs from the repo's — the build copied a stale icon`
+    );
+    const share = colorShare(decodePng(packaged), BRAND_BLUE);
+    assert.ok(share >= 0.3, `packaged ${rel} is only ${(share * 100).toFixed(1)}% brand blue — stale pre-rebrand icon`);
   }
 });
 
