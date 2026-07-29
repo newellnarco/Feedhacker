@@ -45,6 +45,8 @@ A change to a module the whole app imports has repo-wide blast radius:
 | Update check | `update.ts` | `update` (unit) | options "check for updates" | ✅ if isolated |
 | Popup / options UI | `popup.ts`, `options.ts`, `*.html`, `styles.css` | drive in real Chromium (system) | UI only; gated by `tsc` + build, not model tests | ✅ if presentational + `tsc`/build green |
 | Manifest / packaging | `manifest.json`, `scripts/build.mjs` | `manifest` (unit), `build.system` (system) | the whole packaged product | ❌ run full triad |
+| Brand assets / icons | `icons/*`, `store/brand/*`, `feedhacker-logo.*` | `brand-assets` (unit), `build.system` (system) | the icon every install and the store listing show — two separate publish channels (best_practices §33) | ❌ run both tiers |
+| Windows installer / updater | `installer/windows/*.ps1`, `*.bat` | `installer`, `installer-update` (unit), `build.system` (system) | the auto-update channel for every sideload install — a bad release-asset match or a lost sideload `key` silently kills updates for all Windows users (§34) | ❌ run both tiers |
 | Docs / records only | `*.md`, `roadmap.json`, `the_wall.md` | none (no runtime) | none | ✅ merge on green |
 
 ## Rules

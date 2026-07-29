@@ -4,10 +4,10 @@ The running queue we work from. Each item has a short **explanation**, a **code 
 (is it actually in the codebase?), and tracking for **Tested** and **Merged**.
 
 **Process files (adopted from the sibling repos MAX3 / netsniff):**
-[`best_practices.md`](best_practices.md) — the numbered rulebook CodeRabbit reads ·
+[`best_practices.md`](best_practices.md) — the numbered rulebook we self-review against ·
 [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) — the bug ledger ·
 [`TEST_MATRIX.md`](TEST_MATRIX.md) — blast-radius test doctrine ·
-[`.coderabbit.yaml`](.coderabbit.yaml) — reviews drafts, learns locally. The four-part
+[`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md) — no hosted AI reviewer is in use. The four-part
 review loop and the testing/PR rules live in [`CLAUDE.md`](CLAUDE.md).
 
 ## Legend
@@ -53,8 +53,8 @@ The **open** items are the live queue; shipped items are collapsed at the bottom
 |---|---|---|---|---|---|
 | FH-038 | Refresh the first-run welcome page | The welcome page is unchanged since 0.2.0. Swap the decorative emoji (🧩 jigsaw + 📌 pushpin) for Chrome's own puzzle-piece + pin glyphs so the pinning guide matches the real toolbar, and freshen copy that still says "settings" (predates the 0.4.0 "Advanced Settings" rename). | 🟡 Similar — **puzzle-piece done** (swapped 🧩 for Chrome's gray Material "extension" glyph). **Remaining:** pin step still uses 📌; body copy still says "settings". | partial | in PR |
 | FH-039 | Overhaul Hidden Post UX | Design doc proposes a clean **one-line** collapsed stub — category (+ Show anyway), author/sample only when opted in, Mute / Visit-profile in an author menu, no icons, never wrapping. | 🟡 Similar (not the same) — a stub exists (`src/feed.ts`) but it's the **icon-button cluster**, which has drifted from the one-line doc. Needs the overhaul. | ⬜ | ⬜ |
-| FH-040 | Restore the FeedHacker "Fh" logo | Replace the current dark "M" mark with the original blue **"Fh"** badge that spoofs LinkedIn's "in", across the extension icons (16/32/48/128), the store listing, and the welcome page. | ⬜ Backlog — icons are still the "M" mark; the "Fh" art isn't applied. | ⬜ | ⬜ |
-| NS-1 | Custom ast-grep rules for FeedHacker's hot bug-shapes | Add `.coderabbit/ast-grep/*.yml` rules so recurring classes are caught mechanically at $0: (a) a `chrome.*` call not preceded by a liveness/`contextAlive` guard (best_practices §6); (b) assigning user/post text to `innerHTML`/`insertAdjacentHTML` instead of `textContent` (§12); (c) a second `chrome.storage.*.set` on a key that already has a writer (§7). | ⬜ Backlog — only the community `essential_rules` pack is on; no custom rules yet. Needs care to avoid false positives. | ⬜ | ⬜ |
+| FH-040 | Restore the FeedHacker "Fh" logo | Replace the current dark "M" mark with the original blue **"Fh"** badge that spoofs LinkedIn's "in", across the extension icons (16/32/48/128), the store listing, and the welcome page. | ✅ Done (0.4.6, PR #50) — the "Fh" element-mark replaced the "M" across `icons/{16,32,48,128}.png`, the store icons, and the brand assets; `feedhacker-logo.svg` is the source of truth. Now guarded by `test/unit/brand-assets.test.js`. | ✅ | ✅ |
+| NS-1 | Custom ast-grep rules for FeedHacker's hot bug-shapes | Was: add `.coderabbit/ast-grep/*.yml` rules so recurring classes are caught mechanically — (a) a `chrome.*` call not preceded by a liveness/`contextAlive` guard (best_practices §6); (b) assigning user/post text to `innerHTML`/`insertAdjacentHTML` instead of `textContent` (§12); (c) a second `chrome.storage.*.set` on a key that already has a writer (§7). | ❌ Cancelled — CodeRabbit is off the repo (`REVIEWERS_STATUS.md`), so there's no host for these rules. If we still want them mechanically enforced, re-file as a plain CI lint step (ast-grep or eslint) rather than a reviewer config. | ⬜ | ⬜ |
 | NS-2 | Path-gate docs-only CI runs | Gate `pull_request.paths` so a docs-/records-only PR spends zero test minutes (and skips the Chromium install). **Blocked on** first confirming the tier jobs are not *required* status checks in branch protection — a path-skipped required check blocks merge forever (see TEST_MATRIX §8). | ⬜ Backlog — CI now fires once per change (push→main + PR) but still runs the full triad on docs-only PRs. | ⬜ | ⬜ |
 | NS-3 | `persist-credentials: false` on release.yml checkouts | Harden the release workflow's checkouts too — **carefully**: the publish path tags `v<version>` from inside the Action, so the tagging checkout must keep its credential (or tag via the API). | ⬜ Backlog — `ci.yml` is hardened; `release.yml` left alone to avoid breaking the tag push. | ⬜ | ⬜ |
 

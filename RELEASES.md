@@ -31,7 +31,7 @@ at different speeds, so they're tracked separately:
 | 0.4.4 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live — Google "Item successfully published" email, Version 0.4.4, 2026-07-09 20:56 UTC. Autonomous AI-slop self-calibration (living model), Aggression slider that sticks, curated grouping, click-safe re-apply, observation reaping, accurate in-app docs. (Best-effort `msi` job failed — WiX v7 OSMF EULA gate; `-win.zip` installer unaffected.) |
 | 0.4.5 | ✅ Released (2026-07-21) | ✅ **Live** (published 2026-07-21) | 2026-07-21 | Confirmed live — Google "Item successfully published" email, Version 0.4.5, 2026-07-21 18:54 UTC. In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified, heartbeat paging false-alarm fix, Advanced removal, scalable `Fh` logo SVG. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). (Best-effort `msi` job failed — WiX gate; `-win.zip` installer unaffected.) |
 
-| 0.4.6 | 🚧 Not tagged (merged to `main` via #50) | ⏳ Submitted → review | 2026-07-23 | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue; toolbar icons keep transparent corners, the **store icon is opaque** — the store rejects a transparent store icon), simplified `Fh`-only 16/32px toolbar variant, refreshed screenshots + promo tiles, and a brand lockup carrying "created by www.MaxResearchCollective.com". Merged to `main`; **submitted to the store 2026-07-23 via manual upload** (in Google review — slot now blocked until it clears). No GitHub tag/Release cut for 0.4.6 (manual store upload, not the Release workflow). |
+| 0.4.6 | 🚧 Not tagged (merged to `main` via #50) | ❌ **Never published** — the 2026-07-23 submission published as **0.4.5** | 2026-07-23 (listing assets only) | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue; toolbar icons keep transparent corners, the **store icon is opaque** — the store rejects a transparent store icon), simplified `Fh`-only 16/32px toolbar variant, refreshed screenshots + promo tiles, and a brand lockup carrying "created by www.MaxResearchCollective.com". Merged to `main`. **The 0.4.6 *package* never reached the store:** Google's publish email for the 2026-07-23 submission states **Version 0.4.5** (published 2026-07-24 10:39 UTC), i.e. the new *listing assets* went live on top of the old 0.4.5 package. That's why the store page shows the `Fh` icon but installs still show the old "M" — see `KNOWN_ISSUES.md`. **Submission slot is OPEN**; uploading the 0.4.6 package is what makes the new icon reach users. No GitHub tag/Release cut for 0.4.6 either. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -40,7 +40,7 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 
-### 0.4.6 — merged to `main` (2026-07-23); submitted to the Chrome Web Store (in review)
+### 0.4.6 — merged to `main` (2026-07-23); package NOT on the store (listing assets only)
 - **New FeedHacker brand identity** across the extension and store: the app/store icon is now the
   **"Fh" element mark** (periodic-table cell — atomic number `42`, big `Fh`, name *FeedHacker*) on
   LinkedIn blue, replacing the generic "MAX M" placeholder. `feedhacker-logo.svg` is the source of
@@ -51,8 +51,14 @@ Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 - **Refreshed store screenshots + promo tiles** with the new branding (current popup UI).
 - **Brand lockup with attribution** (`store/brand/logo-lockup.svg` → `logo-lockup-1024.png`): Fh mark
   + *FeedHacker* wordmark + **"created by www.MaxResearchCollective.com"** for the store brand image.
-- Merged via PR #50. Submitted to the store by manual upload on 2026-07-23; **no GitHub tag/Release**
-  was cut (the maintainer uploaded the package directly rather than running the Release workflow).
+- Merged via PR #50. **The store never got the 0.4.6 package** — the 2026-07-23 submission published
+  as **Version 0.4.5** on 2026-07-24, so only the new *listing assets* (icon, screenshots, promo
+  tiles) went live. Installed copies therefore still show the old "M" icon. No GitHub tag/Release
+  was cut for 0.4.6 either.
+- **Icon-mismatch guard added** (this session): `test/unit/brand-assets.test.js` +
+  `test/system/build.system.test.js` anchor the store-listing icons and the icons inside the built
+  package to one brand constant, and six unreferenced pre-rebrand rasters were deleted from the repo
+  root. See `KNOWN_ISSUES.md` and `best_practices.md` §33.
 
 ### 0.4.5 — released on GitHub (2026-07-21); LIVE on the store (2026-07-21)
 - **"Update now" applies a Chrome Web Store update in place** — no browser restart. Store installs

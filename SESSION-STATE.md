@@ -21,16 +21,19 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
-- **Did v0.4.6 get published on the Chrome Web Store?** It was submitted 2026-07-23 (manual upload)
-  and was in Google review. Check Gmail for the "Item successfully published" email (Version 0.4.6);
-  if it's live, mark 0.4.6 **✅ Live** in [`RELEASES.md`](RELEASES.md) and note the submission slot is
-  OPEN again. If still in review, the slot stays blocked — don't upload anything newer until it clears.
-- **Confirm PR #51 (records) merged** — it was records-only and merging on green when this session ended.
-- **Optional:** v0.4.6 has **no GitHub tag/Release** (the store upload was manual, not the Release
-  workflow). If the maintainer wants GitHub + store in lockstep, offer to cut `v0.4.6` via the Release
-  workflow (tag → GitHub Release with prebuilt zips). Only on an explicit "ship".
+- **v0.4.6 is still NOT on the store, and that's the whole icon bug.** The 2026-07-23 submission
+  published as **Version 0.4.5** (Google's email, 2026-07-24 10:39 UTC) — only the new *listing
+  assets* went live, on top of the old package. So the store page shows the `Fh` element mark while
+  every install still shows the old "M". **Submission slot is OPEN.** The fix is a real 0.4.6
+  package upload — awaiting an explicit "ship".
+- **Verify the published *package* version, never the listing.** The listing's icon/screenshots
+  publish independently of the package; only the "Item successfully published" email's `Version`
+  field proves what users are running (best_practices §33).
+- **Optional:** v0.4.6 has **no GitHub tag/Release** either. If the maintainer wants GitHub + store
+  in lockstep, cutting `v0.4.6` via the Release workflow does both (tag → GitHub Release with
+  prebuilt zips → store upload). Only on an explicit "ship".
 
-## Current state — as of 2026-07-23
+## Current state — as of 2026-07-29
 
 - **Latest GitHub release:** `v0.4.5` (2026-07-21) — tag `v0.4.5` on `main` @ `bb9e512`. The next
   dev cycle has begun: `manifest.json`/`package.json` are now bumped to **0.4.6** and all 0.4.6 work
@@ -41,12 +44,19 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   refreshed screenshots + promo tiles, and a brand lockup carrying "created by
   www.MaxResearchCollective.com". `feedhacker-logo.svg` is the source of truth. Merged via PR #50
   (`ee0cc11`).
-- **Chrome Web Store:** **v0.4.5 is LIVE** (confirmed 2026-07-21). **v0.4.6 was submitted to the store
-  by manual upload on 2026-07-23 and is now IN GOOGLE REVIEW** — the submission slot is therefore
-  **BLOCKED** until it clears. Watch for the "Item successfully published" email (Version 0.4.6); mark
-  it **Live** in `RELEASES.md` only then. **No GitHub tag/Release was cut for 0.4.6** (manual store
-  upload, not the Release workflow) — offer to cut one if the maintainer wants GitHub/store in lockstep.
+- **Chrome Web Store:** the live **package is still v0.4.5** — Google published Version 0.4.5 twice
+  (2026-07-21, then again 2026-07-24 for the 2026-07-23 submission). **v0.4.6's package never
+  reached the store**; only its *listing assets* did. That is exactly the reported bug: the store
+  page shows the new `Fh` icon, installs still show the old "M". **The submission slot is OPEN**
+  (newest store email is a published decision), so a 0.4.6 upload would go through — pending an
+  explicit "ship". **No GitHub tag/Release for 0.4.6** either.
   (The best-effort `msi` job still fails on the WiX gate and never blocks anything.)
+- **Icon-mismatch guard is in place** (session 2026-07-29, branch
+  `claude/chrome-app-icon-mismatch-fkhy9a`): `test/unit/brand-assets.test.js` and a new case in
+  `test/system/build.system.test.js` pin the store-listing icons *and* the icons inside the built
+  package to one brand blue, so a rebrand that reaches only one channel fails CI. Six unreferenced
+  pre-rebrand rasters were deleted from the repo root (`storeicon128.png`, `Store image.jpg`, …) —
+  they were look-alike candidates for a wrong manual Dashboard upload. See `best_practices.md` §33.
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the

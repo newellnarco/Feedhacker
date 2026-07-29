@@ -59,10 +59,23 @@ if (-not $NoSchedule) {
   $updater = Join-Path $Inst "update.ps1"
   $taskName = "FeedHacker Auto-Update"
   $cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$updater`" -Repo $Repo"
+  # schtasks is a native exe: a failure sets $LASTEXITCODE but does NOT throw, so a try/catch
+  # alone would print "Registered" over a task that was never created (best_practices rule 4 -
+  # no false green). Check the exit code, then prove the task exists with /Query before claiming it.
+  $registered = $false
   try {
-    schtasks /Create /F /SC DAILY /ST 09:00 /TN $taskName /TR $cmd | Out-Null
+    schtasks /Create /F /SC DAILY /ST 09:00 /TN $taskName /TR $cmd 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+      schtasks /Query /TN $taskName 2>&1 | Out-Null
+      $registered = ($LASTEXITCODE -eq 0)
+    }
+  } catch { $registered = $false }
+  if ($registered) {
     Info "Registered daily auto-update task '$taskName' (pulls the latest green release)."
-  } catch { Warn "Could not register the scheduled task; you can still update by running update.bat." }
+  } else {
+    Warn "Could NOT register the daily auto-update task - background updates are OFF."
+    Warn "Update manually with installer\update.bat, or use 'Update now' in Advanced Settings."
+  }
 }
 
 # --- Native-messaging host: lets the extension's "Update now" button self-update ---

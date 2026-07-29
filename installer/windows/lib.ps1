@@ -46,8 +46,15 @@ function Sync-LatestRelease {
   $tag = ("" + $rel.tag_name).TrimStart("v")
   $installed = Get-InstalledVersion -ExtDir $ExtDir
 
-  # The unpacked-extension asset is feedhacker-<version>.zip (NOT the -win bundle).
-  $asset = $rel.assets | Where-Object { $_.name -like "feedhacker-*.zip" -and $_.name -notlike "*-win.zip" } | Select-Object -First 1
+  # The sideload unpacked-extension asset is EXACTLY feedhacker-<version>.zip. Match it with
+  # an anchored pattern, never a "feedhacker-*.zip minus the ones we know about" blacklist: a
+  # release also carries -win.zip, -store.zip and -store-submission.zip, and GitHub returns
+  # assets in upload order, which is alphabetical - so -store-submission.zip came FIRST and a
+  # blacklist that only excluded -win.zip selected it. That bundle deliberately has no
+  # manifest.json, so every update run died on "did not contain manifest.json"; -store.zip
+  # would be worse, since it omits the sideload `key` and would change the extension ID and
+  # break native messaging. Allowlist the one asset we want.
+  $asset = $rel.assets | Where-Object { $_.name -match '^feedhacker-[0-9]+\.[0-9]+\.[0-9]+\.zip$' } | Select-Object -First 1
   if (-not $asset) { throw "Latest release has no feedhacker-<version>.zip asset." }
 
   $tmp = Join-Path $env:TEMP ("feedhacker_" + [Guid]::NewGuid().ToString("N"))

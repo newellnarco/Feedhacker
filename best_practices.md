@@ -141,14 +141,14 @@
 
 # FeedHacker — best_practices.md
 
-The numbered coding standard for FeedHacker, and the file CodeRabbit reads as its
-review criteria (`.coderabbit.yaml` → `knowledge_base.code_guidelines.filePatterns`).
+The numbered coding standard for FeedHacker. With no hosted AI reviewer on the repo
+(see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md)), this file **is** the review criteria:
+read it and self-review against it before pushing.
 
 **The loop:** every real bug becomes (1) a fix, (2) a regression test at the right tier
 (unit / integration / system), (3) a row in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md), and
 (4) — if it's a general class — a numbered rule here. That way the same class of bug can't
-recur silently. When the reviewer flags the same class twice, the standard was missing —
-add it.
+recur silently. If the same class bites twice, the standard was missing — add it.
 
 Rules are terse and checkable against a diff. Newest rules may cite the PR that spawned them.
 
@@ -290,6 +290,40 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     the stored value on every settings load (see `Filters.applyFixed`) or run a one-time migration —
     and don't claim "fixed"/"always on" in a comment while merged storage can still override it. (The
     persisted-state sibling of §4/§5's false-claim rule.)
+
+33. **The store listing and the shipped package are two separate publish channels — never call a
+    user-visible change "shipped" because the listing shows it.** Chrome Web Store listing assets
+    (icon, screenshots, promo tiles, description) go live on their own; what a user's browser
+    actually renders — the toolbar/extensions icon, the popup, the filters — comes from
+    `manifest.icons` and the code inside the **uploaded package**, which only reaches users after
+    Google approves that version. So the listing can advertise a rebrand while every install still
+    shows the old one. Two obligations: (a) **verify the published *package* version**, not the
+    listing (Google's "Item successfully published" email states the `Version` — that's the only
+    proof, per `SESSION-STATE.md` step 2), and (b) **anchor both channels to one constant in
+    tests** so a half-done rebrand fails CI — see `BRAND_BLUE` shared by
+    `test/unit/brand-assets.test.js` and `test/system/build.system.test.js`. Corollary: brand
+    assets get exactly **one home** (`icons/` for packaged, `store/` for listing). A stale copy
+    parked elsewhere under an upload-target name is a loaded gun at the Dashboard's file picker.
+
+34. **Select a release artifact with an anchored allowlist, never a "everything except the ones
+    I know about" blacklist.** A release's asset list grows — FeedHacker's went from two zips to
+    four (`-win`, `-store`, `-store-submission`, plus the sideload zip) — and GitHub returns assets
+    in upload order, which is alphabetical, so a *new* artifact can silently become the first
+    match. The Windows updater's `feedhacker-*.zip` minus `*-win.zip` filter started picking
+    `-store-submission.zip` the moment that bundle was added, and every auto-update failed. Match
+    the exact thing you want (`^feedhacker-[0-9]+\.[0-9]+\.[0-9]+\.zip$`). Same rule anywhere a
+    glob picks one item out of a growing set. And when the artifact is the **update channel**,
+    test the selection against the *real* asset-name set — the failure is invisible in the repo,
+    it only appears against a published release.
+
+35. **A native command's failure doesn't throw — check `$LASTEXITCODE`, then verify.** In
+    PowerShell, `try { schtasks /Create ... } catch { }` never fires when `schtasks` fails: an exe
+    reports failure through its exit code, not a terminating error. So the success line prints
+    anyway and the user is told background auto-updates are ON when they are OFF. Check
+    `$LASTEXITCODE` after every native call whose outcome you report, and where the thing is
+    externally observable, **prove it** (`schtasks /Query`) rather than inferring it from "the
+    create command returned". This is §4's false-green rule applied to shell-outs, and it bites
+    hardest in installers, where nobody sees the failure until updates have silently stopped.
 
 ## More tests & docs
 
