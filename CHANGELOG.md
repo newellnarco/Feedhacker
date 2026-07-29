@@ -27,6 +27,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
     `lib.ps1` to the real four-asset release set, and `test/system/build.system.test.js`
     asserts the sideload zip's manifest keeps the `key` + `nativeMessaging` while the store
     zip has neither.
+- **The Windows installer no longer claims it registered the daily update task when it didn't.**
+  `schtasks` reports failure through its exit code, not a thrown error, so the surrounding
+  `try/catch` never fired and "Registered daily auto-update task" printed unconditionally — telling
+  users background updates were on when they were off. It now checks `$LASTEXITCODE`, confirms the
+  task exists with `schtasks /Query`, and otherwise says plainly that background updates are OFF.
 - **Windows sideload installs were also stuck on 0.4.5 for a second reason:** the updater reads
   GitHub's `releases/latest`, and no `v0.4.6` tag or Release had been cut. Releasing 0.4.6 fixes
   the store *and* the sideload channel.

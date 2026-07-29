@@ -316,6 +316,15 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     test the selection against the *real* asset-name set — the failure is invisible in the repo,
     it only appears against a published release.
 
+35. **A native command's failure doesn't throw — check `$LASTEXITCODE`, then verify.** In
+    PowerShell, `try { schtasks /Create ... } catch { }` never fires when `schtasks` fails: an exe
+    reports failure through its exit code, not a terminating error. So the success line prints
+    anyway and the user is told background auto-updates are ON when they are OFF. Check
+    `$LASTEXITCODE` after every native call whose outcome you report, and where the thing is
+    externally observable, **prove it** (`schtasks /Query`) rather than inferring it from "the
+    create command returned". This is §4's false-green rule applied to shell-outs, and it bites
+    hardest in installers, where nobody sees the failure until updates have silently stopped.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
