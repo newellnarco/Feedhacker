@@ -32,9 +32,10 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 - **One owner action outstanding:** **Windows sideload users must re-install once** — see FH-042 /
   `KNOWN_ISSUES.md`. The 0.4.5 updater can't deliver its own fix, so tell any affected user to
   re-run `installer\install.bat` from `feedhacker-0.4.6-win.zip`.
-- **CodeRabbit is on the FREE tier and stays** (maintainer, 2026-07-29) — advisory only, **never**
-  the gate, and **never spend on review calls** (no paid plan, no on-demand `@coderabbitai`
-  commands). Don't recreate `.coderabbit.yaml`. See `REVIEWERS_STATUS.md`.
+- **No AI reviewer runs on this repo.** CodeRabbit was **removed from every repo except `max3` and
+  `netsniff`** (maintainer, 2026-07-29), so FeedHacker PRs get no bot review at all. **Green CI is
+  the merge gate.** Don't recreate `.coderabbit.yaml`, don't invoke `@coderabbitai` commands (paid
+  quota), and don't wait on a bot comment. See `REVIEWERS_STATUS.md`.
 - **Next dev cycle is 0.4.7** — `manifest.json`/`package.json` are bumped, `CHANGELOG.md` has an
   empty `[0.4.7] — unreleased` section. Accumulate there; don't release without an explicit "ship".
 
@@ -67,11 +68,10 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 - **Review apparatus changed** (maintainer's call, 2026-07-29): **green CI is the merge gate** and
   self-review against `best_practices.md` before pushing is the review step. `.coderabbit.yaml` was
   deleted and stays deleted — it forced draft reviews and re-review-on-every-push, the usage we
-  don't want to pay for. **CodeRabbit remains installed on the FREE tier** (costs nothing on a
-  public repo) as an advisory extra: expect very limited coverage, never wait on it, and never
-  spend on review calls. With no repo config it uses the account's Organization UI settings, and it
-  skips draft PRs — which our draft-while-CI-runs flow relies on to keep usage near zero. See
-  `REVIEWERS_STATUS.md`.
+  don't want to pay for. Then **CodeRabbit was removed from every repo except `max3` and
+  `netsniff`**, so **no AI reviewer runs on FeedHacker at all**. (This flip-flopped three times in
+  one session — `REVIEWERS_STATUS.md` records the sequence so it isn't re-litigated. Removed is
+  current.) Prior CodeRabbit findings stay credited in `KNOWN_ISSUES.md`'s **Found by** column.
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the

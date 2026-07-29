@@ -1,38 +1,42 @@
 # Reviewer status
 
-**No AI reviewer is the merge gate on this repo.** Review is **CI** (three tiers) +
-**shift-left self-review** against [`best_practices.md`](best_practices.md), done *before*
-pushing. CodeRabbit is kept on the **free tier** as an advisory extra; Greptile and Aikido
-are cancelled outright.
+**No AI reviewer runs on this repo.** Review is **CI** (three tiers) + **shift-left
+self-review** against [`best_practices.md`](best_practices.md), done *before* pushing.
+**Green CI is the merge gate** — there is no bot coming behind you, so the rulebook is the
+checklist and the self-review is not optional.
 
-## CodeRabbit — FREE TIER ONLY, advisory (as of 2026-07-29)
+## CodeRabbit — REMOVED from this repo (2026-07-29)
 
-The maintainer downgraded to the **free tier** (it costs nothing on a public repo) rather
-than uninstalling the App. Ground rules:
+The maintainer **removed all repos from CodeRabbit except `max3` and `netsniff`**. FeedHacker
+is not one of them, so **CodeRabbit no longer reviews this repo at all** and no FeedHacker PR
+should expect or wait for its comments. It is still in use on those two sibling repos — so
+this file is about FeedHacker only, and CodeRabbit conventions there don't apply here.
 
-- **Never spend money on review calls.** No paid plan, and no on-demand `@coderabbitai`
-  commands (`review`, `full review`, autofix checkboxes) — those consume paid quota. Expect
-  coverage to be **very limited**; that's fine and intended.
-- **It is not the gate.** **Green CI is the merge gate.** Never hold a PR waiting for a
-  CodeRabbit comment, and never treat its silence as approval.
-- **Its findings are advisory.** Read them, take what's genuinely right, skip the rest. It is
-  prone to flagging our own committed files (a `manifest.json`, our own icons) as untrusted
-  input, and to markdown-lint nits about the numbered rules — those numbers are stable `§N`
-  identifiers grouped by topic, not an ordered list, so **don't renumber or reorder them**.
-- **`.coderabbit.yaml` is deliberately absent.** The old config forced draft reviews
-  (`auto_review.drafts: true`) and re-reviewed every push (`auto_incremental_review: true`) —
-  precisely the volume we don't want to buy. **Don't recreate it.** With no repo config it
-  falls back to the account's Organization UI settings.
-- **Drafts keep it cheap.** CodeRabbit skips draft PRs by default, and our flow opens every PR
-  as a draft while CI runs — so most PRs cost nothing. (Observed: it skipped PR #56 with
-  "Review skipped — Draft detected".)
+- **`.coderabbit.yaml` is deliberately absent and must not be recreated.** The old config
+  forced reviews of draft PRs (`auto_review.drafts: true`) and re-reviewed on every push
+  (`auto_incremental_review: true`), which is exactly the usage we don't want to pay for.
+- **Never spend on review calls** — no paid plan for this repo, and no on-demand
+  `@coderabbitai` commands (`review`, `full review`, autofix checkboxes); those consume paid
+  quota.
+- **If a stray CodeRabbit comment does appear**, treat it as advisory and unblocking. Two
+  patterns from its last reviews here that were *not* worth acting on: flagging our own
+  committed files (`manifest.json`, our own icons) as untrusted input needing path-traversal
+  guards, and markdown-lint nits demanding the numbered rules in `best_practices.md` be
+  renumbered — those numbers are stable `§N` identifiers grouped by topic, not an ordered
+  list, so renumbering would break cross-references across the docs.
+- **One thing to watch:** CodeRabbit posts a `CodeRabbit` commit status that can sit pending.
+  If it is ever a *required* status check in branch protection it would block merges forever —
+  remove it from the required list.
 
 Prior CodeRabbit findings stay credited in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md)'s **Found by**
 column; that history is worth keeping.
 
-**One owner action, if it ever bites:** CodeRabbit posts a `CodeRabbit` commit status that can
-sit pending on a PR. If it is ever a *required* status check in branch protection it would
-block merges — remove it from the required list.
+> **History (so a later session doesn't re-litigate this):** within 2026-07-29 the state moved
+> three times — CodeRabbit was configured and paid (Pro Plus), then the repo config was deleted
+> and it was called cancelled, then it was described as kept on the free tier, and finally the
+> repo was removed from CodeRabbit's list entirely. **The last of those is current.** The bot
+> self-reported `Plan: Pro Plus` on PRs #55–#57 while all this was in flight, which is why the
+> intermediate records were wrong.
 
 ## Greptile and Aikido — CANCELLED (2026-07-28)
 
