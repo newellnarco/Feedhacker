@@ -27,13 +27,14 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   **Version** field says **0.4.6**. If yes → mark 0.4.6 ✅ Live in `RELEASES.md`, slot OPEN. If the
   newest email still says 0.4.5, it's **still in review** — slot BLOCKED, don't upload anything.
   **Read the `Version` field, not the listing** — that mix-up is what caused the icon bug (§33).
-- **Two owner actions are outstanding (can't be done from code):**
-  1. **Uninstall the CodeRabbit GitHub App.** Deleting `.coderabbit.yaml` did not stop it — it fell
-     back to "Organization UI" config and kept reviewing PR #55. It also posts a `CodeRabbit`
-     commit status that will sit pending on new PRs; drop it from branch protection too.
-  2. **Windows sideload users must re-install once** — see FH-042 / `KNOWN_ISSUES.md`. The 0.4.5
-     updater can't deliver its own fix, so tell any affected user to re-run `installer\install.bat`
-     from `feedhacker-0.4.6-win.zip`.
+  As of 2026-07-29 ~22:15 UTC the newest store email was still Version **0.4.5** (2026-07-24), i.e.
+  0.4.6 was **still in review**, no rejection.
+- **One owner action outstanding:** **Windows sideload users must re-install once** — see FH-042 /
+  `KNOWN_ISSUES.md`. The 0.4.5 updater can't deliver its own fix, so tell any affected user to
+  re-run `installer\install.bat` from `feedhacker-0.4.6-win.zip`.
+- **CodeRabbit is on the FREE tier and stays** (maintainer, 2026-07-29) — advisory only, **never**
+  the gate, and **never spend on review calls** (no paid plan, no on-demand `@coderabbitai`
+  commands). Don't recreate `.coderabbit.yaml`. See `REVIEWERS_STATUS.md`.
 - **Next dev cycle is 0.4.7** — `manifest.json`/`package.json` are bumped, `CHANGELOG.md` has an
   empty `[0.4.7] — unreleased` section. Accumulate there; don't release without an explicit "ship".
 
@@ -63,10 +64,14 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   `test/unit/installer-update.test.js` locks the updater's asset selection against the real
   four-asset release set. Both verified to fail when the original bugs are reintroduced. Six
   unreferenced pre-rebrand rasters were deleted from the repo root.
-- **Review apparatus changed: CodeRabbit is OFF this repo** (maintainer's call, 2026-07-29).
-  `.coderabbit.yaml` deleted; `CLAUDE.md` no longer waits on a bot review — **green CI is the merge
-  gate**, and self-review against `best_practices.md` before pushing is the review step. See
-  `REVIEWERS_STATUS.md`; the App still needs uninstalling by the owner.
+- **Review apparatus changed** (maintainer's call, 2026-07-29): **green CI is the merge gate** and
+  self-review against `best_practices.md` before pushing is the review step. `.coderabbit.yaml` was
+  deleted and stays deleted — it forced draft reviews and re-review-on-every-push, the usage we
+  don't want to pay for. **CodeRabbit remains installed on the FREE tier** (costs nothing on a
+  public repo) as an advisory extra: expect very limited coverage, never wait on it, and never
+  spend on review calls. With no repo config it uses the account's Organization UI settings, and it
+  skips draft PRs — which our draft-while-CI-runs flow relies on to keep usage near zero. See
+  `REVIEWERS_STATUS.md`.
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the

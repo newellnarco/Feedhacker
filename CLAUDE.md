@@ -21,12 +21,19 @@ FeedHacker PR from a different account or bot identity.
   instead of opening the PR — a PR opened under the wrong account can't be reassigned after the
   fact. PRs created with this session's GitHub token normally already pass this check; run it anyway.
 
-- **No hosted AI PR reviewer is in use** (see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md) —
-  CodeRabbit, Greptile, Aikido all cancelled). Review is **CI + shift-left self-review against
-  [`best_practices.md`](best_practices.md)**. Do the self-review before you push, not after: the
-  rulebook is the checklist, and there is no bot coming behind you to catch what you skip.
-- **Open PRs as drafts** while CI runs, then promote to ready + merge once CI is green. There's no
-  review to wait for, so green CI is the gate — don't sit on a PR expecting a bot comment.
+- **Review is CI + shift-left self-review against [`best_practices.md`](best_practices.md).** Do the
+  self-review **before** you push, not after: the rulebook is the checklist, and no bot is coming
+  behind you to catch what you skip.
+- **CodeRabbit runs on the FREE tier only and is advisory, never the gate**
+  (see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md); Greptile and Aikido are cancelled outright).
+  **Never spend money on review calls** — no paid plan, and don't invoke on-demand
+  `@coderabbitai` commands (`review`, `full review`, autofix) that consume paid quota. Whatever it
+  gives for free is a bonus; read it, take what's genuinely right, ignore the rest.
+  - `.coderabbit.yaml` is **deliberately absent** — it used to force draft reviews and
+    re-review-every-push, which is exactly the usage we don't want to buy. Don't recreate it.
+- **Open PRs as drafts** while CI runs, then promote to ready + merge once CI is green. Two reasons:
+  green CI is the actual gate, and CodeRabbit **skips drafts** by default — so the draft window
+  keeps free-tier usage low. **Never wait on a bot comment to merge.**
 - **One PR per branch** (reuse over creation). If the branch's PR is already merged, restart the
   branch from the latest default branch for the next change.
 
