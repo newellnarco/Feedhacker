@@ -11,7 +11,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.4.6] — unreleased
+## [0.4.7] — unreleased
+
+_Nothing yet._
+
+## [0.4.6] — 2026-07-29
 
 ### Fixed
 - **Windows auto-update was completely broken — it now works again.** Both the daily

@@ -31,7 +31,8 @@ at different speeds, so they're tracked separately:
 | 0.4.4 | ✅ Released (2026-07-09) | ✅ **Live** (published 2026-07-09) | 2026-07-09 | Confirmed live — Google "Item successfully published" email, Version 0.4.4, 2026-07-09 20:56 UTC. Autonomous AI-slop self-calibration (living model), Aggression slider that sticks, curated grouping, click-safe re-apply, observation reaping, accurate in-app docs. (Best-effort `msi` job failed — WiX v7 OSMF EULA gate; `-win.zip` installer unaffected.) |
 | 0.4.5 | ✅ Released (2026-07-21) | ✅ **Live** (published 2026-07-21) | 2026-07-21 | Confirmed live — Google "Item successfully published" email, Version 0.4.5, 2026-07-21 18:54 UTC. In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified, heartbeat paging false-alarm fix, Advanced removal, scalable `Fh` logo SVG. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). (Best-effort `msi` job failed — WiX gate; `-win.zip` installer unaffected.) |
 
-| 0.4.6 | 🚧 Not tagged (merged to `main` via #50) | ❌ **Never published** — the 2026-07-23 submission published as **0.4.5** | 2026-07-23 (listing assets only) | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue; toolbar icons keep transparent corners, the **store icon is opaque** — the store rejects a transparent store icon), simplified `Fh`-only 16/32px toolbar variant, refreshed screenshots + promo tiles, and a brand lockup carrying "created by www.MaxResearchCollective.com". Merged to `main`. **The 0.4.6 *package* never reached the store:** Google's publish email for the 2026-07-23 submission states **Version 0.4.5** (published 2026-07-24 10:39 UTC), i.e. the new *listing assets* went live on top of the old 0.4.5 package. That's why the store page shows the `Fh` icon but installs still show the old "M" — see `KNOWN_ISSUES.md`. **Submission slot is OPEN**; uploading the 0.4.6 package is what makes the new icon reach users. No GitHub tag/Release cut for 0.4.6 either. |
+| 0.4.6 | ✅ Released (2026-07-29) — tag `v0.4.6` @ `92ff8f9` | ⏳ Submitted → review (2026-07-29) | 2026-07-29 | **Shipped via the Release workflow** (`publish: true`): tag → GitHub Release with all four prebuilt zips → store upload. The `webstore` job uploaded `feedhacker-0.4.6-store.zip` with `CWS_AUTO_PUBLISH=true` — log reads "Publishing… / Publish successful", i.e. **submitted for Google review**, so the submission slot is **BLOCKED** until it clears. Mark ✅ Live only on the "Item successfully published" email for Version 0.4.6. Contents: the `Fh` element-mark branding (finally reaching installs), the **Windows auto-update fix** (the updater was selecting the manifest-less `-store-submission.zip`), the installer's honest scheduled-task reporting, and the icon/updater regression guards. ⚠️ **Existing Windows sideload installs need a manual re-install** — see the note below. (Best-effort `msi` job failed again on the WiX gate; never blocks.) |
+| ~~0.4.6 (first attempt)~~ | 🚧 Not tagged | ❌ **Never published** — the 2026-07-23 submission published as **0.4.5** | 2026-07-23 (listing assets only) | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue; toolbar icons keep transparent corners, the **store icon is opaque** — the store rejects a transparent store icon), simplified `Fh`-only 16/32px toolbar variant, refreshed screenshots + promo tiles, and a brand lockup carrying "created by www.MaxResearchCollective.com". Merged to `main`. **The 0.4.6 *package* never reached the store:** Google's publish email for the 2026-07-23 submission states **Version 0.4.5** (published 2026-07-24 10:39 UTC), i.e. the new *listing assets* went live on top of the old 0.4.5 package. That's why the store page shows the `Fh` icon but installs still show the old "M" — see `KNOWN_ISSUES.md`. **Submission slot is OPEN**; uploading the 0.4.6 package is what makes the new icon reach users. No GitHub tag/Release cut for 0.4.6 either. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
 ◻︎ n/a or historical.
@@ -40,7 +41,28 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
 
-### 0.4.6 — merged to `main` (2026-07-23); package NOT on the store (listing assets only)
+### 0.4.6 — released on GitHub (2026-07-29); submitted to the store (in review)
+
+> ⚠️ **Existing Windows sideload installs will NOT auto-update to 0.4.6 — they need a manual
+> re-install.** Two reasons compound: (1) they're still running 0.4.5's `lib.ps1`, which has the
+> broken asset selection, and (2) `Sync-LatestRelease` only refreshes
+> `%LOCALAPPDATA%\FeedHacker\extension`, never the installer scripts in
+> `%LOCALAPPDATA%\FeedHacker\installer` — so the updater can't deliver its own fix. Fix for an
+> affected user: download `feedhacker-0.4.6-win.zip` from the v0.4.6 Release, unzip, and run
+> `installer\install.bat` again. From 0.4.6 forward, auto-update works. Tracked as follow-up
+> **FH-042** in [`the_wall.md`](the_wall.md) (have the updater refresh its own scripts).
+
+**What shipped (2026-07-29):**
+- The **`Fh` element-mark branding actually reaches installs** — 0.4.6's package is now on the
+  store (in review) and on GitHub, so the toolbar icon finally matches the listing.
+- **Windows auto-update fixed** — `Sync-LatestRelease` was selecting `-store-submission.zip`
+  (no `manifest.json`), so the daily task and "Update now" failed on every run.
+- **The installer no longer falsely reports** that it registered the daily update task.
+- **Regression guards** for both: brand-blue parity across the two publish channels, and the
+  updater's release-asset selection.
+- **CodeRabbit removed** from the repo; review is CI + self-review against `best_practices.md`.
+
+**Earlier 0.4.6 history (the aborted first attempt):**
 - **New FeedHacker brand identity** across the extension and store: the app/store icon is now the
   **"Fh" element mark** (periodic-table cell — atomic number `42`, big `Fh`, name *FeedHacker*) on
   LinkedIn blue, replacing the generic "MAX M" placeholder. `feedhacker-logo.svg` is the source of

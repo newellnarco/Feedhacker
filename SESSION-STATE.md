@@ -21,42 +21,52 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
-- **v0.4.6 is still NOT on the store, and that's the whole icon bug.** The 2026-07-23 submission
-  published as **Version 0.4.5** (Google's email, 2026-07-24 10:39 UTC) — only the new *listing
-  assets* went live, on top of the old package. So the store page shows the `Fh` element mark while
-  every install still shows the old "M". **Submission slot is OPEN.** The fix is a real 0.4.6
-  package upload — awaiting an explicit "ship".
-- **Verify the published *package* version, never the listing.** The listing's icon/screenshots
-  publish independently of the package; only the "Item successfully published" email's `Version`
-  field proves what users are running (best_practices §33).
-- **Optional:** v0.4.6 has **no GitHub tag/Release** either. If the maintainer wants GitHub + store
-  in lockstep, cutting `v0.4.6` via the Release workflow does both (tag → GitHub Release with
-  prebuilt zips → store upload). Only on an explicit "ship".
+- **Did v0.4.6 publish on the Chrome Web Store?** It was shipped 2026-07-29 via the Release
+  workflow and auto-submitted (`CWS_AUTO_PUBLISH=true`, log: "Publish successful" = *submitted for
+  review*, not approved). Search Gmail for the "Item successfully published" email and check the
+  **Version** field says **0.4.6**. If yes → mark 0.4.6 ✅ Live in `RELEASES.md`, slot OPEN. If the
+  newest email still says 0.4.5, it's **still in review** — slot BLOCKED, don't upload anything.
+  **Read the `Version` field, not the listing** — that mix-up is what caused the icon bug (§33).
+- **Two owner actions are outstanding (can't be done from code):**
+  1. **Uninstall the CodeRabbit GitHub App.** Deleting `.coderabbit.yaml` did not stop it — it fell
+     back to "Organization UI" config and kept reviewing PR #55. It also posts a `CodeRabbit`
+     commit status that will sit pending on new PRs; drop it from branch protection too.
+  2. **Windows sideload users must re-install once** — see FH-042 / `KNOWN_ISSUES.md`. The 0.4.5
+     updater can't deliver its own fix, so tell any affected user to re-run `installer\install.bat`
+     from `feedhacker-0.4.6-win.zip`.
+- **Next dev cycle is 0.4.7** — `manifest.json`/`package.json` are bumped, `CHANGELOG.md` has an
+  empty `[0.4.7] — unreleased` section. Accumulate there; don't release without an explicit "ship".
 
-## Current state — as of 2026-07-29
+## Current state — as of 2026-07-29 (post-0.4.6 ship)
 
-- **Latest GitHub release:** `v0.4.5` (2026-07-21) — tag `v0.4.5` on `main` @ `bb9e512`. The next
-  dev cycle has begun: `manifest.json`/`package.json` are now bumped to **0.4.6** and all 0.4.6 work
-  accumulates under that version.
-- **v0.4.6 (branding) — merged to `main`:** new FeedHacker **"Fh" element-mark** identity across the
-  extension and store icons (LinkedIn blue; toolbar icons transparent-cornered, **store icon opaque**
-  because the store rejects a transparent store icon), a simplified `Fh`-only 16/32px toolbar variant,
-  refreshed screenshots + promo tiles, and a brand lockup carrying "created by
-  www.MaxResearchCollective.com". `feedhacker-logo.svg` is the source of truth. Merged via PR #50
-  (`ee0cc11`).
-- **Chrome Web Store:** the live **package is still v0.4.5** — Google published Version 0.4.5 twice
-  (2026-07-21, then again 2026-07-24 for the 2026-07-23 submission). **v0.4.6's package never
-  reached the store**; only its *listing assets* did. That is exactly the reported bug: the store
-  page shows the new `Fh` icon, installs still show the old "M". **The submission slot is OPEN**
-  (newest store email is a published decision), so a 0.4.6 upload would go through — pending an
-  explicit "ship". **No GitHub tag/Release for 0.4.6** either.
-  (The best-effort `msi` job still fails on the WiX gate and never blocks anything.)
-- **Icon-mismatch guard is in place** (session 2026-07-29, branch
-  `claude/chrome-app-icon-mismatch-fkhy9a`): `test/unit/brand-assets.test.js` and a new case in
-  `test/system/build.system.test.js` pin the store-listing icons *and* the icons inside the built
-  package to one brand blue, so a rebrand that reaches only one channel fails CI. Six unreferenced
-  pre-rebrand rasters were deleted from the repo root (`storeicon128.png`, `Store image.jpg`, …) —
-  they were look-alike candidates for a wrong manual Dashboard upload. See `best_practices.md` §33.
+- **Latest GitHub release:** **`v0.4.6` (2026-07-29)** — tag `v0.4.6` on `main` @ `92ff8f9`, cut by
+  the Release workflow (`publish: true`) with all four prebuilt zips attached. The next dev cycle
+  has begun: `manifest.json`/`package.json` are bumped to **0.4.7**.
+- **Chrome Web Store:** **0.4.6 uploaded + auto-submitted 2026-07-29** (`webstore` job green; log:
+  "Uploading feedhacker-0.4.6-store.zip… / Publishing… / Publish successful" with
+  `CWS_AUTO_PUBLISH=true`). That means **submitted for Google review, NOT approved** — the live
+  package is still 0.4.5 until the "Item successfully published (Version 0.4.6)" email lands. The
+  submission slot is therefore **BLOCKED**.
+  (The best-effort `msi` job failed again on the WiX gate and never blocks anything.)
+- **What 0.4.6 fixes for users, once approved:**
+  - The **`Fh` element-mark icon finally reaches installs.** The listing had shown it since
+    2026-07-24, but the store's published *package* was still 0.4.5, so every install kept the old
+    MAX "M". Root cause: listing assets and the uploaded package are two independent publish
+    channels (`best_practices.md` §33).
+  - **Windows auto-update, which was completely broken.** `Sync-LatestRelease` selected the release
+    asset with a blacklist, so `feedhacker-<v>-store-submission.zip` (no `manifest.json`) won and
+    both the daily task and "Update now" failed every run. Now an anchored allowlist (§34).
+  - The installer **no longer falsely claims** it registered the daily update task (§35).
+- **Guards added** (branch `claude/chrome-app-icon-mismatch-fkhy9a`, PR #55, squashed to `92ff8f9`):
+  `test/unit/brand-assets.test.js` + `test/system/build.system.test.js` pin the store-listing icons
+  *and* the icons inside the built package to one brand blue (`test/png.js` holds the constant), and
+  `test/unit/installer-update.test.js` locks the updater's asset selection against the real
+  four-asset release set. Both verified to fail when the original bugs are reintroduced. Six
+  unreferenced pre-rebrand rasters were deleted from the repo root.
+- **Review apparatus changed: CodeRabbit is OFF this repo** (maintainer's call, 2026-07-29).
+  `.coderabbit.yaml` deleted; `CLAUDE.md` no longer waits on a bot review — **green CI is the merge
+  gate**, and self-review against `best_practices.md` before pushing is the review step. See
+  `REVIEWERS_STATUS.md`; the App still needs uninstalling by the owner.
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
 - **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
