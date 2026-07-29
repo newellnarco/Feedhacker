@@ -86,4 +86,15 @@ function colorShare(img, rgb, tolerance = 48) {
   return opaque ? near / opaque : 0;
 }
 
-module.exports = { decodePng, colorShare };
+// The one brand constant both tiers measure against — LinkedIn blue, as declared by the
+// source-of-truth mark (icons/icon.svg). It lives here, not in either test file, because the
+// whole point is that the packaged icons and the store-listing icons are checked against the
+// SAME value: two copies could drift and let the two publish channels disagree again
+// (best_practices §33). `brand-assets.test.js` asserts this still matches the artwork.
+const BRAND_BLUE = [0x0a, 0x66, 0xc2];
+
+// Share of an icon that must be brand blue. Measured 46-74% across the packaged sizes and
+// the store icons; 30% leaves room for artwork tweaks while an old-brand icon (0%) fails.
+const MIN_BRAND_SHARE = 0.3;
+
+module.exports = { decodePng, colorShare, BRAND_BLUE, MIN_BRAND_SHARE };

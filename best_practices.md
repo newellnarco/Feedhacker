@@ -141,14 +141,14 @@
 
 # FeedHacker — best_practices.md
 
-The numbered coding standard for FeedHacker, and the file CodeRabbit reads as its
-review criteria (`.coderabbit.yaml` → `knowledge_base.code_guidelines.filePatterns`).
+The numbered coding standard for FeedHacker. With no hosted AI reviewer on the repo
+(see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md)), this file **is** the review criteria:
+read it and self-review against it before pushing.
 
 **The loop:** every real bug becomes (1) a fix, (2) a regression test at the right tier
 (unit / integration / system), (3) a row in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md), and
 (4) — if it's a general class — a numbered rule here. That way the same class of bug can't
-recur silently. When the reviewer flags the same class twice, the standard was missing —
-add it.
+recur silently. If the same class bites twice, the standard was missing — add it.
 
 Rules are terse and checkable against a diff. Newest rules may cite the PR that spawned them.
 
@@ -304,6 +304,17 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     `test/unit/brand-assets.test.js` and `test/system/build.system.test.js`. Corollary: brand
     assets get exactly **one home** (`icons/` for packaged, `store/` for listing). A stale copy
     parked elsewhere under an upload-target name is a loaded gun at the Dashboard's file picker.
+
+34. **Select a release artifact with an anchored allowlist, never a "everything except the ones
+    I know about" blacklist.** A release's asset list grows — FeedHacker's went from two zips to
+    four (`-win`, `-store`, `-store-submission`, plus the sideload zip) — and GitHub returns assets
+    in upload order, which is alphabetical, so a *new* artifact can silently become the first
+    match. The Windows updater's `feedhacker-*.zip` minus `*-win.zip` filter started picking
+    `-store-submission.zip` the moment that bundle was added, and every auto-update failed. Match
+    the exact thing you want (`^feedhacker-[0-9]+\.[0-9]+\.[0-9]+\.zip$`). Same rule anywhere a
+    glob picks one item out of a growing set. And when the artifact is the **update channel**,
+    test the selection against the *real* asset-name set — the failure is invisible in the repo,
+    it only appears against a published release.
 
 ## More tests & docs
 

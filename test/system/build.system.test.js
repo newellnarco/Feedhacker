@@ -7,10 +7,10 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
 const { EXT, ROOT } = require("./helper");
-const { decodePng, colorShare } = require("../png");
-
-// The brand blue the store-listing icon and every packaged icon must share (icons/icon.svg).
-const BRAND_BLUE = [0x0a, 0x66, 0xc2];
+const zlib = require("node:zlib");
+// Same brand constant the unit tier uses — see test/png.js. Shared on purpose: the packaged
+// icons and the store-listing icons must be measured against one value, not two copies.
+const { decodePng, colorShare, BRAND_BLUE, MIN_BRAND_SHARE } = require("../png");
 
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8"));
 
@@ -82,7 +82,10 @@ test("the icons that ship in the package are the current brand mark, byte-for-by
       `${rel} in dist/feedhacker differs from the repo's — the build copied a stale icon`
     );
     const share = colorShare(decodePng(packaged), BRAND_BLUE);
-    assert.ok(share >= 0.3, `packaged ${rel} is only ${(share * 100).toFixed(1)}% brand blue — stale pre-rebrand icon`);
+    assert.ok(
+      share >= MIN_BRAND_SHARE,
+      `packaged ${rel} is only ${(share * 100).toFixed(1)}% brand blue — stale pre-rebrand icon`
+    );
   }
 });
 
@@ -154,4 +157,49 @@ test("the Chrome Web Store zip exists and has manifest.json at its root (no wrap
   }
   assert.ok(names.includes("manifest.json"), `store zip must have manifest.json at root; saw: ${names.slice(0, 3).join(", ")}…`);
   assert.ok(!names.some((n) => n.startsWith("feedhacker/")), "store zip must not nest under a feedhacker/ folder");
+});
+
+// Read one file out of a build zip (stored deflate-raw; see the writer in scripts/build.mjs).
+function readZipEntry(zip, entryName) {
+  const buf = fs.readFileSync(zip);
+  const sig = Buffer.from("PK\x03\x04"); // local file header
+  for (let i = 0; (i = buf.indexOf(sig, i)) !== -1; i += 4) {
+    const nameLen = buf.readUInt16LE(i + 26);
+    const extraLen = buf.readUInt16LE(i + 28);
+    const name = buf.toString("utf8", i + 30, i + 30 + nameLen);
+    if (name !== entryName) continue;
+    const start = i + 30 + nameLen + extraLen;
+    const compressed = buf.readUInt32LE(i + 18);
+    const data = buf.subarray(start, start + compressed);
+    return buf.readUInt16LE(i + 8) === 8 ? zlib.inflateRawSync(data) : data;
+  }
+  return null;
+}
+
+test("the sideload zip the Windows updater downloads keeps the extension ID stable", () => {
+  // The updater replaces the files under a Load-unpacked install, so the ID must not move:
+  // native messaging whitelists one exact origin (installer/windows/install.ps1 registers
+  // chrome-extension://fefpmbcbklcplgfohobiekbndohmfcpi/). The ID comes from the manifest
+  // `key`, which scripts/build.mjs injects into the SIDELOAD builds only. If a release ever
+  // shipped the store-clean manifest here, "Update now" would silently stop working.
+  const zip = path.join(ROOT, "dist", `feedhacker-${manifest.version}.zip`);
+  const raw = readZipEntry(zip, "feedhacker/manifest.json");
+  assert.ok(raw, "sideload zip must contain feedhacker/manifest.json");
+  const m = JSON.parse(raw.toString("utf8"));
+  assert.ok(m.key, "the sideload manifest must carry the fixed `key` that pins the unpacked ID");
+  assert.ok(
+    (m.permissions || []).includes("nativeMessaging"),
+    "the sideload manifest must request nativeMessaging so 'Update now' can reach the helper"
+  );
+  assert.strictEqual(m.version, manifest.version, "sideload manifest version must match the repo's");
+
+  // And the store package must stay clean — the two must not converge.
+  const storeManifest = JSON.parse(
+    readZipEntry(path.join(ROOT, "dist", `feedhacker-${manifest.version}-store.zip`), "manifest.json").toString("utf8")
+  );
+  assert.strictEqual(storeManifest.key, undefined, "the store manifest must NOT carry the sideload key");
+  assert.ok(
+    !(storeManifest.permissions || []).includes("nativeMessaging"),
+    "the store manifest must NOT request nativeMessaging"
+  );
 });

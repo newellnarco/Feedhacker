@@ -14,6 +14,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.4.6] — unreleased
 
 ### Fixed
+- **Windows auto-update was completely broken — it now works again.** Both the daily
+  scheduled task and the extension's **Update now** button failed on every run with
+  "Downloaded archive did not contain manifest.json". `Sync-LatestRelease` chose its download
+  with a blacklist (`feedhacker-*.zip` minus `*-win.zip`), but a release carries four zips and
+  GitHub returns assets in upload (alphabetical) order — so `feedhacker-<version>-store-submission.zip`
+  came first and won. That bundle has no manifest by design. Worse, `-store.zip` would have been
+  selected next: it omits the sideload `key`, which would change the unpacked extension ID and
+  break the native-messaging whitelist that **Update now** depends on. The updater now matches
+  exactly one asset (`^feedhacker-<x.y.z>.zip$`).
+  - Guarded at two tiers: `test/unit/installer-update.test.js` applies the pattern from
+    `lib.ps1` to the real four-asset release set, and `test/system/build.system.test.js`
+    asserts the sideload zip's manifest keeps the `key` + `nativeMessaging` while the store
+    zip has neither.
+- **Windows sideload installs were also stuck on 0.4.5 for a second reason:** the updater reads
+  GitHub's `releases/latest`, and no `v0.4.6` tag or Release had been cut. Releasing 0.4.6 fixes
+  the store *and* the sideload channel.
 - **The store listing showed the new `Fh` icon while installed copies still showed the old
   "M" icon.** The two come from different places: the listing's icon is a Dashboard asset that
   publishes on its own, while the icon Chrome paints for an install comes from `manifest.icons`
@@ -29,6 +45,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
     byte-identical to the repo's and pass the same brand check.
 
 ### Removed
+- **CodeRabbit** is no longer used on this repo (`.coderabbit.yaml` deleted). Review is now CI
+  plus shift-left self-review against `best_practices.md`; the standing rules in `CLAUDE.md` no
+  longer wait on a bot review, so green CI is the merge gate. See `REVIEWERS_STATUS.md`.
 - **Six unreferenced pre-rebrand images at the repo root** (`storeicon128.png`, `storeicon120.png`,
   `128x128.jpg`, `Store image.jpg`, `screenshot1feed.jpg`, `screenshot2popup.jpg`). All carried the
   old "M" mark or a superseded screenshot, nothing in the build or docs referenced them, and their

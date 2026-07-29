@@ -11,13 +11,13 @@ const test = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
-const { decodePng, colorShare } = require("../png");
+// BRAND_BLUE / MIN_BRAND_SHARE come from test/png.js so this tier and the system tier
+// measure against ONE constant — two copies could drift and let the store listing and the
+// packaged icons disagree again (best_practices §33).
+const { decodePng, colorShare, BRAND_BLUE, MIN_BRAND_SHARE } = require("../png");
 
 const ROOT = path.join(__dirname, "..", "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8"));
-
-// The current brand: LinkedIn blue, declared by the source-of-truth mark (icons/icon.svg).
-const BRAND_BLUE = [0x0a, 0x66, 0xc2];
 // Palette of the superseded MAX "M" mark. Any real coverage of these means an old-brand
 // asset is still in the tree.
 const SUPERSEDED = {
@@ -27,9 +27,7 @@ const SUPERSEDED = {
 };
 
 // Icons that are a solid brand-blue tile: the four packaged sizes plus the store-listing
-// icons. Measured coverage is 46-74%; 30% leaves headroom for artwork tweaks while an
-// old-brand icon (0%) still fails outright.
-const MIN_BRAND_SHARE = 0.3;
+// icons.
 const BLUE_TILES = [
   ...Object.values(manifest.icons),
   "store/brand/store-icon-128.png",

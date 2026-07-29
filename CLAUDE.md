@@ -13,39 +13,34 @@ submission slot is open → report next-release plan and ask ship-or-wait). Keep
 
 ## Pull requests (standing rule)
 
-**Always open PRs under the maintainer's GitHub username (`newellnarco`).** CodeRabbit is
-**single-user licensed** to that account, so a PR authored by any other identity **won't be
-reviewed at all** — the whole learning loop below depends on the PR being `newellnarco`'s. Never
-open a FeedHacker PR from a different account or bot identity.
+**Always open PRs under the maintainer's GitHub username (`newellnarco`).** Never open a
+FeedHacker PR from a different account or bot identity.
 
 - **Verify the identity before you open a PR** — don't assume. Call `get_me` (GitHub MCP) and
   confirm `login` is `newellnarco`. If it returns any other login, **stop and tell the user**
-  instead of opening the PR: a PR from the wrong identity silently skips CodeRabbit review.
-- PRs created with this session's GitHub token are normally already `newellnarco`'s, so the check
-  usually just passes — but run it anyway, because a PR opened under the wrong account can't be
-  reassigned after the fact.
+  instead of opening the PR — a PR opened under the wrong account can't be reassigned after the
+  fact. PRs created with this session's GitHub token normally already pass this check; run it anyway.
 
-- **Open PRs as drafts** while CI runs. CodeRabbit is configured to review drafts
-  ([`.coderabbit.yaml`](.coderabbit.yaml) → `auto_review.drafts: true`) — without that it would
-  skip them. Promote to ready + merge once CI is green **and** review findings are addressed.
-- **Code-bearing PRs wait for the review to land (≥ ~15 min) before merge**; docs-/records-only
-  PRs have no runtime blast radius — merge as soon as CI is green.
-- **Don't push a follow-up commit while a review is in flight** — a new head aborts the in-flight
-  review. Batch doc/number touch-ups into the feature push.
+- **No hosted AI PR reviewer is in use** (see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md) —
+  CodeRabbit, Greptile, Aikido all cancelled). Review is **CI + shift-left self-review against
+  [`best_practices.md`](best_practices.md)**. Do the self-review before you push, not after: the
+  rulebook is the checklist, and there is no bot coming behind you to catch what you skip.
+- **Open PRs as drafts** while CI runs, then promote to ready + merge once CI is green. There's no
+  review to wait for, so green CI is the gate — don't sit on a PR expecting a bot comment.
 - **One PR per branch** (reuse over creation). If the branch's PR is already merged, restart the
   branch from the latest default branch for the next change.
 
 ## Code review & the learning loop (standing rule)
 
-**Close the loop on every real bug or reviewer finding — four things, same PR when practical:**
+**Close the loop on every real bug — four things, same PR when practical:**
 1. the **fix**;
 2. a **regression test** at the tier that would have caught it (see Testing below);
 3. a row in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) (root cause → fix PR → the test, with a **Found
-   by** attribution so the AI-reviewer signal stays comparable);
-4. if it's a general class, a numbered rule in [`best_practices.md`](best_practices.md) — the file
-   CodeRabbit reads as its review criteria. **When the reviewer flags the same class twice, the
-   standard was missing — add it.** Keep `best_practices.md` and `KNOWN_ISSUES.md` current; they
-   are how a bug class gets paid for exactly once.
+   by** attribution — keep recording it, it's how we see where bugs actually come from);
+4. if it's a general class, a numbered rule in [`best_practices.md`](best_practices.md), the
+   project's coding standard. **If the same class bites twice, the standard was missing — add it.**
+   Keep `best_practices.md` and `KNOWN_ISSUES.md` current; they are how a bug class gets paid for
+   exactly once, and with no bot reviewer they're the whole review apparatus.
 
 ## Testing (standing rule)
 
