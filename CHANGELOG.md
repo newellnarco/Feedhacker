@@ -14,13 +14,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.4.7] — unreleased
 
 ### Changed
-- **Review-process record corrected: CodeRabbit stays installed on the free tier**, advisory only.
-  0.4.6's records described it as cancelled with "uninstall the App" as a follow-up; the maintainer
-  instead downgraded to the free tier, which costs nothing on a public repo. `CLAUDE.md`,
-  `REVIEWERS_STATUS.md`, `SESSION-STATE.md`, and `the_wall.md` now say the same thing: green CI is
-  the merge gate, CodeRabbit is never waited on, no money goes to review calls (no paid plan, no
-  on-demand `@coderabbitai` commands), and `.coderabbit.yaml` stays deleted because it forced draft
-  reviews and re-review-on-every-push.
+- **No AI reviewer runs on this repo.** CodeRabbit was removed from every repo except `max3` and
+  `netsniff`, so FeedHacker PRs get no bot review at all. **Green CI is the merge gate**, with
+  shift-left self-review against `best_practices.md` before pushing as the review step.
+  `.coderabbit.yaml` stays deleted (it forced draft reviews and re-review-on-every-push), no
+  `@coderabbitai` commands (paid quota), and no PR ever waits on a bot comment. `CLAUDE.md`,
+  `REVIEWERS_STATUS.md`, `SESSION-STATE.md` and `the_wall.md` all say this now.
+  - `REVIEWERS_STATUS.md` also records the sequence this took — configured/paid, then "cancelled",
+    then "free tier", then removed — so a later session doesn't re-litigate it. The bot
+    self-reported `Plan: Pro Plus` throughout, which is why the intermediate records were wrong.
 
 ## [0.4.6] — 2026-07-29
 
@@ -63,8 +65,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ### Removed
 - **`.coderabbit.yaml` deleted, and CodeRabbit is no longer the review gate.** Review is now CI plus
   shift-left self-review against `best_practices.md`; the standing rules in `CLAUDE.md` no longer
-  wait on a bot review, so green CI is the merge gate. (The App itself stays installed on the free
-  tier as an advisory extra — see the 0.4.7 entry and `REVIEWERS_STATUS.md`.)
+  wait on a bot review, so green CI is the merge gate. (CodeRabbit was subsequently removed from
+  this repo entirely — see the 0.4.7 entry and `REVIEWERS_STATUS.md`.)
 - **Six unreferenced pre-rebrand images at the repo root** (`storeicon128.png`, `storeicon120.png`,
   `128x128.jpg`, `Store image.jpg`, `screenshot1feed.jpg`, `screenshot2popup.jpg`). All carried the
   old "M" mark or a superseded screenshot, nothing in the build or docs referenced them, and their
