@@ -16,11 +16,20 @@
       padding: 10px 18px; color: #0a66c2; font-weight: 600; background: #fff; }
     a.btn.primary { background: #0a66c2; color: #fff; border-color: #0a66c2; }
     a.btn:hover { filter: brightness(0.97); }
+    /* Screenshot carousel: CSS scroll-snap only, no JS. Wider than the 640px text
+       column, so it breaks out of the body column via viewport-relative margins. */
+    .carousel { width: min(94vw, 960px); margin: 40px calc(50% - min(47vw, 480px)) 8px;
+      display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
+    .carousel img { width: min(88vw, 880px); flex: 0 0 auto; scroll-snap-align: center;
+      border-radius: 12px; border: 1px solid #dde1e7; box-shadow: 0 10px 30px rgba(22,41,68,.10); }
+    .carousel-hint { font-size: 13px; color: #8a94a3; margin-bottom: 36px; }
     @media (prefers-color-scheme: dark) {
       body { color: #e7e9ec; background: #14171a; }
       p { color: #9aa4b0; }
       a.btn { background: #1e242a; border-color: #2b3138; }
       a.btn.primary { background: #2f6fd0; border-color: #2f6fd0; color: #fff; }
+      .carousel img { border-color: #2b3138; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
     }
   </style>
 </head>
@@ -28,6 +37,14 @@
   <h1>FeedHacker</h1>
   <p>Mute the noise in your LinkedIn feed — AI slop, promoted posts, engagement bait,
      hiring posts, and more. Runs entirely in your browser; nothing is sent to any server.</p>
+  <div class="carousel">
+    <img src="carousel/carousel-1-feed.png" alt="FeedHacker in the LinkedIn feed: flagged posts collapsed to one-line stubs while real posts stay" loading="lazy">
+    <img src="carousel/carousel-2-mixer.png" alt="The toolbar popup: a Mute / Solo mixer for nine kinds of feed noise" loading="lazy">
+    <img src="carousel/carousel-3-group.png" alt="A run of four flagged posts folded into a single summary row with a tally of reasons" loading="lazy">
+    <img src="carousel/carousel-4-stub.png" alt="Collapsed stubs showing the author, a sample of the post, and why it was flagged" loading="lazy">
+    <img src="carousel/carousel-5-transparent.png" alt="The status page: active filters, the storage-only permission, and what Mute and Solo do" loading="lazy">
+  </div>
+  <div class="carousel-hint">← swipe or scroll →</div>
   <div class="links">
     <a class="btn primary" href="https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb">Chrome Web Store</a>
     <a class="btn" href="https://github.com/newellnarco/Feedhacker">Source on GitHub</a>
