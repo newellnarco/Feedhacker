@@ -13,6 +13,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.7] — unreleased
 
+### Added
+- **Screenshot carousel on the website** (`docs/index.html`, the GitHub Pages landing page):
+  five 1280×800 frames under `docs/carousel/`, captured from the real extension running in
+  Chromium via the system-test harness (feed stubs, the Mute/Solo popup, a folded group row,
+  stub detail, and the options/status page from the store build). CSS scroll-snap only, no JS.
+
 ### Changed
 - **No AI reviewer runs on this repo.** CodeRabbit was removed from every repo except `max3` and
   `netsniff`, so FeedHacker PRs get no bot review at all. **Green CI is the merge gate**, with
