@@ -172,3 +172,67 @@ test("recompute reveals posts the loosened model no longer flags, without rebuil
     assert.strictEqual(p.querySelector(".feedhacker-stub"), null, `post ${i} stub removed`);
   });
 });
+
+// --- FH-044: a folded run used to drop EVERY per-post control, so on a slop-heavy feed
+// (where runs are the common case) the AI-slop splat was unreachable — the user only ever
+// saw "N posts hidden". The group row now carries the splat, and it trains on the whole run.
+function trainingSettings(over) {
+  const labels = [];
+  const verdicts = [];
+  const s = baseSettings(Object.assign({ groupHiddenRuns: true }, over || {}));
+  s.onFeedback = (feats, label) => labels.push(label);
+  s.onSlopVerdict = (id, label) => verdicts.push(label);
+  s.onSlopDecision = () => {};
+  return { s, labels, verdicts };
+}
+
+test("a group summary row carries the AI-slop splat", () => {
+  const doc = makeDoc(feedHtml(slopPosts(4)));
+  const { s } = trainingSettings();
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const group = doc.querySelector(".feedhacker-stub.feedhacker-group");
+  const splat = group.querySelector('[data-fh-act="confirm-group"]');
+  assert.ok(splat, "the group row exposes an AI-slop confirm control");
+  assert.match(splat.title, /confirm all 4/, "its title says how many posts it covers");
+  assert.ok(group.querySelector('[data-fh-act="ungroup"]'), "…alongside Show all");
+});
+
+test("confirming a group trains on every slop member, once, and retires the run", () => {
+  const doc = makeDoc(feedHtml(slopPosts(4)));
+  const { s, labels, verdicts } = trainingSettings();
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const splat = doc.querySelector('[data-fh-act="confirm-group"]');
+  splat.dispatchEvent(new doc.defaultView.MouseEvent("click", { bubbles: true }));
+
+  assert.deepStrictEqual(labels, [1, 1, 1, 1], "one positive signal per slop post in the run");
+  assert.deepStrictEqual(verdicts, [1, 1, 1, 1], "…and one logged verdict per post");
+  feed.findPostContainers(doc).forEach((p, i) => {
+    assert.strictEqual(p.dataset.feedhackerConfirmedSlop, "1", `post ${i} marked confirmed`);
+    assert.strictEqual(p.dataset.feedhackerDismissed, "1", `post ${i} retired from the feed`);
+  });
+
+  // Idempotent: the button is spent, and a second confirm can't double-train.
+  assert.strictEqual(splat.disabled, true, "the splat is disabled once confirmed");
+  feed.groupRuns(doc, s);
+  const again = doc.querySelector('[data-fh-act="confirm-group"]');
+  if (again) again.dispatchEvent(new doc.defaultView.MouseEvent("click", { bubbles: true }));
+  assert.deepStrictEqual(labels, [1, 1, 1, 1], "no second round of training signals");
+});
+
+test("a group with nothing trainable in it shows no splat", () => {
+  // Promoted posts are a deterministic filter: hidden, but nothing for the model to learn.
+  const promo = (i) => post(`<a href="/company/acme">Acme</a><span>Promoted</span><div>buy thing ${i}</div>`);
+  const doc = makeDoc(feedHtml([0, 1, 2].map(promo).join("")));
+  const { s } = trainingSettings({ muteSloppy: false, mutePromoted: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const group = doc.querySelector(".feedhacker-stub.feedhacker-group");
+  assert.ok(group, "the promoted run still folds");
+  assert.strictEqual(group.querySelector('[data-fh-act="confirm-group"]'), null, "but there is no slop to confirm");
+  assert.ok(group.querySelector('[data-fh-act="ungroup"]'), "Show all is still offered");
+});

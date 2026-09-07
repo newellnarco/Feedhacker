@@ -37,11 +37,11 @@ A change to a module the whole app imports has repo-wide blast radius:
 | Area | Source | Primary tests | Blast radius | Fast-track? |
 |---|---|---|---|---|
 | AI-slop model | `scorer.ts`, `sloplog.ts` | `scorer`, `retrain`, `autocalibrate`, `livecalibrate`, `sloplog` (unit) | feed scoring, content calibration, options panel | ❌ run row |
-| Feed / DOM layer | `feed.ts` | `feed`, `grouping` (integration) | content re-apply, stub UX, grouping | ❌ run row |
-| Content glue (storage/msg) | `content.ts` | `content-boot`, `content-teardown` (integration) | everything on the page | ❌ run row + system |
+| Feed / DOM layer | `feed.ts` | `feed`, `grouping`, `author-identity` (integration) + `extension` (system) | content re-apply, stub UX, grouping, who Mute keys on | ❌ run row + system |
+| Content glue (storage/msg) | `content.ts` | `content-boot`, `content-teardown`, `slop-verdict-queue` (integration) | everything on the page; storage read-modify-write ordering (§7) | ❌ run row + system |
 | Background SW | `background.ts` | `background-badge`, `background-update` (integration) | badge, self-update, store update | ❌ run row |
 | Matching / custom filters | `matcher.ts`, `customfilters.ts` | `matcher`, `customfilters` (unit) | which posts are hidden | ❌ run row |
-| Authors (mute/allow) | `authors.ts` | `authors` (unit) | author memory | ❌ run row |
+| Authors (mute/allow) | `authors.ts` | `authors` (unit), `author-identity` (integration), `extension` (system) | author memory — and the DOM-side identity that feeds it (§36) | ❌ run row + system |
 | Update check | `update.ts` | `update` (unit) | options "check for updates" | ✅ if isolated |
 | Popup / options UI | `popup.ts`, `options.ts`, `*.html`, `styles.css` | drive in real Chromium (system) | UI only; gated by `tsc` + build, not model tests | ✅ if presentational + `tsc`/build green |
 | Manifest / packaging | `manifest.json`, `scripts/build.mjs` | `manifest` (unit), `build.system` (system) | the whole packaged product | ❌ run full triad |
