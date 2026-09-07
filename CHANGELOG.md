@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.4.7] — unreleased
+## [0.4.7] — 2026-09-07
 
 ### Fixed
 - **The green AI-slop splat never appeared on a heavily filtered feed.** Grouping is on by
