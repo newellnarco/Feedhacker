@@ -21,17 +21,21 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
-- **0.4.7 work in flight (this session, 2026-09-07):** three user-reported feed bugs fixed on
-  `claude/ai-splat-filtering-issues-9nev9o` —
-  1. **FH-044** the AI-slop splat was unreachable whenever grouping folded a run (the common case on
-     a heavily filtered feed); the group row now carries it and confirms the whole run;
-  2. **FH-043** Mute keyed on garbage (the collapsed post's own stub text) or on the *reactor* of a
-     reshare, and was lost to a 1.5 s debounce on reload — identity is now captured while the post
-     is visible and written through immediately;
-  3. the **grouping toggle is back on the options page** (Feed display panel), synced with the popup.
-  Plus a §7 concurrent-writer fix found in self-review: slop verdicts are now serialized.
-  Full triad green (186 unit+integration, 16 system); every new guard verified to fail pre-fix.
-  **Not released** — accumulating under 0.4.7 per the release policy.
+- **0.4.7 SHIPPED 2026-09-07** on the maintainer's explicit "ship it" — merged as `a10d66e`
+  (PR #60), then released via the Release workflow (`publish: true`): tag `v0.4.7` → GitHub
+  Release with the prebuilt zips → store upload attempt. Contents: the AI-slop splat was
+  unreachable whenever grouping folded a run (**FH-044**); **Mute** keyed on the collapsed
+  stub's own text, or on a reshare's *reactor*, and could be lost to a write debounce
+  (**FH-043**); the grouping toggle is back on the options page; slop verdicts are serialized
+  (§7). Full triad green; every new guard verified to fail pre-fix.
+  - ⚠️ **The store upload was expected to FAIL** (`ITEM_NOT_UPDATABLE`): **0.4.6 has been in
+    Google review since 2026-07-29** with neither a publish nor a rejection email — ~6 weeks,
+    unusually long. The slot stays BLOCKED. **Next session: check the store email again; if
+    0.4.6 finally published, re-upload 0.4.7** (re-run the Release workflow, or upload
+    `feedhacker-0.4.7-store.zip` from the Release assets). Worth chasing in the Developer
+    Dashboard if there's still no decision.
+  - Next dev cycle is **0.4.8** — bump `manifest.json`/`package.json` and open a fresh
+    `[0.4.8] — unreleased` section in `CHANGELOG.md` before the next change.
 
 - **Did v0.4.6 publish on the Chrome Web Store?** It was shipped 2026-07-29 via the Release
   workflow and auto-submitted (`CWS_AUTO_PUBLISH=true`, log: "Publish successful" = *submitted for

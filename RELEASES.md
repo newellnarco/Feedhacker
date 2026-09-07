@@ -32,6 +32,7 @@ at different speeds, so they're tracked separately:
 | 0.4.5 | ✅ Released (2026-07-21) | ✅ **Live** (published 2026-07-21) | 2026-07-21 | Confirmed live — Google "Item successfully published" email, Version 0.4.5, 2026-07-21 18:54 UTC. In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified, heartbeat paging false-alarm fix, Advanced removal, scalable `Fh` logo SVG. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). (Best-effort `msi` job failed — WiX gate; `-win.zip` installer unaffected.) |
 
 | 0.4.6 | ✅ Released (2026-07-29) — tag `v0.4.6` @ `92ff8f9` | ⏳ Submitted → review (2026-07-29) | 2026-07-29 | **Shipped via the Release workflow** (`publish: true`): tag → GitHub Release with all four prebuilt zips → store upload. The `webstore` job uploaded `feedhacker-0.4.6-store.zip` with `CWS_AUTO_PUBLISH=true` — log reads "Publishing… / Publish successful", i.e. **submitted for Google review**, so the submission slot is **BLOCKED** until it clears. Mark ✅ Live only on the "Item successfully published" email for Version 0.4.6. Contents: the `Fh` element-mark branding (finally reaching installs), the **Windows auto-update fix** (the updater was selecting the manifest-less `-store-submission.zip`), the installer's honest scheduled-task reporting, and the icon/updater regression guards. ⚠️ **Existing Windows sideload installs need a manual re-install** — see the note below. (Best-effort `msi` job failed again on the WiX gate; never blocks.) |
+| 0.4.7 | ✅ Released (2026-09-07) — tag `v0.4.7` | ⏳ Upload attempted while the slot was **BLOCKED** | — | **Shipped on the maintainer's explicit "ship it"** via the Release workflow (`publish: true`) from `main` @ `a10d66e`. Three user-reported live-feed bugs: the AI-slop splat was unreachable whenever grouping folded a run (FH-044), **Mute** keyed on the collapsed stub's own text or on a reshare's *reactor* and could be lost to a write debounce (FH-043), and the grouping toggle is back on the options page. Plus a §7 concurrent-writer fix (slop verdicts are serialized). **Store status:** 0.4.6 has been in Google review since 2026-07-29 with neither a publish nor a rejection email, so the store accepts only that one pending version — the `webstore` job's upload is expected to fail `ITEM_NOT_UPDATABLE`. Re-upload 0.4.7 once 0.4.6 clears; the GitHub Release is unaffected. |
 | ~~0.4.6 (first attempt)~~ | 🚧 Not tagged | ❌ **Never published** — the 2026-07-23 submission published as **0.4.5** | 2026-07-23 (listing assets only) | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue; toolbar icons keep transparent corners, the **store icon is opaque** — the store rejects a transparent store icon), simplified `Fh`-only 16/32px toolbar variant, refreshed screenshots + promo tiles, and a brand lockup carrying "created by www.MaxResearchCollective.com". Merged to `main`. **The 0.4.6 *package* never reached the store:** Google's publish email for the 2026-07-23 submission states **Version 0.4.5** (published 2026-07-24 10:39 UTC), i.e. the new *listing assets* went live on top of the old 0.4.5 package. That's why the store page shows the `Fh` icon but installs still show the old "M" — see `KNOWN_ISSUES.md`. **Submission slot is OPEN**; uploading the 0.4.6 package is what makes the new icon reach users. No GitHub tag/Release cut for 0.4.6 either. |
 
 Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/blocked · 🚧 unreleased ·
@@ -40,6 +41,30 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 ## What's in each version
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
+
+### 0.4.7 — released on GitHub (2026-09-07); store upload blocked behind 0.4.6
+
+Three bugs reported from the live feed, plus one found in self-review:
+
+- **The AI-slop splat was unreachable on a heavily filtered feed (FH-044).** Grouping is on by
+  default and folds any run of 3+ consecutive hidden posts into one summary row, which carried
+  only *Show all* — every per-post control went with the stubs it replaced. The group row now
+  carries the splat and confirms every slop post in the run at once; *Show all* still expands to
+  individual stubs.
+- **Mute didn't stick (FH-043).** The author was re-identified at click time, when a collapsed
+  post's `innerText` is FeedHacker's own stub — so it stored an unmatchable key while the row
+  still slid away. On reshares it keyed on the reactor rather than the author. And it shared a
+  1.5 s write debounce with internal tallies, so a reload could drop it. Identity is now captured
+  while the post is visible, the actor's own anchor is chosen, and the decision is saved
+  immediately.
+- **The "Group flagged posts" toggle is back on the options page** (Feed display panel), synced
+  with the popup.
+- **Slop verdicts are serialized** — the new bulk confirm would otherwise have raced N storage
+  read-modify-writes and kept one training example out of N (`best_practices` §7).
+
+New guards: `test/integration/author-identity.test.js`, `test/integration/slop-verdict-queue.test.js`,
+plus group-row cases in `grouping.test.js` and a real-Chromium reshare-mute case in
+`extension.system.test.js`. All verified to fail against the pre-fix build.
 
 ### 0.4.6 — released on GitHub (2026-07-29); submitted to the store (in review)
 
