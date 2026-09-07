@@ -74,3 +74,77 @@ test("leaves the Promoted post visible under default settings (Promoted muting o
     await close();
   }
 });
+
+// --- FH-043: Mute must key on the post's AUTHOR, in a real browser -------------------
+// This is the case that only a browser reproduces honestly: by the time the user clicks
+// Mute, `.feedhacker-hidden > *:not(.feedhacker-stub) { display:none }` has taken effect,
+// so re-deriving the author from the live DOM reads our own stub back. On a reshare the
+// reactor's profile link also comes first, so the old code muted the wrong person and the
+// author kept appearing. The identity is now captured while the post is still visible.
+const RESHARE_FIXTURE = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
+  ${post("p-reshare", `
+    <div><a href="/in/reactor-rita">Rita Reactor</a> likes this</div>
+    <div><a href="/in/author-alice">Alice Author</a></div>
+    <div>2h</div>
+    <div>Original commentary from Alice about her week.</div>`)}
+  ${post("p-alice", `
+    <div><a href="/in/author-alice">Alice Author</a></div>
+    <div>1h</div>
+    <div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}
+  ${post("p-dana", `
+    <div><a href="/in/dana-dev">Dana Dev</a></div>
+    <div>30m</div>
+    <div>Notes from the incident review are up on the wiki.</div>`)}
+</div></main></body></html>`;
+
+test("Mute on a reshare stub mutes the author, not the reactor", { skip, timeout: 60000 }, async () => {
+  // "Reaction reshares" is a deterministic filter, so this test never depends on the model.
+  const { ctx, page, close } = await launchFeed({ fixtureHtml: RESHARE_FIXTURE, sync: { muteLikes: true } });
+  try {
+    await page.waitForSelector("#p-reshare .feedhacker-stub", { timeout: 20000 });
+    // Positive control: Alice's own post is visible before the mute.
+    await page.waitForSelector("#p-alice[data-feedhacker-scanned]", { timeout: 20000 });
+    const aliceBefore = await page.locator("#p-alice").evaluate((el) => el.classList.contains("feedhacker-gone"));
+    assert.strictEqual(aliceBefore, false, "Alice's plain post starts visible");
+
+    await page.locator('#p-reshare [data-fh-act="mute"]').click();
+
+    // Muting Alice must take her other post out of the feed outright (a soft block: no stub).
+    // state:"attached" — a soft-blocked post is display:none, so it is never "visible".
+    await page.waitForSelector("#p-alice.feedhacker-gone", { state: "attached", timeout: 20000 });
+    assert.strictEqual(await page.locator("#p-alice .feedhacker-stub").count(), 0,
+      "a muted author's post leaves no placeholder");
+    const danaGone = await page.locator("#p-dana").evaluate((el) => el.classList.contains("feedhacker-gone"));
+    assert.strictEqual(danaGone, false, "an unrelated author is untouched — the reactor was not muted");
+
+    // …and it is persisted immediately, not left in a debounce window a reload would drop.
+    // Read it back through the service worker — the page's main world has no chrome.storage.
+    const sw = ctx.serviceWorkers()[0];
+    const stored = await sw.evaluate(() => new Promise((r) =>
+      chrome.storage.local.get("feedhacker:authors", (o) => r(o["feedhacker:authors"] || {}))));
+    assert.deepStrictEqual(Object.keys(stored.muted || {}), ["/in/author-alice"],
+      "the author's profile path is what got muted");
+  } finally {
+    await close();
+  }
+});
+
+// --- FH-044: the AI-slop splat must be reachable on a folded run --------------------
+test("a folded group row exposes the AI-slop splat end-to-end", { skip, timeout: 60000 }, async () => {
+  const { page, close } = await launchFeed({ fixtureHtml: RUN_FIXTURE, sync: { mutePromoted: true } });
+  try {
+    await page.waitForSelector(".feedhacker-stub.feedhacker-group", { timeout: 20000 });
+    // Promoted posts are deterministic, so there is nothing for the model to learn from and
+    // no splat is offered — only "Show all". (The splat's own behaviour is covered at the
+    // integration tier, where the slop score can be set deterministically.)
+    assert.strictEqual(await page.locator('.feedhacker-group [data-fh-act="confirm-group"]').count(), 0,
+      "a run with no learnable slop in it offers no confirm control");
+    // Expanding restores the individual stubs, each with its own controls.
+    await page.locator('.feedhacker-group [data-fh-act="ungroup"]').click();
+    await page.waitForSelector('#promo-3 [data-fh-act="hide"]', { timeout: 10000 });
+    assert.ok((await page.locator('#promo-0 [data-fh-act="mute"]').count()) >= 1,
+      "an expanded member carries its per-post author controls");
+  } finally {
+    await close();
+  }
+});

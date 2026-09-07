@@ -13,7 +13,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.7] — unreleased
 
+### Fixed
+- **The green AI-slop splat never appeared on a heavily filtered feed.** Grouping is on by
+  default, and a run of three or more filtered posts in a row folds into one *"N posts hidden"*
+  summary row — which carried only **Show all**, dropping every per-post control with the stubs it
+  replaced. The denser your filtering, the more of the feed is runs, so the one button the AI-slop
+  learning loop depends on was effectively unreachable. **The group row now carries the splat**:
+  confirming it trains the filter on every slop post in the run at once, then retires the run.
+  **Show all** still expands the run into individual stubs with their own splat / Hide / Mute /
+  Always show / profile controls.
+- **Mute didn't stick — the muted author's posts kept showing up.** Three separate faults, all
+  silent:
+  - The author was re-identified at the moment you clicked, but by then the post is collapsed and
+    FeedHacker's own stub is the only visible child — so it read *"AI Slop / Show anyway"* back as
+    the author's name and stored a key that could never match a real post. The row still slid away,
+    so the mute looked like it had worked. The author's identity is now **captured while the post
+    is still visible** and read back from there.
+  - On a **reshare** ("Rita likes this"), the reactor's profile link comes first, so Mute muted the
+    connection who surfaced the post instead of the person who wrote it. It now picks the author's
+    own link — the same person the stub names.
+  - Mute and **Always show** were batched into the same 1.5 s write delay as the internal hide/show
+    tallies, so reloading or navigating within that window dropped the decision. They're now saved
+    immediately. If the author genuinely can't be identified, that's logged (visible under
+    **Activity** on the options page) instead of failing quietly.
+
+- **AI-slop corrections recorded in the same moment could overwrite each other**, so the learner
+  kept only the last one. Verdicts are now applied one at a time. (Found while reviewing the group
+  splat above, which confirms a whole run at once and would have hit this on every use.)
+
+  Note: Mute is still a local **soft block** — the author's posts stop appearing in your feed,
+  hidden outright with no placeholder. FeedHacker deliberately never automates a LinkedIn
+  unfollow, block or mute on your account; the ↗ profile button opens LinkedIn's own UI if you
+  want to do that there.
+
 ### Added
+- **The "Group flagged posts" toggle is back on the Advanced Settings page**, in a new **Feed
+  display** panel, alongside an explanation of what grouping does and how the group row's splat
+  and **Show all** behave. It's the same setting as the popup's toggle — change it in either place
+  and both follow — and the Status line now notes when grouping is off.
 - **Screenshot carousel on the website** (`docs/index.html`, the GitHub Pages landing page):
   five 1280×800 frames under `docs/carousel/`, captured from the real extension running in
   Chromium via the system-test harness (feed stubs, the Mute/Solo popup, a folded group row,

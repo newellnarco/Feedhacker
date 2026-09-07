@@ -325,6 +325,27 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     create command returned". This is §4's false-green rule applied to shell-outs, and it bites
     hardest in installers, where nobody sees the failure until updates have silently stopped.
 
+36. **Capture DOM-derived state while the element is still VISIBLE — hiding it changes what you
+    can read.** `.feedhacker-hidden > *:not(.feedhacker-stub) { display: none }` means a collapsed
+    post's `innerText` is now our own stub's text. Re-deriving the author at click time therefore
+    read *"AI Slop / Show anyway"* back as the author's name, and Mute stored a key that could
+    never match a real post — the row still slid away, so the mute looked like it worked and the
+    author kept appearing. Anything you will need *after* you hide something (author, URL, body
+    preview, the scorer's feature vector) is captured **before** the collapse and stashed on the
+    element; readers prefer the stash and only fall back to the live DOM. This is §8 ("re-score
+    from stored features, not stub text") generalised past scoring to identity.
+37. **A summary row must carry the actions of the rows it replaces.** Folding N hidden posts into
+    one "N posts hidden" row dropped every per-post control with them, so on a slop-heavy feed —
+    where runs are the *common* case, not the exception — the AI-slop splat was unreachable and the
+    learner got no signal at all. Whenever a collapsed/aggregated view stands in for individual
+    items, either surface the action at the aggregate level (confirm the whole run) or give a
+    one-click way back to the individual rows. Check the collapsed path for **every** affordance
+    the expanded path offers, and check it at the density users actually hit.
+38. **A user's deliberate one-off decision is written through immediately; only tallies get
+    debounced.** Mute / Always-show were batched into the same 1.5 s debounce as the high-frequency
+    hide/show counters, so a reload or navigation inside that window dropped the mute entirely.
+    Debounce what is chatty and reconstructible; persist what the user just told you, now.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

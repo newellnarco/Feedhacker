@@ -115,29 +115,76 @@
     return (t2.split(/[•·]/)[0] || "").replace(/\s+(Verified|Premium)\s+Profile\b.*$/i, "").trim().slice(0, 40);
   }
 
-  // --- author actions: unfollow + profile quick-link ---
+  // --- author actions: mute + profile quick-link ---
   // Same cleanup as actorLinkName, but returns the anchor element (so we can read its
-  // href), not just the display name. Skips the empty avatar link and reactor links.
-  function actorAnchor(el) {
+  // href), not just the display name. Skips the empty avatar link.
+  //
+  // `name` (optional) is the actor we already resolved for this post. On a RESHARE the
+  // reactor's profile link comes FIRST in document order, so "first named link" returns
+  // the wrong person: the stub then names the author while Mute keys on the reactor, and
+  // the author keeps showing up. Preferring the anchor whose own text matches the resolved
+  // actor keeps the name we display and the key we store on the same person.
+  function actorAnchor(el, name?: string) {
     var links = el.querySelectorAll('a[href*="/in/"], a[href*="/company/"]');
+    var want = (name || "").replace(/\s+/g, " ").trim().toLowerCase();
+    var named: any[] = [], seen: any = {};
     for (var i = 0; i < links.length; i++) {
       var txt = getText(links[i]).replace(/\s+/g, " ").trim()
         .replace(/\s+(Verified|Premium)\s+Profile\b.*$/i, "")
         .replace(/\s*[•·].*$/, "")
         .replace(/\s+(1st|2nd|3rd\+?)\b.*$/i, "")
         .replace(/\s*\d[\d,]*\s*followers?.*/i, "").trim();
-      if (txt.length >= 2 && !/^(Promoted|Follow|Page)$/i.test(txt)) return links[i];
+      if (txt.length < 2 || /^(Promoted|Follow|Page)$/i.test(txt)) continue;
+      if (want && sameActor(txt.toLowerCase(), want)) return links[i];   // the actor's own link wins
+      var href = (links[i].getAttribute("href") || "").split("?")[0];
+      if (!seen[href]) { seen[href] = 1; named.push(links[i]); }         // dedupe avatar + name links
     }
-    return null;
+    // No name match (the header often runs the name straight into the body, so there is
+    // nothing clean to compare). Fall back on POSITION, using the same reshare test getActor
+    // uses to name the author: on a reshare the reactor's link is first and the author's is
+    // the next distinct profile, so taking the first link would mute the wrong person.
+    if (named.length > 1 && isReactionReshare(el)) return named[1];
+    return named[0] || null;
   }
-  // {name, url} for the post's author. url is normalized to an absolute LinkedIn URL
-  // with the query stripped; empty string when no profile link is found.
-  function authorInfo(el) {
-    var a = actorAnchor(el);
+  // The resolved actor name and a link's own text rarely match character-for-character —
+  // whichever is derived from innerText can carry a trailing headline or timestamp. Treat
+  // them as the same person when one starts with the other AT A WORD BOUNDARY, so "Alice
+  // Author" matches "Alice Author Head of Growth" but "Al" never matches "Alice Author".
+  function sameActor(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    return a.indexOf(b + " ") === 0 || b.indexOf(a + " ") === 0;
+  }
+  // {name, url} for the post's author, derived from the LIVE DOM. url is normalized to an
+  // absolute LinkedIn URL with the query stripped; empty string when no profile link is
+  // found. Only valid while the post is still VISIBLE — see captureAuthor/authorInfo.
+  function liveAuthorInfo(el) {
+    var name = getActor(el);
+    var a = actorAnchor(el, name);
     var url = a ? (a.getAttribute("href") || "") : "";
     if (url && url.indexOf("http") !== 0 && url.charAt(0) === "/") url = "https://www.linkedin.com" + url;
     url = url.split("?")[0];
-    return { name: getActor(el), url: url };
+    return { name: name, url: url };
+  }
+  // Capture the author while the post is still visible and stash it on the element. MUST be
+  // called before collapse(): once a post is hidden, CSS hides every child except our stub,
+  // so el.innerText becomes the STUB's own text ("AI Slop / Show anyway") and getActor reads
+  // that back as the author's name. A later Mute click then stores a garbage key that can
+  // never match a real post, so the mute silently does nothing (FH-043).
+  function captureAuthor(el) {
+    var info = liveAuthorInfo(el);
+    el.dataset.feedhackerActor = info.name;
+    el.dataset.feedhackerActorUrl = info.url;
+    return info;
+  }
+  // {name, url} for the post's author. Prefers the values captured while the post was
+  // visible; falls back to the live DOM for posts we never scanned (or in tests).
+  function authorInfo(el) {
+    var ds = el && el.dataset;
+    if (ds && typeof ds.feedhackerActorUrl === "string") {
+      return { name: ds.feedhackerActor || "", url: ds.feedhackerActorUrl };
+    }
+    return liveAuthorInfo(el);
   }
 
   // A post authored by a LinkedIn Company or School page (WSJ, brands, publishers,
@@ -445,6 +492,12 @@
     switch (btn.getAttribute("data-fh-act")) {
       case "ungroup":
         ungroupRun(doc, el, settings);
+        break;
+      case "confirm-group":
+        btn.disabled = true; btn.title = "Confirmed AI slop";
+        btn.classList.add("feedhacker-confirmed");
+        clearEl(btn); btn.appendChild(checkIcon(doc));   // same confirmation beat as the single-post splat
+        confirmGroupSlop(doc, el, settings);
         break;
       case "confirm":
         if (el.dataset.feedhackerConfirmedSlop === "1") return;   // idempotent: one positive signal per post
@@ -828,6 +881,26 @@
     }
     return order.map(function (l) { return { label: l, n: counts[l] }; });
   }
+  // Members of a folded run, head first, in feed order.
+  function groupMembers(doc, headId) {
+    var out: any[] = [];
+    if (!headId) return out;
+    var all = findPostContainers(doc);
+    for (var i = 0; i < all.length; i++) {
+      var p = all[i];
+      if (p.dataset.feedhackerGrouphead === headId || p.dataset.feedhackerGroup === headId) out.push(p);
+    }
+    return out;
+  }
+  // The run members we can actually train on: slop-flagged and carrying the feature vector
+  // the scorer stashed when we collapsed them.
+  function slopMembers(members) {
+    var out: any[] = [];
+    for (var i = 0; i < members.length; i++) {
+      if (members[i].dataset.feedhackerFeatures && hasFlag(readReasons(members[i]), "sloppy")) out.push(members[i]);
+    }
+    return out;
+  }
   function renderGroupStub(doc, head, headId, members, settings) {
     armStub(doc, settings);
     var stub = ensureStub(doc, head);
@@ -842,9 +915,37 @@
     if (detail) { var d = doc.createElement("span"); d.className = "feedhacker-stub-rule"; d.textContent = " · " + detail; line.appendChild(d); }
     main.appendChild(line); stub.appendChild(main);
     var actions = doc.createElement("span"); actions.className = "feedhacker-actions";
+    // The AI-slop splat belongs on the GROUP row too. Folding a run used to drop every
+    // per-post control, so on a slop-heavy feed — where runs are the common case — the
+    // splat was never reachable at all (FH-044). Here it confirms every slop post in the run
+    // at once; "Show all" still expands to individual stubs for a post-by-post decision.
+    var trainable = slopMembers(members);
+    if (trainable.length && settings && typeof settings.onFeedback === "function") {
+      var yes = iconButton(doc, "feedhacker-confirm", splatIcon(doc),
+        "AI slop — confirm all " + trainable.length + " in this group");
+      yes.setAttribute("data-fh-act", "confirm-group");
+      actions.appendChild(yes);
+    }
     var btn = twoRowButton(doc, "feedhacker-show", "Show", "all");
     btn.setAttribute("data-fh-act", "ungroup");
     actions.appendChild(btn); stub.appendChild(actions);
+  }
+  // "Yes, all of this is slop": train on every slop member of the run, then retire the whole
+  // run. Idempotent per post (feedhackerConfirmedSlop), like the single-post splat.
+  function confirmGroupSlop(doc, el, settings) {
+    var headId = el.dataset.feedhackerGrouphead || el.dataset.feedhackerGroup;
+    var members = groupMembers(doc, headId);
+    if (!members.length) return;
+    for (var i = 0; i < members.length; i++) {
+      var m = members[i];
+      if (m.dataset.feedhackerConfirmedSlop === "1") continue;
+      var mflags = readReasons(m);
+      if (!hasFlag(mflags, "sloppy")) continue;
+      m.dataset.feedhackerConfirmedSlop = "1";
+      emitFeedback(m, mflags, settings, 1);
+      emitVerdict(m, settings, 1);
+    }
+    for (var j = 0; j < members.length; j++) dismissRow(members[j]);
   }
   function groupRuns(doc, settings) {
     if (!settings || !settings.groupHiddenRuns) return;
@@ -874,13 +975,9 @@
   }
   function ungroupRun(doc, el, settings) {
     var headId = el.dataset.feedhackerGrouphead || el.dataset.feedhackerGroup;
-    if (!headId) return;
-    var all = findPostContainers(doc);
-    for (var i = 0; i < all.length; i++) {
-      var p = all[i];
-      var isHead = p.dataset.feedhackerGrouphead === headId;
-      var isMember = p.dataset.feedhackerGroup === headId;
-      if (!isHead && !isMember) continue;
+    var run = groupMembers(doc, headId);
+    for (var i = 0; i < run.length; i++) {
+      var p = run[i];
       delete p.dataset.feedhackerGrouphead; delete p.dataset.feedhackerGroup;
       p.dataset.feedhackerUngrouped = "1";                 // don't immediately re-group this run
       p.classList.remove("feedhacker-gone"); p.classList.add("feedhacker-hidden");
@@ -894,7 +991,8 @@
     if (stub && stub.parentNode) stub.parentNode.removeChild(stub);
     el.classList.remove("feedhacker-hidden", "feedhacker-gone", "feedhacker-dismissing");
     ["feedhackerHidden", "feedhackerScanned", "feedhackerReasons", "feedhackerFeatures",
-     "feedhackerActor", "feedhackerPreview", "feedhackerSlopId", "feedhackerConfirmedSlop"].forEach(function (k) { delete el.dataset[k]; });
+     "feedhackerActor", "feedhackerActorUrl", "feedhackerPreview", "feedhackerSlopId",
+     "feedhackerConfirmedSlop"].forEach(function (k) { delete el.dataset[k]; });
   }
   // Soft re-apply after the model changes (auto-calibration): reveal slop-hidden posts that no
   // longer qualify and let a tightened model hide newly-qualifying shown posts — WITHOUT tearing
@@ -957,7 +1055,9 @@
     // Author memory: an allowlisted author is always shown; a muted author is always
     // hidden — both independent of the per-kind toggles.
     var A = root.FeedHackerAuthors, info: any = null;
-    function author() { if (info === null) info = authorInfo(el); return info; }
+    // captureAuthor (not authorInfo) so the identity is stashed on the element NOW, while the
+    // post is still visible — every later read (Mute, Always show, the stub's name) uses it.
+    function author() { if (info === null) info = captureAuthor(el); return info; }
     if (A && settings.authors) {
       var key = A.keyFor(author());
       if (key) {
@@ -984,8 +1084,7 @@
     // Capture the author + opening line while the post is still visible (innerText goes
     // empty once we hide it). The slop stub reads both back; the name also feeds "Name
     // names". Cheap here — only posts past the early-returns above reach this.
-    var actor = getActor(el);
-    el.dataset.feedhackerActor = actor;
+    var actor = author().name;                       // stashes feedhackerActor/-ActorUrl if not already
     el.dataset.feedhackerPreview = firstBodyLine(text, actor);
 
     if (solos.length) {   // Solo wins: show ONLY soloed kinds, hide the rest.
@@ -1166,7 +1265,7 @@
       hid[j].classList.remove("feedhacker-gone");
       hid[j].classList.remove("feedhacker-dismissing");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-actor-url],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       if (kept(el)) continue;
@@ -1175,6 +1274,7 @@
       delete el.dataset.feedhackerDismissed;
       delete el.dataset.feedhackerReasons;
       delete el.dataset.feedhackerActor;
+      delete el.dataset.feedhackerActorUrl;
       delete el.dataset.feedhackerPreview;
       delete el.dataset.feedhackerFeatures;
       delete el.dataset.feedhackerDismissing;

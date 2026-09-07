@@ -42,14 +42,37 @@ enabledBox.addEventListener("change", function () {
   paintEnabled(enabledBox.checked);
 });
 
+// --- Feed display: grouping toggle -------------------------------------------------
+// The same sync key the popup writes ("Group flagged posts"). It lives here as well because
+// this is where a user goes looking for settings once a lot of their feed is being filtered;
+// storage.onChanged repaints it, so the two surfaces can never disagree.
+var groupBox = byId("groupHiddenRuns");
+var groupState = byId("group-state");
+function paintGrouping(on) {
+  if (!groupBox) return;
+  groupBox.checked = !!on;
+  if (groupState) {
+    groupState.textContent = on ? "ON" : "OFF";
+    groupState.className = "state " + (on ? "on" : "off");
+  }
+}
+if (groupBox) {
+  groupBox.addEventListener("change", function () {
+    chrome.storage.sync.set({ groupHiddenRuns: groupBox.checked });
+    paintGrouping(groupBox.checked);
+  });
+}
+
 function renderStatus(st) {
   paintEnabled(st.enabled);
+  paintGrouping(st.groupHiddenRuns !== false);   // default on
   var active: any[] = [];
   Filters.FILTERS.forEach(function (f) {
     if (st["solo" + f.key]) active.push(f.label + " (solo)");
     else if (st["mute" + f.key]) active.push(f.label);
   });
   var extras: any[] = [];
+  if (st.groupHiddenRuns === false) extras.push("no grouping");
   if (st.hideSlopComments) extras.push("hide slop comments");
   if (st.hideCompletely) extras.push("hide completely");
   if (st.nameNames && st.nameSample) extras.push("author + sample");

@@ -123,6 +123,16 @@
       catch (e) { logError(e, "save-authors"); }
     }, 1500);
   }
+  // Mute / Always-show are deliberate, one-off user decisions, so they are written through
+  // immediately: the 1.5s debounce below is for the high-frequency hide/show TALLIES, and a
+  // reload or navigation inside that window used to drop the mute entirely — the author then
+  // kept showing up (FH-043). Bypasses the debounce and cancels any pending one.
+  function saveAuthorsNow() {
+    if (authorsTimer) { clearTimeout(authorsTimer); authorsTimer = null; }
+    authorsDirty = false;
+    try { var p = {}; p[AUTHORS_KEY] = authorStore; chrome.storage.local.set(p); }
+    catch (e) { logError(e, "save-authors"); }
+  }
   function refreshAuthorFlags() {
     settings.authors = authorStore;
     settings.authorMutesActive = !!(Authors && Authors.listMuted(authorStore).length);
@@ -130,9 +140,14 @@
   function onMuteAuthor(info) {
     try {
       if (!Authors) return;
-      authorStore = Authors.mute(authorStore, Authors.keyFor(info), info && info.name);
+      var key = Authors.keyFor(info);
+      // No key means we could not identify the author, and Authors.mute would return the store
+      // UNCHANGED — the row would still slide away and the user would think it worked. Say so
+      // instead of failing silently.
+      if (!key) { logError(new Error("Mute: could not identify this post's author"), "mute-author"); return; }
+      authorStore = Authors.mute(authorStore, key, info && info.name);
       refreshAuthorFlags();
-      authorsDirty = true; saveAuthorsSoon();
+      saveAuthorsNow();
       if (ready) { F.reset(document, true); scanNow(); reportBadge(); }   // apply immediately (keep user Hide/Show actions)
     } catch (e) { logError(e, "mute-author"); }
   }
@@ -140,9 +155,11 @@
   function onAllowAuthor(info) {
     try {
       if (!Authors) return;
-      authorStore = Authors.allow(authorStore, Authors.keyFor(info), info && info.name);
+      var akey = Authors.keyFor(info);
+      if (!akey) { logError(new Error("Always show: could not identify this post's author"), "allow-author"); return; }
+      authorStore = Authors.allow(authorStore, akey, info && info.name);
       refreshAuthorFlags();
-      authorsDirty = true; saveAuthorsSoon();
+      saveAuthorsNow();
       if (ready) { F.reset(document, true); scanNow(); reportBadge(); }   // reveal now + keep showing
     } catch (e) { logError(e, "allow-author"); }
   }
@@ -233,31 +250,47 @@
     }
     return out;
   }
-  function onSlopVerdict(id, label, feats) {
+  // A verdict is a read-modify-write over two storage keys, so two of them in flight at once
+  // would both read the SAME pre-state and the second `set` would drop the first's training
+  // example (best_practices §7). The group splat confirms a whole run in one tick, which makes
+  // that the normal case rather than a race — so verdicts are queued and applied one at a time.
+  var verdictQueue: any[] = [], verdictBusy = false;
+  function pumpVerdicts() {
+    if (verdictBusy) return;
+    var job = verdictQueue.shift();
+    if (!job) return;
+    verdictBusy = true;
+    var done = function () { verdictBusy = false; pumpVerdicts(); };
     try {
-      if (!SlopLog) return;
-      var lab = label ? 1 : 0;
-      // Stamp any not-yet-flushed decision in memory so a fast correction isn't lost.
-      for (var p = 0; p < slopPending.length; p++) if (slopPending[p].id === id) slopPending[p].label = lab;
       chrome.storage.local.get([SlopLog.STORAGE_KEY, TRAIN_KEY], function (o) {
         try {
           var list = (o && o[SlopLog.STORAGE_KEY]) || [];
-          if (id) list = SlopLog.applyVerdict(list, id, lab, Date.now());
+          if (job.id) list = SlopLog.applyVerdict(list, job.id, job.lab, Date.now());
           var patch: any = {}; patch[SlopLog.STORAGE_KEY] = list;
-          if (feats && Scorer) {
+          if (job.feats && Scorer) {
             var train = (o && o[TRAIN_KEY]) || [];
-            var ex = { id: id || String(Date.now()), features: cleanFeatures(feats), label: lab, ts: Date.now() };
+            var ex = { id: job.id || String(Date.now()), features: cleanFeatures(job.feats), label: job.lab, ts: Date.now() };
             var replaced = false;   // one example per decision — a changed mind overwrites
-            for (var i = 0; i < train.length; i++) if (id && train[i] && train[i].id === id) { train[i] = ex; replaced = true; break; }
+            for (var i = 0; i < train.length; i++) if (job.id && train[i] && train[i].id === job.id) { train[i] = ex; replaced = true; break; }
             if (!replaced) train.push(ex);
             if (train.length > TRAIN_MAX) train = train.slice(train.length - TRAIN_MAX);
             patch[TRAIN_KEY] = train;
             // Label-driven retune only when the autonomous loop is OFF (otherwise it owns the model).
             if (!settings.autoCalibrate && ++newLabels >= RETUNE_EVERY) { newLabels = 0; recalibrate(train); }
           }
-          chrome.storage.local.set(patch);
-        } catch (e) { logError(e, "slop-verdict"); }
+          chrome.storage.local.set(patch, done);
+        } catch (e) { logError(e, "slop-verdict"); done(); }
       });
+    } catch (e) { logError(e, "slop-verdict"); done(); }
+  }
+  function onSlopVerdict(id, label, feats) {
+    try {
+      if (!SlopLog) return;
+      var lab = label ? 1 : 0;
+      // Stamp any not-yet-flushed decision in memory so a fast correction isn't lost.
+      for (var p = 0; p < slopPending.length; p++) if (slopPending[p].id === id) slopPending[p].label = lab;
+      verdictQueue.push({ id: id, lab: lab, feats: feats });
+      pumpVerdicts();
     } catch (e) {}
   }
   settings.onSlopVerdict = onSlopVerdict;
