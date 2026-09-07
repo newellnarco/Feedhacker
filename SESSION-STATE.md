@@ -22,29 +22,33 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 ## ⏳ Next session — check first
 
 - **0.4.7 SHIPPED 2026-09-07** on the maintainer's explicit "ship it" — merged as `a10d66e`
-  (PR #60), then released via the Release workflow (`publish: true`): tag `v0.4.7` → GitHub
-  Release with the prebuilt zips → store upload attempt. Contents: the AI-slop splat was
-  unreachable whenever grouping folded a run (**FH-044**); **Mute** keyed on the collapsed
-  stub's own text, or on a reshare's *reactor*, and could be lost to a write debounce
-  (**FH-043**); the grouping toggle is back on the options page; slop verdicts are serialized
-  (§7). Full triad green; every new guard verified to fail pre-fix.
-  - ⚠️ **The store upload was expected to FAIL** (`ITEM_NOT_UPDATABLE`): **0.4.6 has been in
-    Google review since 2026-07-29** with neither a publish nor a rejection email — ~6 weeks,
-    unusually long. The slot stays BLOCKED. **Next session: check the store email again; if
-    0.4.6 finally published, re-upload 0.4.7** (re-run the Release workflow, or upload
-    `feedhacker-0.4.7-store.zip` from the Release assets). Worth chasing in the Developer
-    Dashboard if there's still no decision.
-  - Next dev cycle is **0.4.8** — bump `manifest.json`/`package.json` and open a fresh
-    `[0.4.8] — unreleased` section in `CHANGELOG.md` before the next change.
+  (PR #60) + `f81446e` (PR #61), then released via the Release workflow run #20
+  (`publish: true`, conclusion **success**): tag **`v0.4.7`** → **GitHub Release** with all four
+  prebuilt zips → **store upload**. Contents: the AI-slop splat was unreachable whenever grouping
+  folded a run (**FH-044**); **Mute** keyed on the collapsed stub's own text, or on a reshare's
+  *reactor*, and could be lost to a write debounce (**FH-043**); the grouping toggle is back on
+  the options page; slop verdicts are serialized (§7). Full triad green; every new guard verified
+  to fail pre-fix.
+  - **The store upload SUCCEEDED** — `webstore` job log: "Uploading feedhacker-0.4.7-store.zip… /
+    Publishing… / Publish successful", i.e. **submitted for Google review**, not yet approved.
+    This contradicted the prediction made earlier in the session (that it would fail
+    `ITEM_NOT_UPDATABLE` behind 0.4.6); `RELEASES.md` has been corrected to match what actually
+    happened. Lesson: read the job log, don't record a prediction as an outcome.
+  - **0.4.6's store fate is unknown and it was never confirmed live.** No "Item successfully
+    published" email for 0.4.6 ever arrived — the newest publish email is still **Version 0.4.5**
+    (2026-07-21) — and no rejection arrived either, yet the store accepted 0.4.7 on 2026-09-07, so
+    0.4.6 was no longer holding the slot. Don't spend more time reconstructing it; 0.4.7
+    supersedes it.
+  - **Next session: check whether 0.4.7 published.** Search Gmail
+    `from:chromewebstore-noreply@google.com newer_than:7d` and read the **Version** field of the
+    newest "Item successfully published" email. If it says **0.4.7** → mark 0.4.7 ✅ Live in
+    `RELEASES.md`, slot OPEN. If it still says 0.4.5, 0.4.7 is in review → slot BLOCKED, don't
+    upload. Given 0.4.6 apparently vanished without an email, **verify in the Developer Dashboard
+    too** rather than trusting email alone.
+  - The next dev cycle is **0.4.8**: `manifest.json` / `package.json` are bumped and
+    `CHANGELOG.md` has an empty `[0.4.8] — unreleased` section. Accumulate there; don't release
+    without an explicit "ship".
 
-- **Did v0.4.6 publish on the Chrome Web Store?** It was shipped 2026-07-29 via the Release
-  workflow and auto-submitted (`CWS_AUTO_PUBLISH=true`, log: "Publish successful" = *submitted for
-  review*, not approved). Search Gmail for the "Item successfully published" email and check the
-  **Version** field says **0.4.6**. If yes → mark 0.4.6 ✅ Live in `RELEASES.md`, slot OPEN. If the
-  newest email still says 0.4.5, it's **still in review** — slot BLOCKED, don't upload anything.
-  **Read the `Version` field, not the listing** — that mix-up is what caused the icon bug (§33).
-  As of 2026-07-29 ~22:15 UTC the newest store email was still Version **0.4.5** (2026-07-24), i.e.
-  0.4.6 was **still in review**, no rejection.
 - **One owner action outstanding:** **Windows sideload users must re-install once** — see FH-042 /
   `KNOWN_ISSUES.md`. The 0.4.5 updater can't deliver its own fix, so tell any affected user to
   re-run `installer\install.bat` from `feedhacker-0.4.6-win.zip`.
