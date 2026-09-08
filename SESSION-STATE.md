@@ -1,92 +1,130 @@
-# FeedHacker — session state & startup checklist
+# FeedHacker — session state
 
-**Read this FIRST at the start of any new session, then run the Startup checklist.** It's the
-fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-version ship record),
-[`CHANGELOG.md`](CHANGELOG.md) (changes), [`CLAUDE.md`](CLAUDE.md) (standing rules).
+**This file is the handoff between sessions.** A session has no memory of the last one; this
+file *is* that memory. Two rules make it work, and both are standing rules in
+[`CLAUDE.md`](CLAUDE.md):
 
-## Startup checklist (run every new session)
+> **Every session STARTS here** — read this file top to bottom, then run the Startup checklist.
+> **Every session ENDS here** — before signing off, run the Close-out checklist below.
 
-1. **Review the record** — this file, then `RELEASES.md` and the top of `CHANGELOG.md`.
-2. **Check which version is LIVE on the Chrome Web Store.** Search Gmail:
-   `from:chromewebstore-noreply@google.com newer_than:7d`, open the newest thread, read the
-   **Version** field of the latest "Item successfully published" email. That version is live.
-3. **Check the submission slot is OPEN.** The store accepts only **one pending version at a
-   time**. It's OPEN when the newest store email is a *published* (or *rejected*) decision for
-   the latest submitted version. It's **BLOCKED** if a version was uploaded but has no
-   published/rejected email yet — that version is still **in review**, and any new store upload
-   fails `ITEM_NOT_UPDATABLE`. (GitHub releases are never blocked; only the store upload is.)
-4. **Report + ask.** Summarize what's done/planned for the next release and which version, then
-   **ask the user: ship these changes now, or wait for more?** Never release without an explicit
-   "ship"/"push" (see `CLAUDE.md`).
+Companion records: [`RELEASES.md`](RELEASES.md) (per-version ship record) ·
+[`CHANGELOG.md`](CHANGELOG.md) (what changed) · [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) (bugs and
+their fixes) · [`best_practices.md`](best_practices.md) (the coding standard) ·
+[`TEST_MATRIX.md`](TEST_MATRIX.md) (what a change obliges you to run).
 
-## ⏳ Next session — check first
+---
 
-### Session closed 2026-09-08 (the "it hides everything" session)
+## 1. Open items — READ FIRST
 
-**Where things stand:** `main` @ `b127b32`. **0.4.9 is LIVE on the Chrome Web Store**
-(Google "Item successfully published", Version 0.4.9, **2026-09-08 04:25 UTC**). The
-**submission slot is OPEN** — nothing is pending review.
+The single list of what is still outstanding. Nothing else in this file is a to-do; if it is not
+here, it is not open. Close an item by deleting its row and saying so in the Session log.
 
-- **Dev cycle OPEN: 0.5.0.** `manifest.json` / `package.json` / `package-lock.json` are bumped
-  and `CHANGELOG.md` has an empty `[0.5.0] — unreleased` section. Land work under that version
-  and label PRs `v0.5.0`. **Do not release without an explicit "ship"/"push."**
+| # | Open item | Who | Detail |
+|---|---|---|---|
+| 1 | **Verify the AI-slop fix on a real feed** | maintainer | FH-049 (0.4.9) has still never been measured against a live feed — the two logs sent so far were byte-identical exports of the *same* pre-0.4.9 build. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. Check `version` reads ≥ `0.5.0` before sending. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
+| 2 | **0.5.0 is in Google review, not live** | maintainer / next session | Submitted 2026-09-08 20:39 UTC. Confirm with the "Item successfully published" email for **Version 0.5.0**, then mark it ✅ Live in `RELEASES.md`. Until then the slot is **BLOCKED** — a further store upload would fail `ITEM_NOT_UPDATABLE`. |
+| 3 | **`CWS_PUBLISHER_ID` is invisible to GitHub Actions** | maintainer | Present in neither tab as far as the workflow can see, so `cancelSubmission` **has never once been called**. Likely the wrong *page*: Settings → Secrets and variables → **Actions** is separate from **Codespaces** and **Dependabot**. Repository (not environment) scope, named exactly `CWS_PUBLISHER_ID`. Only matters when a version is actually stuck in review — every upload so far has gone into a free slot. |
+| 4 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
+| 5 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
 
-- **Two owner actions are still open** (nothing in the repo blocks on them):
-  1. **Verify FH-049 on a real feed.** 0.4.9 shipped proven in tests only. *Reset AI-slop
-     learning* (the stored weights and 112 training examples came from the duplicate flood and
-     stay over-aggressive until cleared), browse, then **Export log (JSON)**. **Decisions should
-     ≈ distinct posts** — it was 300 from 13. If it is still lopsided, the activity-URN lookup
-     is not finding LinkedIn's post ids and the markup needs inspecting. Bring the export; do
-     not re-theorise without it (§49).
-  2. **`CWS_PUBLISHER_ID` is still invisible to Actions**, from both the Variables and the
-     Secrets tab. Most likely the wrong *page*: Settings → Secrets and variables → **Actions**
-     has its own Secrets/Variables tabs, separate from the **Codespaces** and **Dependabot**
-     pages, and a value added on either of those is invisible to workflows. Check it is on the
-     Actions page, at repository (not environment) scope, named exactly `CWS_PUBLISHER_ID`.
+## 2. Current state
 
-**What shipped this session** — three releases in one day, all now live:
+| | |
+|---|---|
+| **Latest version** | **0.5.0** — shipped 2026-09-08 (tag `v0.5.0`, GitHub Release, store upload **submitted for review**) |
+| **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
+| **Confirmed live on the store** | 0.4.9 (published 2026-09-08 04:25 UTC) — 0.5.0 is submitted, not yet live |
+| **Submission slot** | **BLOCKED** until 0.5.0 clears review |
+| **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change |
+| **Review** | no AI reviewer runs on this repo — **green CI is the merge gate** (`REVIEWERS_STATUS.md`) |
 
-| Version | Live on store | Contents |
-|---|---|---|
-| **0.4.7** | 2026-09-07 22:57 UTC | **FH-044** AI-slop splat unreachable when grouping folded a run · **FH-043** Mute keyed on the collapsed stub's own text, or on a reshare's *reactor*, and could be lost to a write debounce · grouping toggle back on the options page · serialized slop verdicts (§7) |
-| **0.4.8** | 2026-09-08 03:24 UTC | **FH-045** the house style guide `claudisms.json` scored as evidence of AI authorship, em dash counted twice (one em dash: p=0.168 → 0.786) · **FH-046** `targetFrac` was a quota, so a clean feed still lost ~28% — now a ceiling · **FH-047** group rows capped at 8 · thin-feed top-up · **FH-048** store-cancel step no longer skips silently |
-| **0.4.9** | 2026-09-08 04:25 UTC | **FH-049** posts re-judged on every LinkedIn re-render — 300 decisions from 13 posts, one 42× in 63s — flooding the calibration population and training buffer, so the model grew more aggressive the longer it ran; identity is now the activity URN with a verdict ledger, and user choices survive a re-render · **FH-050** LinkedIn furniture hidden as posts; 20+ words now required |
+## 3. Startup checklist (run every new session)
 
-**What the store actually did**, now that all three have cleared review: every upload went into
-a **free slot** and published within hours (0.4.7 ~4h, 0.4.8 ~2h, 0.4.9 ~20min). The
-cancel-submission step has therefore **never once been needed**, and `cancelSubmission` has
-**never been called** against Google's API — it remains unexercised, not proven working. Do not
-describe it as working until a run shows an HTTP response from it.
+1. **Read this file** — §1 Open items, then §2 Current state, then §6 Key facts.
+2. **Skim the record** — `RELEASES.md`, then the top of `CHANGELOG.md`.
+3. **Check what is LIVE on the Chrome Web Store.** Gmail:
+   `from:chromewebstore-noreply@google.com newer_than:14d` — the **Version** field of the newest
+   "Item successfully published" email is what users are running. Update `RELEASES.md` if it has
+   moved since the last session wrote it down.
+4. **Check the submission slot.** The store accepts **one pending version at a time**. It is OPEN
+   when the newest email is a published/rejected decision for the latest submitted version;
+   **BLOCKED** if a version was uploaded and has no decision yet (a new upload then fails
+   `ITEM_NOT_UPDATABLE`). GitHub releases are never blocked — only the store upload.
+5. **Report and ask.** Summarize what is done and planned for the next release, then ask:
+   **ship now, or keep developing?** Never release without an explicit "ship"/"push".
 
-**Two method lessons, both earned the hard way this session** (see `best_practices.md`):
+## 4. Close-out checklist (run before ending every session)
 
-- **§44/§45 — never record a prediction as an outcome.** It happened *three* times: the 0.4.7
-  upload was written up as failing `ITEM_NOT_UPDATABLE` before it succeeded; 0.4.9 was written up
-  as "replacing 0.4.8 in the review queue" when nothing was withdrawn; and 0.4.8 carried the same
-  claim about 0.4.7. Each needed its own correction PR (#62, #70, #71). Read the log, then write.
-- **§49 — ask for the artifact before theorising.** Two full rounds of scoring fixes (0.4.8) were
-  validated against a corpus written by the person fixing the bug, which by construction scanned
-  each post once and therefore *could not exhibit* the real defect. The maintainer's exported
-  decision log found it in minutes. Those rounds were not wasted — FH-045/046/047 are real — but
-  they were not the cause.
+The next session starts from what you leave here. Leaving it stale is the whole failure mode.
 
-**PRs merged this session:** #63–#71 (fixes, guards, records). Every bug closed the loop: fix →
-regression test at the tier that catches it → `KNOWN_ISSUES.md` row with a **Found by**
-attribution → a numbered rule in `best_practices.md` where the class was general
-(FH-043 … FH-050; §36–§49).
+1. **Update §1 Open items** — delete what closed, add what is newly outstanding, and say who
+   each item is waiting on. This is the highest-value thing you will write.
+2. **Update §2 Current state** — version, what is confirmed live, dev cycle.
+3. **Add a §5 Session log entry** — newest first: the date, what shipped or merged, what was
+   diagnosed, and anything a future session would otherwise have to rediscover.
+4. **Record outcomes, never predictions** (§44/§45). If you said a workflow or an external
+   service would do something, **read its log and write what it actually did.** This has been
+   got wrong four times; each needed its own correction PR.
+5. **Fold durable lessons outward** — a bug class into `best_practices.md`, a bug into
+   `KNOWN_ISSUES.md`, a shipped version into `RELEASES.md`. This file holds *state*, not lessons.
+6. **Leave the tree clean** — everything merged to `main` with green CI, or explicitly noted here
+   as unfinished with the branch name.
 
-### Standing items that outlived this session
+## 5. Session log
 
-- **Windows sideload users must re-install once** — FH-042 / `KNOWN_ISSUES.md`. The 0.4.5 updater
-  cannot deliver its own fix, so an affected user has to re-run `installer\install.bat` from a
-  current `feedhacker-<version>-win.zip`. Still open.
-- **0.4.6's store fate was never established** — no publish email and no rejection, yet the slot
-  was free for 0.4.7. Superseded three times over now; don't spend time reconstructing it.
-- **No AI reviewer runs on this repo.** CodeRabbit was removed from every repo except `max3` and
-  `netsniff` (2026-07-29). **Green CI is the merge gate**; review is self-review against
-  `best_practices.md` *before* pushing. Don't recreate `.coderabbit.yaml`, don't invoke
-  `@coderabbitai` (paid quota), don't wait on a bot comment. See `REVIEWERS_STATUS.md`.
-- **The `msi` job is best-effort** and fails on the WiX gate every release. It never blocks.
+Newest first. One entry per session; keep entries short and factual.
+
+### 2026-09-08 — "it hides everything", three releases, and the solo-mode red herring
+
+- **Shipped 0.4.7, 0.4.8, 0.4.9 and 0.5.0**, all four on explicit maintainer instruction.
+  0.4.7/0.4.8/0.4.9 confirmed published on the store (22:57, 03:24 and 04:25 UTC); 0.5.0
+  **submitted for review** at 20:39 UTC (Release run #23, `Publish successful`) — not yet live.
+  The store-cancel step ran and warned `CWS_PUBLISHER_ID is empty` for the **fourth** release
+  running, so `cancelSubmission` has still never been called; every upload has gone into a free
+  slot instead.
+- **Fixed FH-043 … FH-051** — see `KNOWN_ISSUES.md`. The arc: Mute keyed on the wrong author →
+  the AI-slop splat unreachable on folded runs → the house style guide scored as evidence of AI
+  authorship → the hidden share was a quota rather than a judgement → posts re-judged on every
+  LinkedIn re-render (300 decisions from 13 posts) → LinkedIn furniture hidden as posts.
+- **The last report was not the AI at all.** "Still hiding nearly 100%" was **solo mode**:
+  `"Filtered out"` occurs at exactly one place in the source, and that branch returns before the
+  scorer is consulted. Two sessions of scoring work had been aimed at a symptom that had nothing
+  to do with scoring. Codified as §51 — grep the strings in a screenshot before reading the model.
+- **Added** Unmute all authors, Factory reset, and guards that an upgrade preserves settings.
+- **`best_practices.md` §36–§52** written this session; `TEST_MATRIX.md` gained rows for
+  destructive controls, install/upgrade, and solo/mute.
+- **Method failures worth not repeating:** a store outcome recorded as fact before reading the
+  log (three times, corrected in #62, #70, #71); two rounds of scoring fixes validated against a
+  corpus written by the person fixing the bug, which by construction could not exhibit the defect
+  (§49); and a user-supplied log accepted without checking its `version` field — it was the same
+  pre-fix export twice (§49 again).
+
+## 6. Key facts & gotchas (so a new session doesn't relearn them)
+
+- **Ship only on explicit "ship"/"push."** Otherwise keep developing, commit/merge PRs freely
+  (green CI), accumulate under the next version.
+- **Release mechanism:** run the **Release** workflow via `workflow_dispatch` with `publish: true`
+  from `main` (the sandbox token can't push tags, so the workflow tags `v<manifest version>`
+  itself, cuts the GitHub Release, and uploads to the store).
+- **Designated dev branch:** the session harness assigns a per-session `claude/*` branch. Its PRs
+  keep getting merged, so reset the branch from `origin/main` for each new change; force-with-lease
+  is fine (it only ever carries already-merged history).
+- **Store rejects a new upload while one is in review** (`ITEM_NOT_UPDATABLE`). Don't try to ship
+  a new store version until the pending one clears.
+- **Installer scripts must be pure ASCII.** Windows PowerShell 5.1 reads a UTF-8-no-BOM `.ps1` as
+  Windows-1252, so an em-dash breaks parsing. `test/unit/installer.test.js` guards this.
+- **Sideload-only build bits:** the `nativeMessaging` permission + a fixed manifest `key` are
+  injected **only** into the sideload builds by `scripts/build.mjs`; the Chrome Web Store zip stays
+  minimal (`["storage"]`, no key). A manifest test guards it.
+- **MSI job** is best-effort (`continue-on-error`) and often fails — never blocks the release.
+- **A user's exported log is only evidence of the build that produced it.** Check its `version`
+  field before drawing any conclusion from it.
+
+---
+
+## Archive
+
+Older state, kept for background only. **Nothing below is current** — §1 and §2 above are.
 
 ## Historical — state as of 2026-07-29 (post-0.4.6 ship)
 
@@ -163,23 +201,3 @@ attribution → a numbered rule in `best_practices.md` where the class was gener
   - The `chrome-extension://invalid/` request some users see on LinkedIn is LinkedIn-side (their
     fetch interceptor hitting a stale reference after a context swap) — FeedHacker no longer
     contributes an enumerable resource to it (0.4.3). Nothing further actionable on our side.
-
-## Key facts & gotchas (so a new session doesn't relearn them)
-
-- **Ship only on explicit "ship"/"push."** Otherwise keep developing, commit/merge PRs freely
-  (green CI), accumulate under the next version.
-- **Release mechanism:** run the **Release** workflow via `workflow_dispatch` with `publish: true`
-  from `main` (the sandbox token can't push tags, so the workflow tags `v<manifest version>`
-  itself, cuts the GitHub Release, and uploads to the store).
-- **Designated dev branch:** the session harness assigns a per-session `claude/*` branch (this
-  session: `claude/new-session-asycej`). Its PRs keep getting merged, so reset the branch from
-  `origin/main` for each new change; force-with-lease is fine (it only ever carries already-merged
-  history).
-- **Store rejects a new upload while one is in review** (`ITEM_NOT_UPDATABLE`). Don't try to ship
-  a new store version until the pending one clears.
-- **Installer scripts must be pure ASCII.** Windows PowerShell 5.1 reads a UTF-8-no-BOM `.ps1` as
-  Windows-1252, so an em-dash breaks parsing. `test/unit/installer.test.js` guards this.
-- **Sideload-only build bits:** the `nativeMessaging` permission + a fixed manifest `key` are
-  injected **only** into the sideload builds by `scripts/build.mjs`; the Chrome Web Store zip stays
-  minimal (`["storage"]`, no key). A manifest test guards it.
-- **MSI job** is best-effort (`continue-on-error`) and often fails — never blocks the release.
