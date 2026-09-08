@@ -28,9 +28,14 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
   recall held 8/8, human false positives 1→0), **FH-046** (the hidden share was a quota, so a clean
   feed still lost ~28%; `targetFrac` is now a ceiling and a clean feed loses nothing), **FH-047**
   (group rows capped at 8 posts), plus the thin-feed top-up. Carries all of 0.4.7 as well.
-  - **First live run of the store cancel-submission step** (CWS API v2), gated on the
-    `CWS_PUBLISHER_ID` repo variable the maintainer added 2026-09-08. Read the `webstore` job log to
-    see what the cancel actually did — it had never hit Google's API before this release.
+  - ⚠️ **The cancel-submission step did NOT run on this release — it was skipped.** `CWS_PUBLISHER_ID`
+    resolved **empty** in the `webstore` job (log: `CWS_PUBLISHER_ID:` with no value) even though the
+    maintainer added it on 2026-09-08, so the `if:` guard was false. Most likely it went into the
+    **Secrets** tab rather than **Variables** (the workflow read `vars.` only), or was scoped to an
+    environment. The upload succeeded regardless — the slot was free, exactly as with 0.4.7 over
+    0.4.6 — so **`cancelSubmission` has still never hit Google's API**. Fixed in **FH-048**: the id
+    is now read from `vars.` OR `secrets.`, and a missing id emits a visible workflow warning
+    instead of silently skipping.
   - **Next session: check whether 0.4.8 published.** Search Gmail
     `from:chromewebstore-noreply@google.com newer_than:7d` and read the **Version** field of the
     newest "Item successfully published" email. **Also check the Developer Dashboard** — 0.4.6
