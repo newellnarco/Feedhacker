@@ -40,8 +40,9 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
     `from:chromewebstore-noreply@google.com newer_than:7d` and read the **Version** field of the
     newest "Item successfully published" email. **Also check the Developer Dashboard** — 0.4.6
     disappeared without any email, so email alone is not trustworthy for this item.
-  - Next dev cycle is **0.4.9**: bump `manifest.json`/`package.json` and open a fresh
-    `[0.4.9] — unreleased` section before the next change.
+  - The **0.4.9 cycle is open**: `manifest.json`, `package.json` and `package-lock.json` are bumped
+    and `CHANGELOG.md` has a `[0.4.9] — unreleased` section carrying the FH-048 fix. Accumulate
+    there; don't release without an explicit "ship".
 
 - **0.4.7 SHIPPED 2026-09-07** on the maintainer's explicit "ship it" — merged as `a10d66e`
   (PR #60) + `f81446e` (PR #61), then released via the Release workflow run #20

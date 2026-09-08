@@ -11,6 +11,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.4.9] — unreleased
+
+### Fixed
+- **The Release workflow's store-cancel step no longer skips silently.** On the 0.4.8 release it
+  was gated on a repository variable that resolved empty, so the step was *skipped* and the whole
+  release reported green while doing nothing. It now reads the publisher id from either the
+  Variables or the Secrets tab, and says so in the log when it can't act. (FH-048)
+
 ## [0.4.8] — 2026-09-08
 
 ### Fixed
