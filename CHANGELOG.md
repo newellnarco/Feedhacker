@@ -11,6 +11,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.5.0] — unreleased
+
+_Nothing yet — next development cycle. Add entries here as work lands._
+
 ## [0.4.9] — 2026-09-08
 
 ### Fixed

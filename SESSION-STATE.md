@@ -21,8 +21,13 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
+- **Dev cycle OPEN: 0.5.0.** `manifest.json` / `package.json` / `package-lock.json` are bumped
+  and `CHANGELOG.md` has an empty `[0.5.0] — unreleased` section. Land work under that version;
+  label PRs `v0.5.0`. **Do not release without an explicit "ship"/"push."**
+
 - **0.4.9 SHIPPED 2026-09-08** on the maintainer's explicit "push it" — tag `v0.4.9`, GitHub
-  Release, store upload replacing 0.4.8 in review. Contents: **FH-049** (posts re-judged on every
+  Release, and a store upload that **succeeded into a free slot** (the cancel step could not run
+  — see below — so nothing was withdrawn). Contents: **FH-049** (posts re-judged on every
   LinkedIn re-render — 300 decisions from 13 posts, one 42× in 63s — flooding the calibration
   population and training buffer, so the model got more aggressive the longer it ran; identity is
   now the activity URN with a verdict ledger) and **FH-050** (LinkedIn furniture hidden as posts;
