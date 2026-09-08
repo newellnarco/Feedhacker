@@ -32,6 +32,7 @@ at different speeds, so they're tracked separately:
 | 0.4.5 | ✅ Released (2026-07-21) | ✅ **Live** (published 2026-07-21) | 2026-07-21 | Confirmed live — Google "Item successfully published" email, Version 0.4.5, 2026-07-21 18:54 UTC. In-place "Update now" for Chrome Web Store installs (no restart), welcome-page puzzle icon matches Chrome, popup help moved behind a "?" button, Aggression slider label simplified, heartbeat paging false-alarm fix, Advanced removal, scalable `Fh` logo SVG. Plus MAX3/netsniff engineering-discipline adoption (CodeRabbit config, best_practices §19–29, ledger, test matrix). (Best-effort `msi` job failed — WiX gate; `-win.zip` installer unaffected.) |
 
 | 0.4.6 | ✅ Released (2026-07-29) — tag `v0.4.6` @ `92ff8f9` | ⏳ Submitted → review (2026-07-29) | 2026-07-29 | **Shipped via the Release workflow** (`publish: true`): tag → GitHub Release with all four prebuilt zips → store upload. The `webstore` job uploaded `feedhacker-0.4.6-store.zip` with `CWS_AUTO_PUBLISH=true` — log reads "Publishing… / Publish successful", i.e. **submitted for Google review**. **Store fate unknown — treat 0.4.6 as never confirmed live.** No "Item successfully published" email for 0.4.6 ever arrived (the newest publish email is still Version 0.4.5, 2026-07-21) and no rejection email arrived either, yet the store **accepted the 0.4.7 upload on 2026-09-07**, so the pending 0.4.6 submission was no longer holding the slot by then. Whether it published silently, was withdrawn, or was superseded is not established from the evidence we have; 0.4.7 supersedes it either way. Contents: the `Fh` element-mark branding (finally reaching installs), the **Windows auto-update fix** (the updater was selecting the manifest-less `-store-submission.zip`), the installer's honest scheduled-task reporting, and the icon/updater regression guards. ⚠️ **Existing Windows sideload installs need a manual re-install** — see the note below. (Best-effort `msi` job failed again on the WiX gate; never blocks.) |
+| 0.4.8 | ✅ Released (2026-09-08) — tag `v0.4.8` @ `2ef8e4d` | ⏳ Submitted → review (2026-09-08) | 2026-09-08 | **Shipped on the maintainer's explicit "ship it"**, replacing 0.4.7 in the review queue. First release to use the new **cancel-pending-submission** step (CWS API v2 `cancelSubmission`), which withdraws a version still in review so the upload isn't blocked by `ITEM_NOT_UPDATABLE`. Contents: the **over-hiding fix** — the house style guide (`claudisms.json`) was being scored as evidence of AI authorship and the em dash was counted twice, so ordinary human posts were hidden (**FH-045**); the hidden share was a **quota** rather than a judgement, so a clean feed still lost ~28% (**FH-046**); grouping capped at 8 posts per summary row (**FH-047**); the feed tops itself up when filtering leaves it thin. Also carries everything from 0.4.7 (the unreachable AI-slop splat, Mute keying on the wrong author, the options-page grouping toggle, serialized slop verdicts). Mark ✅ Live only on the "Item successfully published" email for Version 0.4.8 — and given 0.4.6 vanished without any email, **verify in the Developer Dashboard too**. |
 | 0.4.7 | ✅ Released (2026-09-07) — tag `v0.4.7` @ `f81446e` | ⏳ Submitted → review (2026-09-07) | 2026-09-07 | **Shipped via the Release workflow** (`publish: true`) on the maintainer's explicit "ship it": tag → GitHub Release with all four prebuilt zips → store upload. The `webstore` job uploaded `feedhacker-0.4.7-store.zip` with `CWS_AUTO_PUBLISH=true` — log reads "Uploading… / Publishing… / Publish successful", i.e. **submitted for Google review**. Mark ✅ Live only on the "Item successfully published" email for Version 0.4.7. **The slot turned out to be OPEN** — see the 0.4.6 row; the upload was predicted to fail `ITEM_NOT_UPDATABLE` and did not. Contents: the AI-slop splat was unreachable whenever grouping folded a run (FH-044), **Mute** keyed on the collapsed stub's own text or on a reshare's *reactor* and could be lost to a write debounce (FH-043), the grouping toggle is back on the options page, and slop verdicts are serialized (§7). (Best-effort `msi` job failed again on the WiX gate; never blocks.) |
 | ~~0.4.6 (first attempt)~~ | 🚧 Not tagged | ❌ **Never published** — the 2026-07-23 submission published as **0.4.5** | 2026-07-23 (listing assets only) | New FeedHacker **Fh** element-mark branding across the extension + Chrome Web Store icons (LinkedIn blue; toolbar icons keep transparent corners, the **store icon is opaque** — the store rejects a transparent store icon), simplified `Fh`-only 16/32px toolbar variant, refreshed screenshots + promo tiles, and a brand lockup carrying "created by www.MaxResearchCollective.com". Merged to `main`. **The 0.4.6 *package* never reached the store:** Google's publish email for the 2026-07-23 submission states **Version 0.4.5** (published 2026-07-24 10:39 UTC), i.e. the new *listing assets* went live on top of the old 0.4.5 package. That's why the store page shows the `Fh` icon but installs still show the old "M" — see `KNOWN_ISSUES.md`. **Submission slot is OPEN**; uploading the 0.4.6 package is what makes the new icon reach users. No GitHub tag/Release cut for 0.4.6 either. |
 
@@ -41,6 +42,26 @@ Legend: ✅ done · ⏳ in flight (uploaded/awaiting Google) · ❌ failed/block
 ## What's in each version
 
 Summaries only — see [`CHANGELOG.md`](CHANGELOG.md) for details.
+
+### 0.4.8 — released on GitHub (2026-09-08); submitted to the store (in review)
+
+The "it hides everything" release. User reported FeedHacker was hiding most of an ordinary feed;
+root-caused by measurement rather than by reading the model:
+
+- **FH-045** — `claudisms.json` is the project's house **style guide** ("em dashes banned outright",
+  "leverage — corporate-speak verb") wired into the AI-slop model on its largest weight, and the em
+  dash was scored **twice** (banlist *and* the `emdash` tell). One em dash took an ordinary sentence
+  from p=0.168 to p=0.786. Hits are now weighted by how much evidence they actually are; slop recall
+  held at 8/8 while human false positives went 1 → 0.
+- **FH-046** — the hidden share was a **quota**: a feed with no slop still lost ~28%, and the
+  Sensitivity slider was inert. `targetFrac` is now a ceiling; a clean feed loses nothing.
+- **FH-047** — a group summary row stands for at most 8 posts.
+- The feed tops itself up when filtering leaves the screen thin.
+- Release plumbing: a pending store submission is withdrawn before uploading (CWS API v2).
+
+Also carries all of 0.4.7: the AI-slop splat unreachable on folded runs, Mute keying on the
+collapsed stub's text or on a reshare's reactor, the options-page grouping toggle, and serialized
+slop verdicts.
 
 ### 0.4.7 — released on GitHub (2026-09-07); submitted to the store (in review)
 
