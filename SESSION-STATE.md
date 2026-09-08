@@ -21,22 +21,23 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
-- **FH-049 / FH-050 (0.4.9, in flight): the REAL cause of "it hides everything".** The maintainer
-  exported their live decision log and it settled it: **300 decisions from 13 distinct posts in 11
-  minutes**, one post judged **42 times in 63 seconds**. "Judge each post once" was an attribute on
-  the DOM node, and LinkedIn replaces those nodes — so every re-render was a fresh post to us. That
-  flooded the calibration population (**164 observations → 19 distinct vectors**) and the training
-  buffer (**95 slop labels vs 17**), making the model more aggressive the longer it ran. Fixed by
-  keying identity on the activity URN (else a text hash) with a verdict ledger. Also FH-050:
-  LinkedIn furniture ("Jobs recommended for you", an emoji strip, a profile headline) was being
-  hidden as posts — a 20-word minimum now applies before anything can be hidden as slop.
-  - **The lesson, recorded as §49:** the two earlier rounds of scoring fixes were validated against
-    a corpus written by the same person fixing it, which by construction scanned each post once and
-    so could not exhibit the bug. **Ask for the exported log first.**
-  - **Not yet confirmed on the user's real feed.** The fix is proven in tests (216 unit+integration,
-    17 system, 5 of 7 new guards fail pre-fix, ledger invalidation mutation-tested) but the only
-    real evidence so far is the log that diagnosed it. Ask for a fresh export after they run 0.4.9.
-
+- **0.4.9 SHIPPED 2026-09-08** on the maintainer's explicit "push it" — tag `v0.4.9`, GitHub
+  Release, store upload replacing 0.4.8 in review. Contents: **FH-049** (posts re-judged on every
+  LinkedIn re-render — 300 decisions from 13 posts, one 42× in 63s — flooding the calibration
+  population and training buffer, so the model got more aggressive the longer it ran; identity is
+  now the activity URN with a verdict ledger) and **FH-050** (LinkedIn furniture hidden as posts;
+  20+ words now required to hide as slop).
+  - ⚠️ **Shipped UNVERIFIED on a real feed.** Proven in tests only. The decisive check is a fresh
+    `Export log (JSON)` from the options page: **decisions ≈ distinct posts** (it was 23:1). If it
+    is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup
+    needs inspecting.
+  - **Users on a poisoned model should Reset AI-slop learning once** — stored weights and the 112
+    training examples came from the duplicate flood and stay over-aggressive until cleared.
+  - This release also **properly exercises the store cancel step** for the first time: PR #66 made
+    it read `CWS_PUBLISHER_ID` from either the Variables or the Secrets tab and warn loudly when
+    empty, instead of skipping silently as it did on 0.4.8. Read the `webstore` job log.
+  - The method lesson is §49: two earlier rounds were measured against a corpus written by the
+    person fixing it, which by construction could not exhibit the bug. **Ask for the export first.**
 
 - **0.4.8 SHIPPED 2026-09-08** on the maintainer's explicit "ship it" — tag `v0.4.8`, GitHub Release,
   and a store upload that **replaces 0.4.7 in the review queue**. Contents: the "it hides everything"
