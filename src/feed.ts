@@ -296,6 +296,20 @@
     return { prob: res.prob, threshold: thr, top: top, phrases: phrases };
   }
 
+  // Below this there is not enough prose to judge. Every structural tell is a DENSITY or SHAPE
+  // measure, so on a fragment they saturate on noise: a real decision log had "Jobs recommended
+  // for you" scoring broetry 1.00 / spaced 0.92 and being HIDDEN, an emoji-only comment scoring
+  // emoji 1.00 / broetry 0.79, and a profile headline judged 31 times — all as `surface: post`
+  // (FH-050).
+  //
+  // A fragment is still OBSERVED for calibration. Its feature vector is part of what this feed
+  // actually contains, and a tell that fires on most of the feed genuinely is uninformative
+  // here — damping it is the ubiquity logic working, not misfiring. What distorted the real
+  // population was the same items counted over and over (FH-049), which post identity fixes.
+  var MIN_WORDS_TO_JUDGE = 20;
+  function enoughToJudge(text) {
+    return (String(text || "").match(/\b[\w'’]+\b/g) || []).length >= MIN_WORDS_TO_JUDGE;
+  }
   function scoreSloppy(text, matchers, settings) {
     if (!root.FeedHackerScorer) return null;
     var res = root.FeedHackerScorer.classify(
@@ -311,6 +325,7 @@
     // cutoff sits — independent of whether the user ever corrects anything.
     try { if (settings && typeof settings.onSlopObserve === "function") settings.onSlopObserve(res.features); } catch (e) {}
     if (!res.isSlop) return null;
+    if (!enoughToJudge(text)) return null;   // observed above, but too short to HIDE on
     var d = slopDetail(res, settings);
     return { id: "sloppy", label: "AI Slop", detail: res.detail, features: res.features,
              prob: d.prob, threshold: d.threshold, top: d.top, phrases: d.phrases };
@@ -554,6 +569,7 @@
   // unavailable (tests). The timer is unref'd so it never keeps a process alive.
   function dismissRow(el) {
     if (!el || el.dataset.feedhackerDismissing === "1") return;
+    setVerdict(el, true, readReasons(el), true, ["dismissed"], true);   // stays gone across re-renders
     el.dataset.feedhackerDismissing = "1";
     el.dataset.feedhackerDismissed = "1";   // sticky: survives a settings re-apply / reset so the row can't pop back
     el.classList.add("feedhacker-dismissing");
@@ -671,6 +687,7 @@
 
   // Permanently show this author: allowlist them (don't ask again) and reveal the post now.
   function revealAllowed(el, stub) {
+    setVerdict(el, false, [], false, null, true);   // survives LinkedIn re-rendering the node
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;
     delete el.dataset.feedhackerDismissing;
@@ -797,6 +814,7 @@
     // post is slop — revealing it after confirming is just "let me read it anyway".
     if (el.dataset.feedhackerConfirmedSlop !== "1") { emitFeedback(el, flags, settings, 0); emitVerdict(el, settings, 0); }
     if (markerCountWithin(el) >= 1) recordOutcome(settings, authorInfo(el), false);  // kept: author "shown"
+    setVerdict(el, false, [], false, null, true);   // "Show anyway" survives a re-render
     el.dataset.feedhackerReveal = "1";
     delete el.dataset.feedhackerHidden;
     el.classList.remove("feedhacker-hidden");
@@ -813,6 +831,7 @@
   function reHide(doc, el, stub, flags, settings) {
     emitFeedback(el, flags, settings, 1);   // user re-hid: confirmed slop
     emitVerdict(el, settings, 1);
+    setVerdict(el, true, flags, false, flags, true);
     delete el.dataset.feedhackerReveal;
     el.dataset.feedhackerHidden = "1";
     el.classList.add("feedhacker-hidden");
@@ -822,7 +841,12 @@
   // forceGone: hide the post outright with no stub (a "soft block"), regardless of the
   // hideCompletely setting — used for authors you've already muted, so they simply stop
   // appearing rather than showing a "Muted author" placeholder every time.
-  function collapse(doc, el, flags, settings, forceGone?: boolean) {
+  // silent: this post has been judged before (a re-rendered node re-applying a known verdict).
+  // Re-hide it, but do NOT tell the learner again — onHidden feeds the daily counts and
+  // logSlopDecision feeds the decision log, the calibration population and, via implicit
+  // learning, the training buffer. Firing those per re-render is what flooded all three
+  // with duplicates of a handful of posts (FH-049).
+  function collapse(doc, el, flags, settings, forceGone?: boolean, silent?: boolean) {
     if (el.dataset.feedhackerReveal === "1") return;
     el.dataset.feedhackerHidden = "1";
     try {
@@ -834,8 +858,10 @@
         if (flags[fi].features) { el.dataset.feedhackerFeatures = JSON.stringify(flags[fi].features); break; }
       }
     } catch (e) {}
-    if (settings && typeof settings.onHidden === "function") { try { settings.onHidden(flags); } catch (e) {} }
-    logSlopDecision(el, flags, settings);
+    if (!silent) {
+      if (settings && typeof settings.onHidden === "function") { try { settings.onHidden(flags); } catch (e) {} }
+      logSlopDecision(el, flags, settings);
+    }
     if (forceGone || settings.hideCompletely) { el.classList.add("feedhacker-gone"); return; }
     el.classList.add("feedhacker-hidden");
     if (directChildStub(el)) return;
@@ -999,6 +1025,10 @@
 
   // Reveal a post we previously hid, clearing our state so it reads as a normal post again.
   function uncollapse(el) {
+    // Retract the stored verdict too. recompute() reveals a post the loosened model no longer
+    // flags and then re-scans; without this the ledger still says "hidden" and the very next
+    // scan puts it straight back.
+    forgetVerdict(el);
     var stub = directChildStub(el);
     if (stub && stub.parentNode) stub.parentNode.removeChild(stub);
     el.classList.remove("feedhacker-hidden", "feedhacker-gone", "feedhacker-dismissing");
@@ -1051,6 +1081,66 @@
     groupRuns(doc, settings);
   }
 
+  // --- stable post identity ------------------------------------------------------------
+  // `data-feedhacker-scanned` lives on the DOM node, and LinkedIn's feed REPLACES those nodes.
+  // The attribute dies with the node, the post comes back looking brand new, and it is judged
+  // again — forever. A real decision log showed one post judged 42 times in 63 seconds, 300
+  // decisions from just 13 distinct posts in 11 minutes, and the calibration population and
+  // training buffer both flooded with duplicates of that handful (FH-049).
+  //
+  // Identity therefore has to outlive the node: LinkedIn's own activity URN where it is
+  // exposed, otherwise a hash of the post's text (same words = same post, for our purposes).
+  var URN_RE = /urn:li:(?:activity|ugcPost|share|comment):[0-9]+/;
+  function urnFrom(node) {
+    if (!node || !node.getAttribute) return "";
+    var v = node.getAttribute("data-urn") || node.getAttribute("data-id") || "";
+    var m = String(v).match(URN_RE);
+    return m ? m[0] : "";
+  }
+  function textHash(text) {
+    var t = String(text || "").replace(/\s+/g, " ").trim().slice(0, 400);
+    var h = 5381;
+    for (var i = 0; i < t.length; i++) h = (((h << 5) + h) ^ t.charCodeAt(i)) >>> 0;
+    return "t:" + h.toString(36) + ":" + t.length;
+  }
+  function postKey(el, text) {
+    try {
+      var own = urnFrom(el);
+      if (own) return own;
+      var inner = el.querySelector && el.querySelector('[data-urn*="urn:li:"],[data-id*="urn:li:"]');
+      if (inner) { var iu = urnFrom(inner); if (iu) return iu; }
+      var up = el.closest && el.closest('[data-urn*="urn:li:"],[data-id*="urn:li:"]');
+      if (up) { var uu = urnFrom(up); if (uu) return uu; }
+    } catch (e) {}
+    return textHash(text);
+  }
+  // Verdicts already reached, keyed by post identity, so a re-rendered node re-uses the
+  // decision instead of generating a fresh one. Lives on the document so reset() can clear it.
+  function judgedLedger(doc) {
+    if (!doc.__fhJudged) doc.__fhJudged = {};
+    return doc.__fhJudged;
+  }
+  // The key is stashed on the element so a later reveal/hide can find its own ledger entry
+  // WITHOUT re-deriving it: once a post is collapsed its text is the stub UI, so re-hashing
+  // there would produce a different key and silently orphan the entry.
+  function forgetVerdict(el) {
+    try {
+      var k = el.dataset && el.dataset.feedhackerKey;
+      var doc = el.ownerDocument;
+      if (k && doc && doc.__fhJudged) delete doc.__fhJudged[k];
+    } catch (e) {}
+  }
+  // user: this verdict came from an explicit click (Show anyway / Hide / Always show / Hide
+  // again), not from the model. That distinction decides what survives a re-apply.
+  function setVerdict(el, hidden, flags, gone, ids, user?: boolean) {
+    try {
+      var k = el.dataset && el.dataset.feedhackerKey;
+      var doc = el.ownerDocument;
+      if (!k || !doc) return;
+      judgedLedger(doc)[k] = { hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null, user: !!user };
+    } catch (e) {}
+  }
+
   function recordOutcome(settings, info, hidden) {
     if (settings && typeof settings.onAuthorOutcome === "function") settings.onAuthorOutcome(info, hidden);
   }
@@ -1064,6 +1154,25 @@
     if (!text.trim()) return null;                           // body not rendered yet — retried on a later scan
     el.dataset.feedhackerScanned = "1";
 
+    // Has this POST (not this node) already been judged? Re-apply the same verdict SILENTLY —
+    // no fresh decision log entry, no fresh observation, no fresh training label. Without this
+    // a re-rendered node is a brand-new post to us and the learner ends up training on the same
+    // handful of posts over and over (FH-049).
+    var pkey = postKey(el, text);
+    var ledger = judgedLedger(doc);
+    if (pkey) el.dataset.feedhackerKey = pkey;
+    var prior = pkey ? ledger[pkey] : null;
+    if (prior) {
+      el.dataset.feedhackerRepeat = "1";
+      if (!prior.hidden) return null;                        // judged and kept — leave it alone
+      collapse(doc, el, prior.flags || [], settings, prior.gone, true);
+      return prior.ids || ["repeat"];
+    }
+    function remember(hidden, flags, gone, ids) {
+      if (!pkey) return;
+      ledger[pkey] = { hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null };
+    }
+
     // Author memory: an allowlisted author is always shown; a muted author is always
     // hidden — both independent of the per-kind toggles.
     var A = root.FeedHackerAuthors, info: any = null;
@@ -1073,12 +1182,14 @@
     if (A && settings.authors) {
       var key = A.keyFor(author());
       if (key) {
-        if (A.isAllowed(settings.authors, key)) return null;
+        if (A.isAllowed(settings.authors, key)) { remember(false, [], false, null); return null; }
         if (A.isMuted(settings.authors, key)) {
           // Soft block: an already-muted author's posts just don't appear — hidden
           // outright, no stub. (Manage/unmute them from the options page.)
           recordOutcome(settings, author(), true);
-          collapse(doc, el, [{ id: "author", label: "Muted author", detail: author().name || "" }], settings, true);
+          var authFlags = [{ id: "author", label: "Muted author", detail: author().name || "" }];
+          collapse(doc, el, authFlags, settings, true);
+          remember(true, authFlags, true, ["author"]);
           return ["author"];
         }
       }
@@ -1092,7 +1203,7 @@
     if (!solos.length && root.FeedHackerCustom && settings.customCompiled) {
       custom = root.FeedHackerCustom.match(text, author(), settings.customCompiled);
     }
-    if (!solos.length && !muted.length && !custom.length) return null;
+    if (!solos.length && !muted.length && !custom.length) { remember(false, [], false, null); return null; }
     // Capture the author + opening line while the post is still visible (innerText goes
     // empty once we hide it). The slop stub reads both back; the name also feeds "Name
     // names". Cheap here — only posts past the early-returns above reach this.
@@ -1101,8 +1212,10 @@
 
     if (solos.length) {   // Solo wins: show ONLY soloed kinds, hide the rest.
       var flagsS = matchedFlags(el, matchers, solos, text, settings);
-      if (flagsS.length) return null;
-      collapse(doc, el, [{ label: "Filtered out", detail: "" }], settings);
+      if (flagsS.length) { remember(false, [], false, null); return null; }
+      var soloFlags = [{ label: "Filtered out", detail: "" }];
+      collapse(doc, el, soloFlags, settings);
+      remember(true, soloFlags, false, ["filtered"]);
       return ["filtered"];
     }
 
@@ -1111,8 +1224,10 @@
     if (flags.length) {
       recordOutcome(settings, author(), true);
       collapse(doc, el, flags, settings);
+      remember(true, flags, false, flags);
       return flags;
     }
+    remember(false, [], false, null);
     return null;
   }
 
@@ -1265,6 +1380,22 @@
       return !!preserveUserActions && !!el &&
         (el.dataset.feedhackerReveal === "1" || el.dataset.feedhackerDismissed === "1");
     }
+    // A FULL reset (extension disabled, or we left the surface) forgets every verdict.
+    //
+    // A PRESERVING re-apply happens when the settings or the author lists changed — which is
+    // precisely when a model-derived verdict is stale, so those must go too or a newly muted
+    // author keeps the "keep" verdict from before the mute. What survives is the user's own
+    // explicit per-post choices, which is what this reset promises to preserve.
+    try {
+      if (!preserveUserActions) { delete doc.__fhJudged; }
+      else if (doc.__fhJudged) {
+        var keep: any = {};
+        for (var pk in doc.__fhJudged) {
+          if (Object.prototype.hasOwnProperty.call(doc.__fhJudged, pk) && doc.__fhJudged[pk] && doc.__fhJudged[pk].user) keep[pk] = doc.__fhJudged[pk];
+        }
+        doc.__fhJudged = keep;
+      }
+    } catch (e) { doc.__fhJudged = null; }
     var stubs = doc.querySelectorAll(".feedhacker-stub");
     for (var i = 0; i < stubs.length; i++) {
       if (preserveUserActions && stubs[i].closest('[data-feedhacker-reveal="1"],[data-feedhacker-dismissed="1"]')) continue;
@@ -1277,7 +1408,7 @@
       hid[j].classList.remove("feedhacker-gone");
       hid[j].classList.remove("feedhacker-dismissing");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-actor-url],[data-feedhacker-preview],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-actor-url],[data-feedhacker-preview],[data-feedhacker-repeat],[data-feedhacker-key],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       if (kept(el)) continue;
@@ -1287,6 +1418,8 @@
       delete el.dataset.feedhackerReasons;
       delete el.dataset.feedhackerActor;
       delete el.dataset.feedhackerActorUrl;
+      delete el.dataset.feedhackerRepeat;
+      if (!preserveUserActions) delete el.dataset.feedhackerKey;
       delete el.dataset.feedhackerPreview;
       delete el.dataset.feedhackerFeatures;
       delete el.dataset.feedhackerDismissing;
@@ -1307,7 +1440,7 @@
     groupRuns: groupRuns, recompute: recompute,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
-    authorInfo: authorInfo, actorAnchor: actorAnchor,
+    authorInfo: authorInfo, actorAnchor: actorAnchor, postKey: postKey,
     firstBodyLine: firstBodyLine
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

@@ -15,7 +15,13 @@ function feedHtml(bodyHtml) {
   return `<!doctype html><html><body><main><div id="feed">${bodyHtml}</div></main></body></html>`;
 }
 function post(inner) { return `<div class="post"><h2>Feed post</h2>${inner}</div>`; }
-function slopPosts(n) { let s = ""; for (let i = 0; i < n; i++) s += post(`<div>${SLOP}</div>`); return s; }
+// Each post carries its own LinkedIn activity URN, the way a real feed post does. FeedHacker
+// keys "already judged" on that URN (falling back to a text hash), so without distinct URNs a
+// run of identical-text fixtures is ONE post to it — which is the correct reading of identical
+// markup, but not what these fixtures mean to express.
+let urnSeq = 0;
+function post2(inner) { return `<div class="post" data-urn="urn:li:activity:${++urnSeq}"><h2>Feed post</h2>${inner}</div>`; }
+function slopPosts(n) { let s = ""; for (let i = 0; i < n; i++) s += post2(`<div>${SLOP}</div>`); return s; }
 
 test("a run of 3+ consecutive hidden posts folds into one summary row", () => {
   const doc = makeDoc(feedHtml(slopPosts(4)));
