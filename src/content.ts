@@ -503,6 +503,7 @@
       recordActivitySoon();
       heartbeat();
       ensureLoadButton(F.anyActive(settings));
+      topUpIfThin();                                      // filtered the screen bare? fetch more
     } catch (e) { logError(e, "scan"); }
   }
 
@@ -572,6 +573,23 @@
     }
   }
   function onUserScroll() { if (dead) return; pump(false); harvestImplicit(); }
+
+  // Heavy filtering can leave a screen with almost nothing on it — the batch LinkedIn just
+  // delivered was mostly stuff you asked us to hide. Waiting for the user to scroll to the
+  // bottom (pump's normal trigger) is no help when there is nothing to scroll through, so
+  // top the feed up directly. Bounded by pump()'s own kick limit, and rate-limited here so a
+  // feed that is legitimately short (or has genuinely run out) can't spin.
+  var THIN_VISIBLE = 5, THIN_COOLDOWN = 6000, lastThinAt = 0;
+  function topUpIfThin() {
+    if (dead || !ready || !settings.enabled || !isMainFeed()) return;
+    if (!F.anyActive(settings)) return;
+    if (Date.now() - lastThinAt < THIN_COOLDOWN) return;
+    var posts = F.findPostContainers(document);
+    if (!posts.length) return;                 // nothing scanned yet — not "thin", just empty
+    if (visibleCount() >= THIN_VISIBLE) return;
+    lastThinAt = Date.now();
+    pump(true);
+  }
 
   // Grafted "Load more" bar — inline at the feed's end, spaced + boxed (a fixed button
   // was hidden behind LinkedIn's Messaging widget). Repositioned as the feed grows;

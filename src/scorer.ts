@@ -32,7 +32,12 @@
   var TELLS = [
     { id: "emdash", label: "em dashes", fn: function (t, w) {
         var n = (t.match(/—/g) || []).length;
-        return clamp01(n / Math.max(1, w.length / 60));   // ~1 per 60 words reads as heavy
+        // DENSITY, with a dead zone: a single em dash is ordinary human punctuation, and this
+        // used to saturate at 1.0 for one dash in a short post — which, on top of the banlist
+        // scoring the same character again, was enough on its own to hide a normal sentence
+        // (FH-045). Only a sustained rate reads as the tell.
+        var per = n / Math.max(1, w.length / 60);          // dashes per ~60 words
+        return clamp01((per - 0.5) / 1.5);
       } },
     // "not X, but Y" / "isn't just X — it's Y" / "It's not about X. It's about Y."
     { id: "antithesis", label: "not-X-but-Y framing", fn: function (t) {
@@ -128,6 +133,28 @@
   // Banlist tell is handled specially because it depends on the runtime matchers +
   // per-entry confidence (curated "confirmed" phrases count more than "aggressive"
   // common-word rules). Returned value is a saturating count of weighted hits.
+  // Banlist entries that merely restate a STRUCTURAL TELL are excluded from this feature:
+  // the tell already measures the same thing, density-normalized, and scoring both put ~2.9 of
+  // z on one character — enough to hide "Congrats on the promotion — well deserved" (FH-045).
+  var TELL_DUPLICATE_IDS = { "em-dash": 1 };
+
+  // How much evidence of AI authorship ONE banlist hit actually is.
+  //
+  // claudisms.json is a house STYLE GUIDE ("em dashes banned outright", "always 'articles',
+  // not 'essays'", "leverage — corporate-speak verb"). Its entries say "don't write this",
+  // which is not the same claim as "a machine wrote this". 88 of its match strings are one or
+  // two words of ordinary English, so scoring them all at full confidence made everyday
+  // business writing — "leverage", "unpack", "lessons learned", "this matters" — read as slop.
+  // Length is the usable proxy: a long distinctive phrase is a real tic, a bare word is not.
+  function hitEvidence(d) {
+    var conf = d.category === "confirmed" ? 1 : d.category === "manual" ? 0.4 : 0.7;
+    if (d.aggressive) conf *= 0.4;
+    var n = (String(d.text || "").match(/\b[\w'’]+\b/g) || []).length;
+    if (n <= 1) conf *= 0.25;                    // a single common word proves nothing
+    else if (n === 2) conf *= 0.5;
+    else if (n >= 5) conf *= 1.2;                // a long, distinctive tic is the real signal
+    return conf;
+  }
   function banlistValue(matchers, text) {
     if (!matchers || !matchers.length || !root.FeedHackerMatcher) return { value: 0, hits: [] };
     var det = root.FeedHackerMatcher.findHitDetails(matchers, text);
@@ -135,15 +162,14 @@
     var weight = 0, seen: any = {}, hits: any[] = [];
     for (var i = 0; i < det.length; i++) {
       var d = det[i];
-      if (seen[d.id]) continue;
+      if (seen[d.id] || TELL_DUPLICATE_IDS[d.id]) continue;
       seen[d.id] = 1;
-      // confirmed curated tics are strong; aggressive/common ones are weak evidence.
-      var conf = d.category === "confirmed" ? 1 : d.category === "manual" ? 0.4 : 0.7;
-      if (d.aggressive) conf *= 0.4;
-      weight += conf;
+      weight += hitEvidence(d);
       hits.push(d);
     }
-    return { value: clamp01(weight / 2), hits: hits };   // ~2 confirmed hits => saturated
+    // Divisor 3 (was 2): the banlist carries the model's largest weight, so ONE hit must not
+    // be able to supply half of it. Corroboration — a few real tics together — is the signal.
+    return { value: clamp01(weight / 3), hits: hits };
   }
 
   var FEATURE_IDS = ["banlist"].concat(TELLS.map(function (t) { return t.id; }));
@@ -322,8 +348,20 @@
     for (var j = 0; j < n; j++) probs.push(score(observations[j].features || {}, weights).prob);
     probs.sort(function (a, b) { return a - b; });
     var idx = Math.floor((1 - target) * (n - 1));
+    // targetFrac is a CEILING, not a quota. The quantile caps how much can be hidden; the
+    // floor decides whether anything deserves to be. Taking the higher of the two means a
+    // clean feed loses nothing (the old fixed 0.4 clamp hid the top of the *human* cluster
+    // regardless), while a slop-heavy feed still only loses its worst ~targetFrac.
+    //
+    // The floor is what the Sensitivity slider actually moves. It used to be the constant
+    // 0.4, so — scores being bimodal, human ~0.2 and slop ~0.98 — the quantile always landed
+    // inside a cluster and snapped to the clamp: target 0.28 and target 0.50 produced byte-
+    // identical output and the slider did nothing (FH-046).
+    var floorThr = 0.85 - target;                              // 0.10 strict -> 0.75 ... 0.50 aggressive -> 0.35
+    if (floorThr < 0.35) floorThr = 0.35; else if (floorThr > 0.8) floorThr = 0.8;
     var thr = probs[idx];
-    if (thr < 0.4) thr = 0.4; else if (thr > 0.9) thr = 0.9;   // safety clamp: never near-random, never unhittable
+    if (thr < floorThr) thr = floorThr;
+    if (thr > 0.97) thr = 0.97;                                // never unhittable
     var flagged = 0;
     for (var m = 0; m < n; m++) if (probs[m] >= thr) flagged++;
     return { weights: weights, threshold: thr, calibrated: true, flaggedFrac: flagged / n, freqs: freqs };

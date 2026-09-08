@@ -36,7 +36,7 @@ A change to a module the whole app imports has repo-wide blast radius:
 
 | Area | Source | Primary tests | Blast radius | Fast-track? |
 |---|---|---|---|---|
-| AI-slop model | `scorer.ts`, `sloplog.ts` | `scorer`, `retrain`, `autocalibrate`, `livecalibrate`, `sloplog` (unit) | feed scoring, content calibration, options panel | ❌ run row |
+| AI-slop model | `scorer.ts`, `sloplog.ts`, `claudisms.json` | `scorer`, `retrain`, `autocalibrate`, `livecalibrate`, `sloplog`, **`selectivity`** (unit) + `extension` (system) | feed scoring, content calibration, options panel — and **what fraction of a real feed survives** (§39–42) | ❌ run row + system |
 | Feed / DOM layer | `feed.ts` | `feed`, `grouping`, `author-identity` (integration) + `extension` (system) | content re-apply, stub UX, grouping, who Mute keys on | ❌ run row + system |
 | Content glue (storage/msg) | `content.ts` | `content-boot`, `content-teardown`, `slop-verdict-queue` (integration) | everything on the page; storage read-modify-write ordering (§7) | ❌ run row + system |
 | Background SW | `background.ts` | `background-badge`, `background-update` (integration) | badge, self-update, store update | ❌ run row |

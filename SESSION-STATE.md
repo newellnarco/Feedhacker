@@ -21,6 +21,22 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
+- **0.4.8 in flight (2026-09-07): the "it hides everything" fixes.** User reported FeedHacker was
+  hiding almost the whole feed. Root-caused by measurement, not guesswork:
+  - **FH-045** `claudisms.json` is a house **style guide** being scored as **AI-authorship
+    evidence** on the model's largest weight (3.2), and the em dash was counted twice (banlist
+    *and* the `emdash` tell) — one em dash took an ordinary sentence from p=0.168 to p=0.786.
+    Fixed by weighting a hit by match length, excluding tell-duplicating entries, and giving the
+    density tell a dead zone. Slop recall held at 8/8; human false positives 1→0.
+  - **FH-046** `targetFrac` was a **quota**, not a ceiling — a feed with no slop still lost ~28%,
+    and the [0.4,0.9] clamp made Sensitivity inert. Now `max(quantile, floor)`. Clean feed: 0%.
+  - **FH-047** grouping capped at 8 posts per summary row.
+  - The feed now tops itself up when filtering leaves it thin.
+  - **Honest caveat:** on a perfectly bimodal feed the Sensitivity slider still cannot change the
+    outcome — no threshold can separate clusters that have nothing between them. Recorded in the
+    tests and `KNOWN_ISSUES.md` rather than papered over.
+
+
 - **0.4.7 SHIPPED 2026-09-07** on the maintainer's explicit "ship it" — merged as `a10d66e`
   (PR #60) + `f81446e` (PR #61), then released via the Release workflow run #20
   (`publish: true`, conclusion **success**): tag **`v0.4.7`** → **GitHub Release** with all four

@@ -148,3 +148,45 @@ test("a folded group row exposes the AI-slop splat end-to-end", { skip, timeout:
     await close();
   }
 });
+
+// --- FH-045: a feed of ordinary human posts must survive contact with the real extension.
+// The scoring faults were only visible end-to-end: default settings, the packaged banlist,
+// and the real auto-calibration all together. Every post below is human, and several carry
+// the things the old model treated as proof of a machine — an em dash, an emoji, a
+// three-item list, "leverage", "lessons learned".
+const HUMAN_FEED = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
+  ${post("h-0", `<div><a href="/in/a0">Ana Reyes</a></div><div>2h</div>
+    <div>Congrats to Priya on the promotion — very well deserved. She has carried that project for a year.</div>`)}
+  ${post("h-1", `<div><a href="/in/a1">Ben Osei</a></div><div>3h</div>
+    <div>We cut p99 latency from 800ms to 210ms by fixing one N+1 query. Sometimes it really is that dumb.</div>`)}
+  ${post("h-2", `<div><a href="/in/a2">Cara Lin</a></div><div>4h</div>
+    <div>Three things I am watching this quarter: pricing changes, churn in the SMB segment, and hiring velocity.</div>`)}
+  ${post("h-3", `<div><a href="/in/a3">Dan Woods</a></div><div>5h</div>
+    <div>We should leverage the new tooling and unpack the lessons learned from last quarter.</div>`)}
+  ${post("h-4", `<div><a href="/in/a4">Eve Marsh</a></div><div>6h</div>
+    <div>Our new office finally has decent coffee. Small win but I will take it.</div>`)}
+  ${post("h-5", `<div><a href="/in/a5">Femi Adeyemi</a></div><div>7h</div>
+    <div>Notes from yesterday's incident review are up on the internal wiki if anyone wants them.</div>`)}
+</div></main></body></html>`;
+
+test("a feed of ordinary human posts is left alone end-to-end", { skip, timeout: 60000 }, async () => {
+  // Default settings: AI-slop muting is the one filter on out of the box.
+  const { page, close } = await launchFeed({ fixtureHtml: HUMAN_FEED, sync: {} });
+  try {
+    // Positive control: wait until every post has actually been judged, so this cannot pass
+    // vacuously by the content script never having run.
+    for (let i = 0; i < 6; i++) {
+      await page.waitForSelector(`#h-${i}[data-feedhacker-scanned]`, { timeout: 20000 });
+    }
+    const hidden = [];
+    for (let i = 0; i < 6; i++) {
+      const isHidden = await page.locator(`#h-${i}`).evaluate((el) =>
+        el.classList.contains("feedhacker-hidden") || el.classList.contains("feedhacker-gone"));
+      if (isHidden) hidden.push(`h-${i}`);
+    }
+    assert.deepStrictEqual(hidden, [], `no human post may be hidden by default (hid ${hidden.join(", ")})`);
+    assert.strictEqual(await page.locator(".feedhacker-stub").count(), 0, "and no stubs are inserted");
+  } finally {
+    await close();
+  }
+});

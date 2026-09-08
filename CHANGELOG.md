@@ -13,6 +13,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.4.8] — unreleased
 
+### Fixed
+- **FeedHacker was hiding most of an ordinary feed.** The AI-slop model treated the project's
+  house *style guide* (`claudisms.json`) as *evidence that a machine wrote the post* — but
+  "don't write this" and "a machine wrote this" are different claims. 88 of that list's match
+  strings are one or two words of everyday English ("leverage", "unpack", "lessons learned",
+  "this matters"), all scored at full confidence on the model's largest weight. Worse, the em
+  dash was counted **twice**: once by the phrase list and again by the em-dash tell. Measured,
+  a single em dash took *"Congrats to Priya on the promotion — very well deserved"* from
+  p=0.168 (shown) to **p=0.786 (hidden)**.
+  - A phrase now counts for as much evidence as it actually is — a long, distinctive tic
+    counts, a bare common word barely does — nothing is scored twice, and the em-dash signal
+    measures *heavy use* rather than *presence*.
+  - On a 25-human/8-slop test corpus: **every slop post is still caught (8/8)** while human
+    false positives went **1 → 0**, and long, thoughtful human posts went from 1-in-5 hidden
+    to **none**.
+- **The hidden share was a quota rather than a judgement.** Sensitivity set a *target fraction*,
+  and the calibrator hit that target whether or not there was anything worth hiding — a feed
+  with **no** slop in it still lost its top ~28%, and the model had no way to say "there is
+  nothing to hide here". The target is now a **ceiling**: it caps how much *can* be hidden,
+  while a separate floor decides whether a post *deserves* to be. A clean feed now loses
+  **nothing** (measured 0%, was 6%), a feed that is 24% slop loses about 24%, and a feed that
+  is more than half slop is still capped rather than emptied.
+  - Side effect of the old clamp: **Sensitivity barely worked** — "balanced" and "aggressive"
+    produced byte-identical results. It now moves the cutoff for real. (On a feed whose posts
+    are either obviously fine or obviously slop with nothing in between, no setting can change
+    the outcome — that is a genuine limit, not a bug.)
+- **A long run of filtered posts no longer collapses into one row.** Hidden posts cluster on a
+  real feed, so an uncapped run turned a whole screen into a single *"27 posts hidden"* line
+  with everything behind one **Show all**. A summary row now stands for at most 8 posts; longer
+  runs break into several rows, each with its own splat and Show all.
+
+### Added
+- **The feed tops itself up when filtering leaves it thin.** If a batch LinkedIn just delivered
+  was mostly filtered out, FeedHacker now asks for more instead of waiting for you to scroll to
+  the bottom of a nearly-empty screen (rate-limited, and bounded by the same kick limit as the
+  Load more button).
+
 ## [0.4.7] — 2026-09-07
 
 ### Fixed
