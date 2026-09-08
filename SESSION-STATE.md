@@ -21,6 +21,23 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
+- **FH-049 / FH-050 (0.4.9, in flight): the REAL cause of "it hides everything".** The maintainer
+  exported their live decision log and it settled it: **300 decisions from 13 distinct posts in 11
+  minutes**, one post judged **42 times in 63 seconds**. "Judge each post once" was an attribute on
+  the DOM node, and LinkedIn replaces those nodes — so every re-render was a fresh post to us. That
+  flooded the calibration population (**164 observations → 19 distinct vectors**) and the training
+  buffer (**95 slop labels vs 17**), making the model more aggressive the longer it ran. Fixed by
+  keying identity on the activity URN (else a text hash) with a verdict ledger. Also FH-050:
+  LinkedIn furniture ("Jobs recommended for you", an emoji strip, a profile headline) was being
+  hidden as posts — a 20-word minimum now applies before anything can be hidden as slop.
+  - **The lesson, recorded as §49:** the two earlier rounds of scoring fixes were validated against
+    a corpus written by the same person fixing it, which by construction scanned each post once and
+    so could not exhibit the bug. **Ask for the exported log first.**
+  - **Not yet confirmed on the user's real feed.** The fix is proven in tests (216 unit+integration,
+    17 system, 5 of 7 new guards fail pre-fix, ledger invalidation mutation-tested) but the only
+    real evidence so far is the log that diagnosed it. Ask for a fresh export after they run 0.4.9.
+
+
 - **0.4.8 SHIPPED 2026-09-08** on the maintainer's explicit "ship it" — tag `v0.4.8`, GitHub Release,
   and a store upload that **replaces 0.4.7 in the review queue**. Contents: the "it hides everything"
   fixes — **FH-045** (the house style guide `claudisms.json` was scored as AI-authorship evidence and

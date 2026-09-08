@@ -14,6 +14,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.4.9] — unreleased
 
 ### Fixed
+- **FeedHacker was hiding nearly the whole feed — and getting worse the longer it ran.** Its
+  "judge each post once" guard was an attribute on the post's HTML element, and LinkedIn
+  *replaces* those elements as you scroll. The attribute went with them, so the same post came
+  back looking new and was judged again — one post was judged **42 times in 63 seconds**, and a
+  real log showed **300 decisions from just 13 posts**.
+  - That flooded everything the self-tuning learns from. The model was told the same handful of
+    posts were slop over and over (**95 "slop" votes against 17 "not slop"**), so it grew more
+    aggressive the longer you used it — and its sense of which writing tells are meaningful was
+    computed from the same few posts counted a dozen times each.
+  - A post is now recognised by LinkedIn's own post ID, so re-rendering it changes nothing: the
+    original decision is simply re-applied. **Your "Show anyway" and "Hide" choices now survive a
+    re-render too**, which they previously did not.
+- **LinkedIn's own furniture was being hidden as if it were an AI-slop post.** "Jobs recommended
+  for you", an emoji-only comment, and a profile headline were all judged — and hidden — as posts.
+  The writing tells measure density and shape, which saturate on a fragment that isn't prose.
+  A post now needs a minimum amount of actual writing before it can be hidden as slop.
 - **The Release workflow's store-cancel step no longer skips silently.** On the 0.4.8 release it
   was gated on a repository variable that resolved empty, so the step was *skipped* and the whole
   release reported green while doing nothing. It now reads the publisher id from either the

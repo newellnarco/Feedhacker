@@ -558,6 +558,12 @@
   }
   // Implicit learning: a slop-flagged post the user scrolled well past (without
   // revealing it) is a weak "confirmed" — train on it once, at a low learning rate.
+  // Keyed by POST identity, not by the DOM node: `data-feedhacker-implicit` died with every
+  // LinkedIn re-render, so the same post was harvested again each time it came back. A real
+  // training buffer held 95 "slop" labels against 17 "not slop" — nearly all of them the same
+  // handful of posts, scrolled past over and over. That is a feedback loop: every pass makes
+  // the model more confident about posts it has already seen, so it hides more (FH-049).
+  var implicitSeen = {};
   function harvestImplicit() {
     if (!settings.implicitLearning || !Scorer) return;
     var hid = document.querySelectorAll('[data-feedhacker-hidden="1"][data-feedhacker-features]');
@@ -568,6 +574,12 @@
       try { rect = el.getBoundingClientRect(); } catch (e) { continue; }
       if (rect.bottom < -1000) {   // scrolled well above the viewport
         el.dataset.feedhackerImplicit = "1";
+        var pk = "";
+        try { pk = (F.postKey && F.postKey(el, el.dataset.feedhackerPreview || "")) || ""; } catch (e) {}
+        if (pk) {
+          if (implicitSeen[pk]) continue;   // this POST has already trained us once
+          implicitSeen[pk] = 1;
+        }
         try { onFeedback(JSON.parse(el.dataset.feedhackerFeatures), 1, 0.08); } catch (e) {}
       }
     }

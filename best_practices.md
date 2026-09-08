@@ -394,6 +394,30 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     for a value (Secrets vs Variables), read both rather than making one of them silently wrong.
     This is §4's false-green rule applied to workflow configuration.
 
+46. **Never key durable state to a DOM node on a page you don't control.** LinkedIn re-renders
+    feed nodes constantly. `data-feedhacker-scanned` was our "judge each post once" guard, and it
+    died with every node — so posts were re-judged every ~1.6 seconds, 300 decisions came from 13
+    posts, and the calibration population and training buffer filled with duplicates of that
+    handful. Anything that must outlive a render belongs on the CONTENT's identity (here the
+    activity URN, else a text hash), not on the element. Ask of every `dataset` write: what
+    happens when the framework throws this node away?
+47. **A learner that re-reads the same item is not learning, it is amplifying.** Implicit
+    learning labelled every scrolled-past hidden post as "confirmed slop". With posts re-judged
+    on each render, the same few produced 95 positive labels against 17 negative — the model got
+    more confident about exactly the posts it had already acted on, and hid more. Any feedback
+    loop that harvests from the page must dedupe by item identity, and any tell whose apparent
+    frequency drives damping must be counted per item, not per sighting.
+48. **A cached decision must not outlive the rules it was made under.** Caching verdicts fixed the
+    re-judging, and immediately broke muting: a preserving re-apply — which exists *because* the
+    settings or author lists changed — kept the stale "keep" verdict and the newly muted author
+    sailed through. Cache invalidation has to name what survives and why: here, only the user's
+    explicit per-post choices, never a model-derived verdict.
+49. **Measure against the user's data, not a corpus you wrote.** Two rounds of scoring fixes were
+    validated on a hand-written corpus and left the real problem — re-judging — untouched, because
+    the corpus was scanned once by construction and could not exhibit it. The exported decision
+    log found it in minutes. When a user reports behaviour you cannot reproduce, ask for the
+    artifact before theorising: `Export log (JSON)` on the options page exists for this.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
