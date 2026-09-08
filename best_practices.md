@@ -346,6 +346,36 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     hide/show counters, so a reload or navigation inside that window dropped the mute entirely.
     Debounce what is chatty and reconstructible; persist what the user just told you, now.
 
+39. **A style guide is not a detector — don't score "don't write this" as "a machine wrote
+    this".** `claudisms.json` is a house style guide: its notes say *em dashes banned outright*,
+    *always 'articles', not 'essays'*, *leverage — corporate-speak verb*. Wiring it straight into
+    the AI-slop model on the largest weight made ordinary human writing score as slop, because 88
+    of its match strings are one or two words of everyday English. Prescriptive advice and
+    forensic evidence are different claims about a sentence; when a corpus was authored for one,
+    weight it for the other (here: by match length, so a long distinctive tic counts and a bare
+    word barely does) rather than adopting its categories wholesale.
+40. **Never score the same evidence through two features.** The em dash was counted by the
+    `banlist` feature (0.5 × 3.2) *and* by the `emdash` structural tell (1.0 × 1.3) — 2.9 of z
+    from one character against a bias of −1.6, enough on its own to hide "Congrats on the
+    promotion — well deserved". Whenever a curated list and a computed feature can fire on the
+    same substring, one of them owns it; exclude it from the other. Check every new banlist entry
+    against the tell list.
+41. **A density signal needs a dead zone.** `n / max(1, words/60)` saturated at 1.0 for a *single*
+    em dash in a short post, so "presence" and "heavy use" scored identically. Any per-100-words
+    tell should ramp from the rate a normal writer actually hits, not from zero.
+42. **A "target fraction" must be a CEILING, not a quota.** The auto-calibrator put its threshold
+    at the (1 − targetFrac) quantile and clamped it to [0.4, 0.9], so a feed with *no* slop in it
+    still lost its top ~28% — the model had no way to say "there is nothing to hide here". Take
+    the higher of the quantile and an absolute floor: the quantile caps how much *can* go, the
+    floor decides whether anything *deserves* to. A filter that always removes the same share of
+    the input is a quota, and users experience it as "it hides everything".
+43. **A guard that passes against the broken build is not a guard — and a fixture of N identical
+    items measures the fixture.** Two tests written for these fixes passed pre-fix: one because
+    its corpus happened not to reproduce the shape the bug needed, one because 30 copies of the
+    same post score identically and no threshold can split a tie group. Run every new regression
+    test against the unfixed code and *watch it fail* before believing it; where it can't fail,
+    say what the test actually asserts instead of what you hoped it did.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

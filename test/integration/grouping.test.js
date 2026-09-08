@@ -236,3 +236,37 @@ test("a group with nothing trainable in it shows no splat", () => {
   assert.strictEqual(group.querySelector('[data-fh-act="confirm-group"]'), null, "but there is no slop to confirm");
   assert.ok(group.querySelector('[data-fh-act="ungroup"]'), "Show all is still offered");
 });
+
+// FH-047: hidden posts cluster on a real feed, so an uncapped run collapsed a whole screen
+// into a single "27 posts hidden" line — which reads as "FeedHacker ate my feed" even when
+// the hidden share is modest, and put every post behind one Show-all.
+test("a long run breaks into several rows instead of one giant one", () => {
+  const doc = makeDoc(feedHtml(slopPosts(20)));
+  const s = baseSettings({ groupHiddenRuns: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const rows = [...doc.querySelectorAll(".feedhacker-stub.feedhacker-group")];
+  assert.ok(rows.length > 1, `20 hidden posts must not collapse to one row (got ${rows.length})`);
+  for (const row of rows) {
+    const n = Number((row.textContent.match(/(\d+) posts hidden/) || [])[1]);
+    assert.ok(n <= 8, `no row may stand for more than 8 posts (got ${n})`);
+    assert.ok(row.querySelector('[data-fh-act="ungroup"]'), "each row keeps its own Show all");
+  }
+  // Every hidden post is still accounted for by exactly one row.
+  const claimed = rows.reduce((a, r) => a + Number((r.textContent.match(/(\d+) posts hidden/) || [])[1]), 0);
+  assert.strictEqual(claimed, 20, "the rows account for every hidden post, once");
+});
+
+test("Show all on one row expands only that row's posts", () => {
+  const doc = makeDoc(feedHtml(slopPosts(20)));
+  const s = baseSettings({ groupHiddenRuns: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const before = doc.querySelectorAll(".feedhacker-stub.feedhacker-group").length;
+  doc.querySelector('.feedhacker-group [data-fh-act="ungroup"]')
+     .dispatchEvent(new doc.defaultView.MouseEvent("click", { bubbles: true }));
+  const after = doc.querySelectorAll(".feedhacker-stub.feedhacker-group").length;
+  assert.strictEqual(after, before - 1, "the other rows stay folded");
+});

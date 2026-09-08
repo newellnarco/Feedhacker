@@ -850,6 +850,11 @@
   // the run's first post ("N hidden · AI Slop ×8, Promoted ×3 · Show all"), and the rest fold
   // away with no stub. "Show all" expands the run back to individual stubs.
   var GROUP_MIN = 3;
+  // …and a CEILING on how many a single row may stand for. Hidden posts cluster on a real
+  // feed, so an uncapped run collapsed an entire screen into one "27 posts hidden" line,
+  // which reads as "FeedHacker ate my feed" even when the hidden share is modest (FH-047).
+  // Long runs now break into several rows, each with its own splat and Show-all.
+  var GROUP_MAX = 8;
   function ensureStub(doc, el) {
     var s = directChildStub(el);
     if (!s) { s = doc.createElement("div"); el.insertBefore(s, el.firstChild); }
@@ -951,17 +956,24 @@
     if (!settings || !settings.groupHiddenRuns) return;
     var posts = findPostContainers(doc);
     var run: any[] = [];
+    function fold(chunk) {
+      var head = chunk[0];
+      var headId = head.dataset.feedhackerSlopId || (Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36));
+      for (var j = 1; j < chunk.length; j++) {
+        var m = chunk[j];
+        var s = directChildStub(m); if (s && s.parentNode) s.parentNode.removeChild(s);
+        m.classList.remove("feedhacker-hidden"); m.classList.add("feedhacker-gone");
+        m.dataset.feedhackerGroup = headId;
+      }
+      renderGroupStub(doc, head, headId, chunk, settings);
+    }
     function flush() {
-      if (run.length >= GROUP_MIN) {
-        var head = run[0];
-        var headId = head.dataset.feedhackerSlopId || (Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36));
-        for (var j = 1; j < run.length; j++) {
-          var m = run[j];
-          var s = directChildStub(m); if (s && s.parentNode) s.parentNode.removeChild(s);
-          m.classList.remove("feedhacker-hidden"); m.classList.add("feedhacker-gone");
-          m.dataset.feedhackerGroup = headId;
-        }
-        renderGroupStub(doc, head, headId, run, settings);
+      // Break a long run into GROUP_MAX-sized rows. A remainder shorter than GROUP_MIN is
+      // left as individual stubs rather than folded into a row that claims too little.
+      for (var i0 = 0; run.length - i0 >= GROUP_MIN; i0 += GROUP_MAX) {
+        var chunk = run.slice(i0, i0 + GROUP_MAX);
+        if (chunk.length < GROUP_MIN) break;
+        fold(chunk);
       }
       run = [];
     }
