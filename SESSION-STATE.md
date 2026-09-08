@@ -21,20 +21,19 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 
 | # | Open item | Who | Detail |
 |---|---|---|---|
-| 1 | **Verify the AI-slop fix on a real feed** | maintainer | FH-049 (0.4.9) has still never been measured against a live feed — the two logs sent so far were byte-identical exports of the *same* pre-0.4.9 build. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. Check `version` reads ≥ `0.5.0` before sending. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
-| 2 | **0.5.0 is in Google review, not live** | maintainer / next session | Submitted 2026-09-08 20:39 UTC. Confirm with the "Item successfully published" email for **Version 0.5.0**, then mark it ✅ Live in `RELEASES.md`. Until then the slot is **BLOCKED** — a further store upload would fail `ITEM_NOT_UPDATABLE`. |
-| 3 | **`CWS_PUBLISHER_ID` is invisible to GitHub Actions** | maintainer | Present in neither tab as far as the workflow can see, so `cancelSubmission` **has never once been called**. Likely the wrong *page*: Settings → Secrets and variables → **Actions** is separate from **Codespaces** and **Dependabot**. Repository (not environment) scope, named exactly `CWS_PUBLISHER_ID`. Only matters when a version is actually stuck in review — every upload so far has gone into a free slot. |
-| 4 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
-| 5 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
+| 1 | **Verify the AI-slop fix on a real feed** | maintainer | FH-049 (0.4.9) has still never been measured against a live feed — the two logs sent so far were byte-identical exports of the *same* pre-0.4.9 build. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. Check `version` reads `0.5.0` before sending — 0.5.0 is what is live now. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
+| 2 | **`CWS_PUBLISHER_ID` is invisible to GitHub Actions** | maintainer | Present in neither tab as far as the workflow can see, so `cancelSubmission` **has never once been called**. Likely the wrong *page*: Settings → Secrets and variables → **Actions** is separate from **Codespaces** and **Dependabot**. Repository (not environment) scope, named exactly `CWS_PUBLISHER_ID`. Only matters when a version is actually stuck in review — every upload so far has gone into a free slot. |
+| 3 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
+| 4 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
 
 ## 2. Current state
 
 | | |
 |---|---|
-| **Latest version** | **0.5.0** — shipped 2026-09-08 (tag `v0.5.0`, GitHub Release, store upload **submitted for review**) |
+| **Latest version** | **0.5.0** — shipped and **LIVE** 2026-09-08 (tag `v0.5.0`, GitHub Release, store published 20:55 UTC) |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
-| **Confirmed live on the store** | 0.4.9 (published 2026-09-08 04:25 UTC) — 0.5.0 is submitted, not yet live |
-| **Submission slot** | **BLOCKED** until 0.5.0 clears review |
+| **Confirmed live on the store** | **0.5.0** (published 2026-09-08 20:55:30 UTC) |
+| **Submission slot** | **OPEN** — nothing pending review |
 | **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change |
 | **Review** | no AI reviewer runs on this repo — **green CI is the merge gate** (`REVIEWERS_STATUS.md`) |
 
@@ -78,7 +77,8 @@ Newest first. One entry per session; keep entries short and factual.
 
 - **Shipped 0.4.7, 0.4.8, 0.4.9 and 0.5.0**, all four on explicit maintainer instruction.
   0.4.7/0.4.8/0.4.9 confirmed published on the store (22:57, 03:24 and 04:25 UTC); 0.5.0
-  **submitted for review** at 20:39 UTC (Release run #23, `Publish successful`) — not yet live.
+  **published 20:55:30 UTC**, 16 minutes after upload (Release run #23) — so all four versions
+  shipped this session are live.
   The store-cancel step ran and warned `CWS_PUBLISHER_ID is empty` for the **fourth** release
   running, so `cancelSubmission` has still never been called; every upload has gone into a free
   slot instead.
@@ -91,6 +91,9 @@ Newest first. One entry per session; keep entries short and factual.
   scorer is consulted. Two sessions of scoring work had been aimed at a symptom that had nothing
   to do with scoring. Codified as §51 — grep the strings in a screenshot before reading the model.
 - **Added** Unmute all authors, Factory reset, and guards that an upgrade preserves settings.
+- **All four shipped versions are live on the store** — 0.4.7 (22:57), 0.4.8 (03:24), 0.4.9
+  (04:25) and 0.5.0 (20:55 UTC). Review turnaround ran 4h → 2h → 20min → 16min, so every upload
+  went into a free slot and the cancel step has never once been needed.
 - **`best_practices.md` §36–§52** written this session; `TEST_MATRIX.md` gained rows for
   destructive controls, install/upgrade, and solo/mute.
 - **Method failures worth not repeating:** a store outcome recorded as fact before reading the
