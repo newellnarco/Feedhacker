@@ -20,6 +20,14 @@ var TRAIN_KEY = "feedhacker:sloptrain";
 var OBS_KEY = "feedhacker:slopobs";
 var CAL_KEY = "feedhacker:slopcal";
 
+// Everything FeedHacker persists in chrome.storage.local. Kept as one list so "factory reset"
+// cannot silently miss a key when new state is added — add here and it is cleared.
+var ERRLOG_KEY = Log ? Log.STORAGE_KEY : "feedhacker:errorlog";
+var LOCAL_KEYS = [
+  WEIGHTS_KEY, STATS_KEY, CUSTOM_KEY, AUTHORS_KEY, HISTORY_KEY,
+  SLOPLOG_KEY, TRAIN_KEY, OBS_KEY, CAL_KEY, ERRLOG_KEY
+];
+
 var LABELS = {};
 Filters.FILTERS.forEach(function (f) { LABELS[f.id] = f.label; });
 
@@ -227,6 +235,37 @@ byId("reset-learning").addEventListener("click", function () {
   });
 });
 byId("refresh").addEventListener("click", loadAll);
+
+// --- Factory reset: back to a clean new install ---
+// Clears every learned model, author memory, custom filter and log, and returns all settings to
+// the shipped DEFAULTS — which is AI-slop filtering ON and nothing else, exactly what a first
+// install gets. Wired to two buttons (Authors panel and Error log panel) because that is where
+// people look for it; both run this one function so they cannot drift apart.
+function factoryReset(btn) {
+  if (!self.confirm(
+    "Factory reset?\n\n" +
+    "This clears everything FeedHacker has learned or stored:\n" +
+    "  • all muted and always-shown authors\n" +
+    "  • the learned AI-slop model and its training data\n" +
+    "  • custom filters, decision log, history and stats\n" +
+    "  • every filter and display setting\n\n" +
+    "You are left with a clean install: AI-slop filtering on, nothing else. " +
+    "This cannot be undone."
+  )) return;
+  var was = btn.textContent;
+  btn.disabled = true; btn.textContent = "Resetting…";
+  chrome.storage.local.remove(LOCAL_KEYS, function () {
+    // clear() then write DEFAULTS: a bare set would leave any key we no longer ship behind.
+    chrome.storage.sync.clear(function () {
+      chrome.storage.sync.set(Filters.buildDefaults(), function () {
+        btn.textContent = "Reset complete ✓";
+        setTimeout(function () { btn.disabled = false; btn.textContent = was; loadAll(); }, 1200);
+      });
+    });
+  });
+}
+byId("factory-reset").addEventListener("click", function () { factoryReset(byId("factory-reset")); });
+byId("factory-reset-authors").addEventListener("click", function () { factoryReset(byId("factory-reset-authors")); });
 
 // --- AI-slop decision log: export / clear / recalibrate ---
 function slopStatus(msg) {
@@ -622,6 +661,30 @@ function renderAuthors(store) {
   fill("allowed-list", Object.keys(store.allowed), function (key) {
     var s = Authors.unallow(store, key); saveAuthors(s);
   });
+}
+// One-click "unmute everyone". Muting is per-author and accumulates over months, so undoing it
+// chip by chip is the kind of chore people just don't do — they reinstall instead. Guarded by a
+// confirm because it is not individually undoable; the allowlist and the learned per-author
+// hidden/shown scores are untouched.
+byId("unmute-all").addEventListener("click", function () {
+  var btn: any = byId("unmute-all");
+  chrome.storage.local.get([AUTHORS_KEY], function (o) {
+    var store = Authors ? Authors.ensure(o && o[AUTHORS_KEY]) : (o && o[AUTHORS_KEY]) || { muted: {}, allowed: {}, scores: {} };
+    var n = Authors ? Authors.listMuted(store).length : Object.keys(store.muted || {}).length;
+    if (!n) { flashUnmute(btn, "No muted authors"); return; }
+    if (!self.confirm("Unmute all " + n + " author" + (n === 1 ? "" : "s") + "? This cannot be undone.")) return;
+    var next = Authors ? Authors.unmuteAll(store) : store;
+    var patch: any = {}; patch[AUTHORS_KEY] = next;
+    chrome.storage.local.set(patch, function () {
+      renderAuthors(next); renderTopSources(next);
+      flashUnmute(btn, "Unmuted " + n + " ✓");
+    });
+  });
+});
+function flashUnmute(btn, msg) {
+  var was = "Unmute all authors";
+  btn.textContent = msg;
+  setTimeout(function () { btn.textContent = was; }, 1600);
 }
 function saveAuthors(store) {
   var patch = {}; patch[AUTHORS_KEY] = store;

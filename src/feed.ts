@@ -216,6 +216,16 @@
     for (var i = 0; i < FILTER_IDS.length; i++) if (s[kind + cap(FILTER_IDS[i])]) out.push(FILTER_IDS[i]);
     return out;
   }
+  // "AI slop and Promoted posts" — the soloed kinds, named in the solo stub's label.
+  function soloLabels(ids) {
+    var F = root.FeedHackerFilters, names: any[] = [];
+    for (var i = 0; i < ids.length; i++) {
+      var lbl = F && typeof F.labelFor === "function" ? F.labelFor(ids[i]) : "";
+      names.push(lbl || ids[i]);
+    }
+    if (names.length <= 1) return names.join("");
+    return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+  }
   function anyActive(s) {
     if (!s) return false;
     if (listActive(s, "mute").length > 0 || listActive(s, "solo").length > 0) return true;
@@ -505,6 +515,9 @@
     if (typeof settings.onInteract === "function") settings.onInteract();   // pause background re-tuning so it can't swallow the next click
     var flags = readReasons(el);
     switch (btn.getAttribute("data-fh-act")) {
+      case "unsolo":
+        if (typeof settings.onClearSolo === "function") settings.onClearSolo();
+        break;
       case "ungroup":
         ungroupRun(doc, el, settings);
         break;
@@ -724,6 +737,18 @@
     }
   }
 
+  // Solo mode hides every post that isn't a soloed kind, so it can empty a whole feed from
+  // one toggle in the popup. Whenever that is why a row is hidden, the stub carries the way
+  // back out — otherwise the only exit is knowing to open the popup and find the green S.
+  function appendSoloExit(doc, flags, actions, settings) {
+    if (!hasFlag(flags, "filtered")) return;
+    if (!settings || typeof settings.onClearSolo !== "function") return;
+    var out = twoRowButton(doc, "feedhacker-show", "Show", "everything");
+    out.title = "Turn off solo mode and show the whole feed";
+    out.setAttribute("data-fh-act", "unsolo");
+    actions.appendChild(out);
+  }
+
   // Small green check, shown on the AI-slop button once the user has confirmed the post.
   function checkIcon(doc) {
     return iconSvg(doc, { stroke: "currentColor", sw: "2.6" }, [
@@ -802,6 +827,7 @@
     actions.appendChild(hide);
 
     appendAuthorActions(doc, el, stub, actions, settings);
+    appendSoloExit(doc, flags, actions, settings);
 
     var btn = twoRowButton(doc, "feedhacker-show", "Show", "anyway");
     btn.setAttribute("data-fh-act", "show");
@@ -957,6 +983,7 @@
       yes.setAttribute("data-fh-act", "confirm-group");
       actions.appendChild(yes);
     }
+    appendSoloExit(doc, readReasons(head), actions, settings);
     var btn = twoRowButton(doc, "feedhacker-show", "Show", "all");
     btn.setAttribute("data-fh-act", "ungroup");
     actions.appendChild(btn); stub.appendChild(actions);
@@ -1213,7 +1240,12 @@
     if (solos.length) {   // Solo wins: show ONLY soloed kinds, hide the rest.
       var flagsS = matchedFlags(el, matchers, solos, text, settings);
       if (flagsS.length) { remember(false, [], false, null); return null; }
-      var soloFlags = [{ label: "Filtered out", detail: "" }];
+      // Solo hides EVERYTHING that isn't a soloed kind, so on a normal feed it hides nearly
+      // every post. Say so on the stub — a bare "Filtered out" left users unable to tell a
+      // one-toggle mode from a runaway AI-slop model (FH-051), and appendSoloExit adds the way
+      // back out. The soloed kinds go in the LABEL rather than the detail because stub line 1
+      // renders labels only (labelsText drops detail — the slop splat carries its own).
+      var soloFlags = [{ id: "filtered", label: "Solo mode: showing only " + soloLabels(solos), detail: "" }];
       collapse(doc, el, soloFlags, settings);
       remember(true, soloFlags, false, ["filtered"]);
       return ["filtered"];

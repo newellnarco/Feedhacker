@@ -63,10 +63,18 @@
     return s;
   }
 
+  // Display label for a filter id ("sloppy" -> "AI slop"). Used by the solo stub so it can
+  // name the kinds it is showing without duplicating the FILTERS table.
+  function labelFor(id) {
+    for (var i = 0; i < FILTERS.length; i++) if (FILTERS[i].id === id) return FILTERS[i].label;
+    return "";
+  }
+
   // Keys the content script tracks live (everything in DEFAULTS). slopWeights is
   // handled separately (it lives in storage.local and is large/learned).
   var api = {
     FILTERS: FILTERS,
+    labelFor: labelFor,
     FILTER_IDS: FILTER_IDS,
     DISPLAY_KEYS: DISPLAY_KEYS,
     DEFAULTS: DEFAULTS,

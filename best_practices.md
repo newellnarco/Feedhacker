@@ -417,6 +417,24 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     the corpus was scanned once by construction and could not exhibit it. The exported decision
     log found it in minutes. When a user reports behaviour you cannot reproduce, ask for the
     artifact before theorising: `Export log (JSON)` on the options page exists for this.
+50. **A mode that hides things must name itself on the thing it hid, and offer the way out.**
+    Solo mode hides every post that isn't a soloed kind, and its stub said only "Filtered out" —
+    indistinguishable from an over-aggressive model. The maintainer reported an empty feed as the
+    AI-slop filter "hiding almost 100%", and the only exit was knowing to reopen the popup and
+    spot a green `S`. A hide is a claim the user must be able to audit: say which setting did it,
+    and put the undo where the evidence is (the stub, and the group row when runs are folded —
+    the folded case is the one a heavily filtered feed actually shows).
+51. **Read the label before you read the model.** The screenshot answered this in one `grep`:
+    "Filtered out" appears at exactly one place in the source, in the solo branch — which
+    short-circuits before the scorer is ever consulted. Two sessions of scoring work were queued
+    up against a symptom that had nothing to do with scoring. When a report includes a
+    screenshot, grep the strings in it first; the UI text is a precise index into the code path.
+52. **A destructive reset must enumerate state from one list, and be proven in a browser.**
+    "Factory reset" is only true if it clears *everything* persisted; a hand-kept list silently
+    rots as new keys are added. Keep one `LOCAL_KEYS`, restore settings from `buildDefaults()`
+    rather than a literal, and guard both — a source-scanning test that fails when a persisted
+    key isn't covered (it immediately caught `feedhacker:errorlog`), plus a system test that runs
+    the real button against real `chrome.storage` and asserts nothing survives.
 
 ## More tests & docs
 

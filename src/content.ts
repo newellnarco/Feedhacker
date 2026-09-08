@@ -164,6 +164,22 @@
     } catch (e) { logError(e, "allow-author"); }
   }
   settings.onAllowAuthor = onAllowAuthor;
+  // Leave solo mode from the feed itself. Solo hides every post that isn't a soloed kind, so
+  // one stray click on a green S in the popup can empty the whole feed with no on-feed clue as
+  // to why (FH-051). Clearing every solo* key restores the user's mute settings untouched.
+  function onClearSolo() {
+    try {
+      var patch: any = {};
+      for (var i = 0; i < Filters.FILTER_IDS.length; i++) {
+        var k = "solo" + Filters.cap(Filters.FILTER_IDS[i]);
+        patch[k] = false;
+        settings[k] = false;
+      }
+      chrome.storage.sync.set(patch);   // the storage.onChanged handler re-applies and rescans
+      if (ready) { F.reset(document, true); scanNow(); reportBadge(); }
+    } catch (e) { logError(e, "clear-solo"); }
+  }
+  settings.onClearSolo = onClearSolo;
   function onAuthorOutcome(info, hidden) {
     try {
       if (!Authors) return;

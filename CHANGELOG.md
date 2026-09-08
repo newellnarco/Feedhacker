@@ -13,7 +13,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.5.0] — unreleased
 
-_Nothing yet — next development cycle. Add entries here as work lands._
+### Fixed
+- **Solo mode could empty your whole feed with nothing on screen explaining why.** Solo shows
+  *only* the kinds you solo and hides everything else, so one stray click on a green **S** in the
+  popup hides almost every post — and the hidden rows just said "Filtered out", which looks
+  identical to the AI-slop filter going haywire. It wasn't the AI at all: solo short-circuits
+  before the slop model is even consulted.
+  - Hidden rows now say **"Solo mode: showing only …"** and name the kinds being shown.
+  - Every solo-hidden row — and the **grouped** "N posts hidden" summary row, which is all you
+    see on a heavily filtered feed — now carries a **Show everything** button that turns solo off
+    in one click. Your mute settings are left exactly as they were.
+
+### Added
+- **Unmute all authors** (Authors panel) — clear every muted author at once instead of removing
+  them one chip at a time. Your **Always shown** list and the per-author history are untouched.
+- **Factory reset** (Authors panel and Error log panel) — one button back to a clean install:
+  clears all muted/allowed authors, the learned AI-slop model and its training data, custom
+  filters, the decision log, history, stats and the error log, then restores every setting to its
+  default (AI-slop filtering on, nothing else, no solo). Asks for confirmation first; it can't be
+  undone.
+
+### Unchanged, and now guarded
+- **Upgrading never touches your settings.** Settings are read with the defaults as a fallback and
+  nothing is written on update, so everything you configured survives. A new install gets the
+  shipped defaults: AI-slop filtering on, every other filter and solo off. Both halves now have
+  tests, so a future change can't quietly start overwriting your setup on upgrade.
 
 ## [0.4.9] — 2026-09-08
 
