@@ -22,7 +22,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | # | Open item | Who | Detail |
 |---|---|---|---|
 | 1 | **Verify the AI-slop fix on a real feed** | maintainer | FH-049 (0.4.9) has still never been measured against a live feed — the two logs sent so far were byte-identical exports of the *same* pre-0.4.9 build. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. Check `version` reads `0.5.0` before sending — 0.5.0 is what is live now. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
-| 2 | **`CWS_PUBLISHER_ID` is invisible to GitHub Actions** | maintainer | Present in neither tab as far as the workflow can see, so `cancelSubmission` **has never once been called**. Likely the wrong *page*: Settings → Secrets and variables → **Actions** is separate from **Codespaces** and **Dependabot**. Repository (not environment) scope, named exactly `CWS_PUBLISHER_ID`. Only matters when a version is actually stuck in review — every upload so far has gone into a free slot. |
+| 2 | **`CWS_PUBLISHER_ID` was never added** | maintainer | **Confirmed 2026-09-08 from both tabs, not guesswork:** Actions → *Secrets* holds only `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET` and `CWS_REFRESH_TOKEN`; Actions → *Variables* holds only `CWS_AUTO_PUBLISH` (last touched two months ago). The workflow reads `vars.CWS_PUBLISHER_ID || secrets.CWS_PUBLISHER_ID` — i.e. both — and printed it empty on all four releases. So this is **not** a page, scope or name problem, which is where three earlier sessions looked: the value is simply absent from this repository, and `cancelSubmission` has never once been called. **Fix:** copy the publisher ID from the Chrome Web Store Developer Dashboard → **Publisher → Settings**, then add it at `Settings → Secrets and variables → Actions → Variables` as `CWS_PUBLISHER_ID`. Prefer the **Variables** tab: it is an account identifier (it appears in the API URL path), not a credential, and a variable prints its value in the job log so the next release confirms it resolved — a secret prints `***`. **Low stakes:** every upload so far went into a free slot (review turnaround 4h → 2h → 20min → 16min), so nothing has ever needed withdrawing. |
 | 3 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
 | 4 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
 
@@ -93,7 +93,12 @@ Newest first. One entry per session; keep entries short and factual.
 - **Added** Unmute all authors, Factory reset, and guards that an upgrade preserves settings.
 - **All four shipped versions are live on the store** — 0.4.7 (22:57), 0.4.8 (03:24), 0.4.9
   (04:25) and 0.5.0 (20:55 UTC). Review turnaround ran 4h → 2h → 20min → 16min, so every upload
-  went into a free slot and the cancel step has never once been needed.
+  went into a free slot and the cancel step has never once been needed. The reason it never ran
+  was finally pinned down at the end of the session: `CWS_PUBLISHER_ID` was never added to the
+  repository at all — Actions → Secrets holds only the three OAuth credentials and Actions →
+  Variables only `CWS_AUTO_PUBLISH` — so no amount of tab- or scope-hunting would have found it.
+  Three sessions theorised about *where* it was; nobody checked *whether* it was there (§51 again:
+  look at the thing before reasoning about it).
 - **`best_practices.md` §36–§52** written this session; `TEST_MATRIX.md` gained rows for
   destructive controls, install/upgrade, and solo/mute.
 - **Method failures worth not repeating:** a store outcome recorded as fact before reading the
