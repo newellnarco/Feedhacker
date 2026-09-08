@@ -4,12 +4,31 @@ FeedHacker is a Manifest V3 Chrome extension that filters low-signal posts out o
 the LinkedIn home feed (AI slop, promoted, hiring, corporate/brand, and more) with a
 Mute/Solo mixer. TypeScript, no bundler; sources in `src/`, built by `npm run build`.
 
-## Start here (standing rule)
+## Session continuity (standing rule)
 
-**At the start of every session, read [`SESSION-STATE.md`](SESSION-STATE.md) and run its
-Startup checklist** (review the record → check the live store version → confirm the store
-submission slot is open → report next-release plan and ask ship-or-wait). Keep
-`SESSION-STATE.md` and [`RELEASES.md`](RELEASES.md) updated as state changes.
+A session has no memory of the last one. [`SESSION-STATE.md`](SESSION-STATE.md) **is** that
+memory, and it only works if both ends are honoured:
+
+- **START every session there.** Read it top to bottom — **§1 Open items** first, then §2 Current
+  state and §6 Key facts — and run its **§3 Startup checklist** (skim the record → check the live
+  store version → confirm the submission slot → report the next-release plan and ask
+  ship-or-wait).
+- **END every session there.** Before signing off, run its **§4 Close-out checklist**: update §1
+  Open items, refresh §2 Current state, and add a dated **§5 Session log** entry. A closing
+  session that leaves §1 stale has broken the handoff, whatever else it accomplished.
+
+Two things keep the file trustworthy:
+
+- **§1 Open items is the only to-do list.** If work is outstanding it goes there, with who it is
+  waiting on. If it is not there, it is not open.
+- **Record outcomes, never predictions** (`best_practices.md` §44/§45). When you claim an
+  external system did something — a workflow, the Chrome Web Store — read its log first and write
+  what it actually did.
+
+`SESSION-STATE.md` holds *state*. Durable material belongs in its own record:
+[`RELEASES.md`](RELEASES.md) (what shipped and where it stands),
+[`CHANGELOG.md`](CHANGELOG.md) (what changed), [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) (bugs and
+fixes), [`best_practices.md`](best_practices.md) (lessons as rules).
 
 ## Pull requests (standing rule)
 
