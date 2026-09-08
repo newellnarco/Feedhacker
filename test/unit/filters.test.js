@@ -65,3 +65,15 @@ test("applyFixed is defensive on a missing/invalid settings object", () => {
   assert.strictEqual(filters.applyFixed(null), null);
   assert.strictEqual(filters.applyFixed(undefined), undefined);
 });
+
+test("labelFor maps a filter id to its display label", () => {
+  assert.strictEqual(filters.labelFor("sloppy"), "AI slop");
+  assert.strictEqual(filters.labelFor("promoted"), "Promoted posts");
+  // Every id must resolve — the solo stub names the soloed kinds from this.
+  for (const f of filters.FILTERS) assert.strictEqual(filters.labelFor(f.id), f.label);
+});
+
+test("labelFor returns empty for an unknown id rather than throwing", () => {
+  assert.strictEqual(filters.labelFor("nope"), "");
+  assert.strictEqual(filters.labelFor(undefined), "");
+});

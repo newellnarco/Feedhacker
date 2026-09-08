@@ -57,3 +57,36 @@ test("listMuted / listAllowed reflect the store", () => {
   assert.deepStrictEqual(authors.listMuted(s), ["/in/x"]);
   assert.deepStrictEqual(authors.listAllowed(s), ["/in/y"]);
 });
+
+// --- unmuteAll: the options page's one-click "Unmute all authors" ---
+test("unmuteAll clears every muted author", () => {
+  let s = authors.mute(authors.ensure(null), "a", "Ada");
+  s = authors.mute(s, "b", "Grace");
+  s = authors.mute(s, "c", "Alan");
+  assert.strictEqual(authors.listMuted(s).length, 3);
+  const cleared = authors.unmuteAll(s);
+  assert.deepStrictEqual(authors.listMuted(cleared), []);
+  assert.strictEqual(authors.isMuted(cleared, "a"), false);
+});
+
+test("unmuteAll leaves the allowlist and the learned scores alone", () => {
+  let s = authors.mute(authors.ensure(null), "a", "Ada");
+  s = authors.allow(s, "z", "Zoe");
+  s = authors.record(s, "a", "Ada", true);
+  const cleared = authors.unmuteAll(s);
+  assert.deepStrictEqual(authors.listAllowed(cleared), ["z"], "allowlist survives");
+  assert.strictEqual(authors.isAllowed(cleared, "z"), true);
+  assert.strictEqual(cleared.scores.a.hidden, s.scores.a.hidden, "per-author learning survives");
+});
+
+test("unmuteAll does not mutate the store it was given", () => {
+  let s = authors.mute(authors.ensure(null), "a", "Ada");
+  const before = JSON.stringify(s);
+  authors.unmuteAll(s);
+  assert.strictEqual(JSON.stringify(s), before, "callers keep their copy (same contract as unmute)");
+});
+
+test("unmuteAll on an empty store is a no-op, not a crash", () => {
+  assert.deepStrictEqual(authors.listMuted(authors.unmuteAll(authors.ensure(null))), []);
+  assert.deepStrictEqual(authors.listMuted(authors.unmuteAll(null)), []);
+});

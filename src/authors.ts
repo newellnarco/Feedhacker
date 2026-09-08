@@ -39,6 +39,9 @@
     return s;
   }
   function unmute(store, key) { var s = clone(store); delete s.muted[key]; return s; }
+  // Clear every muted author at once. The allowlist and the per-author hidden/shown scores are
+  // deliberately left alone: this undoes the mutes, not the learning.
+  function unmuteAll(store) { var s = clone(store); s.muted = {}; return s; }
   function allow(store, key, name) {
     var s = clone(store); if (!key) return s;
     s.allowed[key] = 1; delete s.muted[key];
@@ -87,7 +90,7 @@
 
   var api = {
     ensure: ensure, keyFor: keyFor, isMuted: isMuted, isAllowed: isAllowed,
-    mute: mute, unmute: unmute, allow: allow, unallow: unallow,
+    mute: mute, unmute: unmute, unmuteAll: unmuteAll, allow: allow, unallow: unallow,
     record: record, score: score, chronic: chronic, topSources: topSources,
     listMuted: listMuted, listAllowed: listAllowed
   };

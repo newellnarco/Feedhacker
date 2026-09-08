@@ -289,6 +289,12 @@
     <div class="panel-body">
       <h3 class="subhead" style="margin-top:0;">Muted (always hidden)</h3>
       <ul class="chiplist" id="muted-list"></ul>
+      <div class="row" style="margin-top:8px;">
+        <button id="unmute-all" class="danger">Unmute all authors</button>
+        <button id="factory-reset-authors" class="danger">Factory reset</button>
+        <span class="muted" id="unmute-all-note">Unmute all clears every muted author (Always shown is left alone).
+          Factory reset wipes everything and returns FeedHacker to a clean install.</span>
+      </div>
       <h3 class="subhead">Always shown</h3>
       <ul class="chiplist" id="allowed-list"></ul>
     </div>
@@ -315,6 +321,7 @@
       <div class="actions">
         <button id="clear-errors" class="danger">Clear error log</button>
         <button id="reset-learning">Reset AI-slop learning</button>
+        <button id="factory-reset" class="danger">Factory reset</button>
         <button id="refresh">Refresh</button>
       </div>
     </div>
