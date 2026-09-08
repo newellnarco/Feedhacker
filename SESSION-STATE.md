@@ -33,9 +33,17 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
     needs inspecting.
   - **Users on a poisoned model should Reset AI-slop learning once** — stored weights and the 112
     training examples came from the duplicate flood and stay over-aggressive until cleared.
-  - This release also **properly exercises the store cancel step** for the first time: PR #66 made
-    it read `CWS_PUBLISHER_ID` from either the Variables or the Secrets tab and warn loudly when
-    empty, instead of skipping silently as it did on 0.4.8. Read the `webstore` job log.
+  - **The store cancel step ran but did nothing — and said so.** Job log:
+    `##[warning]CWS_PUBLISHER_ID is empty, so a version already in review was NOT withdrawn`.
+    PR #66's fix **worked**: the step is no longer silently `skipped` (0.4.8) and now reports its
+    own inaction. But the publisher id is still invisible to Actions from **both** the Variables
+    and the Secrets tab, so `cancelSubmission` **has never actually been called**. The upload
+    succeeded regardless — the slot was free, as with 0.4.7 and 0.4.8.
+    - **Next step for the maintainer:** the value is likely in the wrong *page* rather than the
+      wrong tab. Settings → Secrets and variables → **Actions** has its own Secrets/Variables
+      tabs, separate from the **Codespaces** and **Dependabot** pages; a value added on either of
+      those is invisible to workflows. Check it is on the Actions page, at repository (not
+      environment) scope, named exactly `CWS_PUBLISHER_ID`.
   - The method lesson is §49: two earlier rounds were measured against a corpus written by the
     person fixing it, which by construction could not exhibit the bug. **Ask for the export first.**
 
