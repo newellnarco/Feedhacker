@@ -168,7 +168,10 @@ jobs:
     continue-on-error: true
     env:
       CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}       # job-level so the guard `if` can read it
-      CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}    # ditto — gates the cancel step below
+      # Accept the id from EITHER tab. Settings has "Secrets" and "Variables" side by side, and
+      # on the v0.4.8 release this resolved empty — the cancel step skipped silently and the
+      # release looked entirely green while doing nothing (FH-048).
+      CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID || secrets.CWS_PUBLISHER_ID }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -196,7 +199,7 @@ jobs:
       #     exactly as it did before this existed.
       # Note the publisher cap: at most six cancels per publisher per day.
       - name: Cancel a pending Chrome Web Store submission
-        if: env.CWS_CLIENT_ID != '' && env.CWS_PUBLISHER_ID != ''
+        if: env.CWS_CLIENT_ID != ''
         continue-on-error: true
         env:
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
@@ -205,6 +208,13 @@ jobs:
         run: |
           # No `set -e`: every failure here is tolerable and must not abort the job.
           set -uo pipefail
+          # Announce the misconfiguration instead of vanishing. This used to be an `if:` guard on
+          # the step, so a publisher id in the wrong place produced a SKIPPED step and a green
+          # release that had silently done nothing — the false-green class §4 exists to prevent.
+          if [ -z "${CWS_PUBLISHER_ID:-}" ]; then
+            echo "::warning title=Store cancel disabled::CWS_PUBLISHER_ID is empty, so a version already in review was NOT withdrawn. If the upload below fails with ITEM_NOT_UPDATABLE, that is why. Add CWS_PUBLISHER_ID (Dashboard -> Publisher > Settings) under Settings -> Secrets and variables -> Actions, in either the Variables or the Secrets tab."
+            exit 0
+          fi
           # Refresh-token -> access token. -sS keeps curl quiet but still prints real errors;
           # the response is parsed with python3 (present on ubuntu-latest) rather than grep so
           # a malformed body can't silently yield a half-token.

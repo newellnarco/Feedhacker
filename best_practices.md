@@ -384,6 +384,16 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     reaches the log. Both were mutation-tested (add `set -e`, echo the token) and both mutations
     fail the suite. Prefer this to trusting a release to be the first execution of new code.
 
+45. **A skipped step reports as success — never gate a feature on config with `if:` alone.** The
+    store-cancel step was guarded by `if: … && env.CWS_PUBLISHER_ID != ''`. On its first real
+    release the id resolved empty (it had been put in the Secrets tab; the workflow read `vars.`),
+    so the step was **skipped**, the job was **green**, and the release quietly did none of the
+    thing it had just been built to do. Gate on whether the *capability* is configured at all,
+    then check the specific input **inside** the step and say out loud — a `::warning::` — that it
+    is not going to act and what will break as a result. And where two places are equally plausible
+    for a value (Secrets vs Variables), read both rather than making one of them silently wrong.
+    This is §4's false-green rule applied to workflow configuration.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

@@ -45,9 +45,22 @@ test("the cancel step can never fail the release", () => {
   assert.ok(!/^\s*set -[a-z]*e/m.test(runScript), "no `set -e`: every failure here is tolerable");
 });
 
-test("the cancel step is skipped unless it is configured", () => {
-  assert.match(cancel, /if:\s*env\.CWS_CLIENT_ID != ''\s*&&\s*env\.CWS_PUBLISHER_ID != ''/,
-    "without a publisher id the release behaves exactly as it did before");
+test("a missing publisher id is ANNOUNCED, never silently skipped", () => {
+  // FH-048: this used to be an `if:` guard on the step, so an id in the wrong settings tab
+  // produced a SKIPPED step and a fully green release that had quietly done nothing. The v0.4.8
+  // release hit exactly that. The step now runs whenever store publishing is configured and
+  // reports the misconfiguration itself.
+  assert.match(cancel, /if:\s*env\.CWS_CLIENT_ID != ''\s*$/m,
+    "gated only on store publishing being configured at all");
+  assert.ok(!/CWS_PUBLISHER_ID != ''/.test(cancel), "the publisher id is NOT an `if:` guard any more");
+  assert.match(runScript, /::warning title=Store cancel disabled::/, "it emits a visible warning annotation");
+});
+
+test("the publisher id is accepted from either settings tab", () => {
+  // Secrets and Variables sit next to each other in Settings; putting it in the "wrong" one
+  // should not silently disable the feature.
+  assert.match(WF, /CWS_PUBLISHER_ID:\s*\$\{\{\s*vars\.CWS_PUBLISHER_ID\s*\|\|\s*secrets\.CWS_PUBLISHER_ID\s*\}\}/,
+    "falls back from vars to secrets");
 });
 
 test("it calls the documented cancelSubmission endpoint", () => {
@@ -114,6 +127,13 @@ test("nothing pending is normal, not a failure", () => {
 test("an auth failure skips the cancel instead of breaking the release", () => {
   const out = runCancel({ FAKE_TOKEN_JSON: '{"error":"invalid_grant"}' });
   assert.match(out, /Could not mint an access token/);
+});
+
+test("no publisher id: warns loudly, exits clean, and does not call the API", () => {
+  const out = runCancel({ CWS_PUBLISHER_ID: "" });
+  assert.match(out, /::warning title=Store cancel disabled::/, "the release log says the cancel did not happen");
+  assert.match(out, /ITEM_NOT_UPDATABLE/, "…and names the symptom it would cause");
+  assert.ok(!/Cancelled the pending submission/.test(out), "it must not claim to have cancelled anything");
 });
 
 test("a malformed token response is handled quietly", () => {
