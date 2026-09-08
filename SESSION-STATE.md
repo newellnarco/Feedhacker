@@ -21,99 +21,78 @@ fast way to get current. Companion files: [`RELEASES.md`](RELEASES.md) (per-vers
 
 ## ⏳ Next session — check first
 
+### Session closed 2026-09-08 (the "it hides everything" session)
+
+**Where things stand:** `main` @ `b127b32`. **0.4.9 is LIVE on the Chrome Web Store**
+(Google "Item successfully published", Version 0.4.9, **2026-09-08 04:25 UTC**). The
+**submission slot is OPEN** — nothing is pending review.
+
 - **Dev cycle OPEN: 0.5.0.** `manifest.json` / `package.json` / `package-lock.json` are bumped
-  and `CHANGELOG.md` has an empty `[0.5.0] — unreleased` section. Land work under that version;
-  label PRs `v0.5.0`. **Do not release without an explicit "ship"/"push."**
+  and `CHANGELOG.md` has an empty `[0.5.0] — unreleased` section. Land work under that version
+  and label PRs `v0.5.0`. **Do not release without an explicit "ship"/"push."**
 
-- **0.4.9 SHIPPED 2026-09-08** on the maintainer's explicit "push it" — tag `v0.4.9`, GitHub
-  Release, and a store upload that **succeeded into a free slot** (the cancel step could not run
-  — see below — so nothing was withdrawn). Contents: **FH-049** (posts re-judged on every
-  LinkedIn re-render — 300 decisions from 13 posts, one 42× in 63s — flooding the calibration
-  population and training buffer, so the model got more aggressive the longer it ran; identity is
-  now the activity URN with a verdict ledger) and **FH-050** (LinkedIn furniture hidden as posts;
-  20+ words now required to hide as slop).
-  - ⚠️ **Shipped UNVERIFIED on a real feed.** Proven in tests only. The decisive check is a fresh
-    `Export log (JSON)` from the options page: **decisions ≈ distinct posts** (it was 23:1). If it
-    is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup
-    needs inspecting.
-  - **Users on a poisoned model should Reset AI-slop learning once** — stored weights and the 112
-    training examples came from the duplicate flood and stay over-aggressive until cleared.
-  - **The store cancel step ran but did nothing — and said so.** Job log:
-    `##[warning]CWS_PUBLISHER_ID is empty, so a version already in review was NOT withdrawn`.
-    PR #66's fix **worked**: the step is no longer silently `skipped` (0.4.8) and now reports its
-    own inaction. But the publisher id is still invisible to Actions from **both** the Variables
-    and the Secrets tab, so `cancelSubmission` **has never actually been called**. The upload
-    succeeded regardless — the slot was free, as with 0.4.7 and 0.4.8.
-    - **Next step for the maintainer:** the value is likely in the wrong *page* rather than the
-      wrong tab. Settings → Secrets and variables → **Actions** has its own Secrets/Variables
-      tabs, separate from the **Codespaces** and **Dependabot** pages; a value added on either of
-      those is invisible to workflows. Check it is on the Actions page, at repository (not
-      environment) scope, named exactly `CWS_PUBLISHER_ID`.
-  - The method lesson is §49: two earlier rounds were measured against a corpus written by the
-    person fixing it, which by construction could not exhibit the bug. **Ask for the export first.**
+- **Two owner actions are still open** (nothing in the repo blocks on them):
+  1. **Verify FH-049 on a real feed.** 0.4.9 shipped proven in tests only. *Reset AI-slop
+     learning* (the stored weights and 112 training examples came from the duplicate flood and
+     stay over-aggressive until cleared), browse, then **Export log (JSON)**. **Decisions should
+     ≈ distinct posts** — it was 300 from 13. If it is still lopsided, the activity-URN lookup
+     is not finding LinkedIn's post ids and the markup needs inspecting. Bring the export; do
+     not re-theorise without it (§49).
+  2. **`CWS_PUBLISHER_ID` is still invisible to Actions**, from both the Variables and the
+     Secrets tab. Most likely the wrong *page*: Settings → Secrets and variables → **Actions**
+     has its own Secrets/Variables tabs, separate from the **Codespaces** and **Dependabot**
+     pages, and a value added on either of those is invisible to workflows. Check it is on the
+     Actions page, at repository (not environment) scope, named exactly `CWS_PUBLISHER_ID`.
 
-- **0.4.8 SHIPPED 2026-09-08** on the maintainer's explicit "ship it" — tag `v0.4.8`, GitHub Release,
-  and a store upload that **replaces 0.4.7 in the review queue**. Contents: the "it hides everything"
-  fixes — **FH-045** (the house style guide `claudisms.json` was scored as AI-authorship evidence and
-  the em dash counted twice; one em dash took an ordinary sentence from p=0.168 to p=0.786 — slop
-  recall held 8/8, human false positives 1→0), **FH-046** (the hidden share was a quota, so a clean
-  feed still lost ~28%; `targetFrac` is now a ceiling and a clean feed loses nothing), **FH-047**
-  (group rows capped at 8 posts), plus the thin-feed top-up. Carries all of 0.4.7 as well.
-  - ⚠️ **The cancel-submission step did NOT run on this release — it was skipped.** `CWS_PUBLISHER_ID`
-    resolved **empty** in the `webstore` job (log: `CWS_PUBLISHER_ID:` with no value) even though the
-    maintainer added it on 2026-09-08, so the `if:` guard was false. Most likely it went into the
-    **Secrets** tab rather than **Variables** (the workflow read `vars.` only), or was scoped to an
-    environment. The upload succeeded regardless — the slot was free, exactly as with 0.4.7 over
-    0.4.6 — so **`cancelSubmission` has still never hit Google's API**. Fixed in **FH-048**: the id
-    is now read from `vars.` OR `secrets.`, and a missing id emits a visible workflow warning
-    instead of silently skipping.
-  - **Next session: check whether 0.4.8 published.** Search Gmail
-    `from:chromewebstore-noreply@google.com newer_than:7d` and read the **Version** field of the
-    newest "Item successfully published" email. **Also check the Developer Dashboard** — 0.4.6
-    disappeared without any email, so email alone is not trustworthy for this item.
-  - The **0.4.9 cycle is open**: `manifest.json`, `package.json` and `package-lock.json` are bumped
-    and `CHANGELOG.md` has a `[0.4.9] — unreleased` section carrying the FH-048 fix. Accumulate
-    there; don't release without an explicit "ship".
+**What shipped this session** — three releases in one day, all now live:
 
-- **0.4.7 SHIPPED 2026-09-07** on the maintainer's explicit "ship it" — merged as `a10d66e`
-  (PR #60) + `f81446e` (PR #61), then released via the Release workflow run #20
-  (`publish: true`, conclusion **success**): tag **`v0.4.7`** → **GitHub Release** with all four
-  prebuilt zips → **store upload**. Contents: the AI-slop splat was unreachable whenever grouping
-  folded a run (**FH-044**); **Mute** keyed on the collapsed stub's own text, or on a reshare's
-  *reactor*, and could be lost to a write debounce (**FH-043**); the grouping toggle is back on
-  the options page; slop verdicts are serialized (§7). Full triad green; every new guard verified
-  to fail pre-fix.
-  - **The store upload SUCCEEDED** — `webstore` job log: "Uploading feedhacker-0.4.7-store.zip… /
-    Publishing… / Publish successful", i.e. **submitted for Google review**, not yet approved.
-    This contradicted the prediction made earlier in the session (that it would fail
-    `ITEM_NOT_UPDATABLE` behind 0.4.6); `RELEASES.md` has been corrected to match what actually
-    happened. Lesson: read the job log, don't record a prediction as an outcome.
-  - **0.4.6's store fate is unknown and it was never confirmed live.** No "Item successfully
-    published" email for 0.4.6 ever arrived — the newest publish email is still **Version 0.4.5**
-    (2026-07-21) — and no rejection arrived either, yet the store accepted 0.4.7 on 2026-09-07, so
-    0.4.6 was no longer holding the slot. Don't spend more time reconstructing it; 0.4.7
-    supersedes it.
-  - **Next session: check whether 0.4.7 published.** Search Gmail
-    `from:chromewebstore-noreply@google.com newer_than:7d` and read the **Version** field of the
-    newest "Item successfully published" email. If it says **0.4.7** → mark 0.4.7 ✅ Live in
-    `RELEASES.md`, slot OPEN. If it still says 0.4.5, 0.4.7 is in review → slot BLOCKED, don't
-    upload. Given 0.4.6 apparently vanished without an email, **verify in the Developer Dashboard
-    too** rather than trusting email alone.
-  - The next dev cycle is **0.4.8**: `manifest.json` / `package.json` are bumped and
-    `CHANGELOG.md` has an empty `[0.4.8] — unreleased` section. Accumulate there; don't release
-    without an explicit "ship".
+| Version | Live on store | Contents |
+|---|---|---|
+| **0.4.7** | 2026-09-07 22:57 UTC | **FH-044** AI-slop splat unreachable when grouping folded a run · **FH-043** Mute keyed on the collapsed stub's own text, or on a reshare's *reactor*, and could be lost to a write debounce · grouping toggle back on the options page · serialized slop verdicts (§7) |
+| **0.4.8** | 2026-09-08 03:24 UTC | **FH-045** the house style guide `claudisms.json` scored as evidence of AI authorship, em dash counted twice (one em dash: p=0.168 → 0.786) · **FH-046** `targetFrac` was a quota, so a clean feed still lost ~28% — now a ceiling · **FH-047** group rows capped at 8 · thin-feed top-up · **FH-048** store-cancel step no longer skips silently |
+| **0.4.9** | 2026-09-08 04:25 UTC | **FH-049** posts re-judged on every LinkedIn re-render — 300 decisions from 13 posts, one 42× in 63s — flooding the calibration population and training buffer, so the model grew more aggressive the longer it ran; identity is now the activity URN with a verdict ledger, and user choices survive a re-render · **FH-050** LinkedIn furniture hidden as posts; 20+ words now required |
 
-- **One owner action outstanding:** **Windows sideload users must re-install once** — see FH-042 /
-  `KNOWN_ISSUES.md`. The 0.4.5 updater can't deliver its own fix, so tell any affected user to
-  re-run `installer\install.bat` from `feedhacker-0.4.6-win.zip`.
-- **No AI reviewer runs on this repo.** CodeRabbit was **removed from every repo except `max3` and
-  `netsniff`** (maintainer, 2026-07-29), so FeedHacker PRs get no bot review at all. **Green CI is
-  the merge gate.** Don't recreate `.coderabbit.yaml`, don't invoke `@coderabbitai` commands (paid
-  quota), and don't wait on a bot comment. See `REVIEWERS_STATUS.md`.
-- **Next dev cycle is 0.4.7** — `manifest.json`/`package.json` are bumped, `CHANGELOG.md` has an
-  empty `[0.4.7] — unreleased` section. Accumulate there; don't release without an explicit "ship".
+**What the store actually did**, now that all three have cleared review: every upload went into
+a **free slot** and published within hours (0.4.7 ~4h, 0.4.8 ~2h, 0.4.9 ~20min). The
+cancel-submission step has therefore **never once been needed**, and `cancelSubmission` has
+**never been called** against Google's API — it remains unexercised, not proven working. Do not
+describe it as working until a run shows an HTTP response from it.
 
-## Current state — as of 2026-07-29 (post-0.4.6 ship)
+**Two method lessons, both earned the hard way this session** (see `best_practices.md`):
+
+- **§44/§45 — never record a prediction as an outcome.** It happened *three* times: the 0.4.7
+  upload was written up as failing `ITEM_NOT_UPDATABLE` before it succeeded; 0.4.9 was written up
+  as "replacing 0.4.8 in the review queue" when nothing was withdrawn; and 0.4.8 carried the same
+  claim about 0.4.7. Each needed its own correction PR (#62, #70, #71). Read the log, then write.
+- **§49 — ask for the artifact before theorising.** Two full rounds of scoring fixes (0.4.8) were
+  validated against a corpus written by the person fixing the bug, which by construction scanned
+  each post once and therefore *could not exhibit* the real defect. The maintainer's exported
+  decision log found it in minutes. Those rounds were not wasted — FH-045/046/047 are real — but
+  they were not the cause.
+
+**PRs merged this session:** #63–#71 (fixes, guards, records). Every bug closed the loop: fix →
+regression test at the tier that catches it → `KNOWN_ISSUES.md` row with a **Found by**
+attribution → a numbered rule in `best_practices.md` where the class was general
+(FH-043 … FH-050; §36–§49).
+
+### Standing items that outlived this session
+
+- **Windows sideload users must re-install once** — FH-042 / `KNOWN_ISSUES.md`. The 0.4.5 updater
+  cannot deliver its own fix, so an affected user has to re-run `installer\install.bat` from a
+  current `feedhacker-<version>-win.zip`. Still open.
+- **0.4.6's store fate was never established** — no publish email and no rejection, yet the slot
+  was free for 0.4.7. Superseded three times over now; don't spend time reconstructing it.
+- **No AI reviewer runs on this repo.** CodeRabbit was removed from every repo except `max3` and
+  `netsniff` (2026-07-29). **Green CI is the merge gate**; review is self-review against
+  `best_practices.md` *before* pushing. Don't recreate `.coderabbit.yaml`, don't invoke
+  `@coderabbitai` (paid quota), don't wait on a bot comment. See `REVIEWERS_STATUS.md`.
+- **The `msi` job is best-effort** and fails on the WiX gate every release. It never blocks.
+
+## Historical — state as of 2026-07-29 (post-0.4.6 ship)
+
+> Superseded by the 2026-09-08 block above: 0.4.7/0.4.8/0.4.9 have all since published and the
+> submission slot is OPEN. Kept for the 0.4.6 background only — do not read its "BLOCKED" and
+> "latest release" lines as current.
 
 - **Latest GitHub release:** **`v0.4.6` (2026-07-29)** — tag `v0.4.6` on `main` @ `92ff8f9`, cut by
   the Release workflow (`publish: true`) with all four prebuilt zips attached. The next dev cycle
