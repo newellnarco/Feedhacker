@@ -45,6 +45,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   runs break into several rows, each with its own splat and Show all.
 
 ### Added
+- **A release no longer gets stuck behind a version still in Google review.** The Chrome Web
+  Store accepts one pending version at a time, so cutting a release while the previous one is
+  under review failed with `ITEM_NOT_UPDATABLE` and the fix never reached users. The Release
+  workflow now withdraws a pending submission first — the API equivalent of the dashboard's
+  **Cancel review** — and then uploads. Best-effort by design: "nothing pending" is the normal
+  case and is not an error, a failed cancel can never fail the release, and without the new
+  `CWS_PUBLISHER_ID` variable the step is skipped and releases behave exactly as before.
 - **The feed tops itself up when filtering leaves it thin.** If a batch LinkedIn just delivered
   was mostly filtered out, FeedHacker now asks for more instead of waiting for you to scroll to
   the bottom of a nearly-empty screen (rate-limited, and bounded by the same kick limit as the

@@ -376,6 +376,14 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     test against the unfixed code and *watch it fail* before believing it; where it can't fail,
     say what the test actually asserts instead of what you hoped it did.
 
+44. **A publish step you can't run in CI is still testable — extract its shell and execute it
+    against a stub.** The store-cancel step runs once per release, against the maintainer's real
+    credentials, and cannot be exercised from a pull request. Asserting the YAML's *text* only
+    proves the text; pulling the `run:` block out of the workflow and running it with a stubbed
+    `curl` proves the *logic* — that no branch aborts the job and that the access token never
+    reaches the log. Both were mutation-tested (add `set -e`, echo the token) and both mutations
+    fail the suite. Prefer this to trusting a release to be the first execution of new code.
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
