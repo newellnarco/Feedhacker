@@ -156,6 +156,9 @@ jobs:
   #   secrets CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN  (Google OAuth creds)
   #   variable CWS_AUTO_PUBLISH = "true" to submit for review automatically; otherwise the
   #            new version is uploaded as a draft and you click "Publish" in the dashboard.
+  #   variable CWS_PUBLISHER_ID  (optional) enables the "cancel pending submission" step below,
+  #            which frees the one-pending-version slot so a release isn't blocked behind a
+  #            version still in review. Dashboard -> Publisher > Settings.
   # The store rejects a version that isn't higher than the live one, so bump manifest.json
   # every release (package.json is kept in lockstep).
   webstore:
@@ -165,6 +168,7 @@ jobs:
     continue-on-error: true
     env:
       CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}       # job-level so the guard `if` can read it
+      CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}    # ditto — gates the cancel step below
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -177,6 +181,55 @@ jobs:
           zip="$(ls dist/feedhacker-*-store.zip | head -1)"
           test -n "$zip"
           echo "path=$zip" >> "$GITHUB_OUTPUT"
+      # The store accepts ONE pending version at a time, so a release cut while the previous
+      # one is still in review fails with ITEM_NOT_UPDATABLE and the fix never reaches users.
+      # This is the API equivalent of the dashboard's "Cancel review" (Store listing -> ... ->
+      # Cancel review): it returns the pending submission to draft and frees the slot for the
+      # upload below. CWS API v2, same OAuth credentials and scope as the v1 upload.
+      #
+      # Deliberately BEST-EFFORT and non-fatal:
+      #   * "nothing pending" is the normal case, not an error — the API is called blind
+      #     because there is no cheap way to ask first, and a 4xx here is expected;
+      #   * a cancel that fails must never take a release down, so the step swallows its own
+      #     failure and lets the upload step report the real outcome;
+      #   * without CWS_PUBLISHER_ID the step is skipped entirely and the release behaves
+      #     exactly as it did before this existed.
+      # Note the publisher cap: at most six cancels per publisher per day.
+      - name: Cancel a pending Chrome Web Store submission
+        if: env.CWS_CLIENT_ID != '' && env.CWS_PUBLISHER_ID != ''
+        continue-on-error: true
+        env:
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          EXTENSION_ID: kccajfoghkplakndamlohpepopdpelkb   # public id from the store URL
+        run: |
+          # No `set -e`: every failure here is tolerable and must not abort the job.
+          set -uo pipefail
+          # Refresh-token -> access token. -sS keeps curl quiet but still prints real errors;
+          # the response is parsed with python3 (present on ubuntu-latest) rather than grep so
+          # a malformed body can't silently yield a half-token.
+          tok="$(curl -sS "https://oauth2.googleapis.com/token" \
+                   -d "client_id=$CWS_CLIENT_ID" \
+                   -d "client_secret=$CWS_CLIENT_SECRET" \
+                   -d "refresh_token=$CWS_REFRESH_TOKEN" \
+                   -d "grant_type=refresh_token" \
+                 | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)"
+          if [ -z "$tok" ]; then
+            echo "Could not mint an access token — skipping the cancel; the upload will report the real state."
+            exit 0
+          fi
+          url="https://chromewebstore.googleapis.com/v2/publishers/$CWS_PUBLISHER_ID/items/$EXTENSION_ID:cancelSubmission"
+          # -o/-w so the token is never echoed and only the status code reaches the log.
+          code="$(curl -sS -o /tmp/cws-cancel.out -w '%{http_code}' -X POST "$url" \
+                    -H "Authorization: Bearer $tok" -H "Content-Length: 0")"
+          if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+            echo "Cancelled the pending submission — the slot is free for this upload."
+          else
+            echo "No pending submission cancelled (HTTP $code). This is normal when nothing is in review."
+            head -c 500 /tmp/cws-cancel.out || true; echo
+          fi
+          exit 0
+
       - name: Upload to the Chrome Web Store
         if: env.CWS_CLIENT_ID != ''   # skip cleanly (green) when store publishing isn't configured
         env:
