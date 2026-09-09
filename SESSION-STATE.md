@@ -21,7 +21,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 
 | # | Open item | Who | Detail |
 |---|---|---|---|
-| 1 | **Verify the AI-slop fix on a real feed** | maintainer | FH-049 (0.4.9) has still never been measured against a live feed — the two logs sent so far were byte-identical exports of the *same* pre-0.4.9 build. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. Check `version` reads `0.5.0` before sending — 0.5.0 is what is live now. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
+| 1 | **Verify the AI-slop fix on a real feed** | maintainer | **The one thing that still matters.** FH-049 has never been measured against a live feed: both logs sent this session were byte-identical exports of the same pre-fix `0.4.8` build, and the two reports that prompted the chase turned out to be solo mode and a stale file — not the model. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. **Check `version` reads `0.5.0`** before sending — that is what is live. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
 | 2 | **`CWS_PUBLISHER_ID` added — unverified** | next session (passive) | The maintainer added it on 2026-09-08 after it was confirmed absent from both Actions tabs. **Not yet proven working:** no session tool can read repository variables or secret names, so the only evidence will be the next release's `webstore` job log. Expect the env line to show a value (or `***` if it went in the Secrets tab) instead of `CWS_PUBLISHER_ID:` with nothing after it, and the cancel step to print `Cancelled the pending submission` or `No pending submission cancelled (HTTP 404)` — the 404 is normal and correct when nothing is in review — instead of the `::warning` it emitted on 0.4.7–0.5.0. **Nothing waits on this**: the step exists because the maintainer asked whether a pending version could be withdrawn and replaced, and every upload since has gone into a free slot anyway (turnaround 4h → 2h → 20min → 16min), so `cancelSubmission` has never had anything to cancel. Removing the step entirely is a reasonable alternative if it is not worth carrying. |
 | 3 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
 | 4 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
@@ -31,6 +31,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | | |
 |---|---|
 | **Latest version** | **0.5.0** — shipped and **LIVE** 2026-09-08 (tag `v0.5.0`, GitHub Release, store published 20:55 UTC) |
+| **Dev cycle** | **0.6.0 open** — manifest/package/lock bumped, empty `[0.6.0] — unreleased` CHANGELOG section. Land work there. |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
 | **Confirmed live on the store** | **0.5.0** (published 2026-09-08 20:55:30 UTC) |
 | **Submission slot** | **OPEN** — nothing pending review |
@@ -101,11 +102,26 @@ Newest first. One entry per session; keep entries short and factual.
   look at the thing before reasoning about it).
 - **`best_practices.md` §36–§52** written this session; `TEST_MATRIX.md` gained rows for
   destructive controls, install/upgrade, and solo/mute.
+- **0.5.0 shipped and went live the same evening** (published 20:55 UTC, 16 minutes after upload),
+  carrying the solo-mode fix, Unmute all authors, Factory reset and the install/upgrade guards.
+- **The session-handoff contract was built and immediately exercised** — `SESSION-STATE.md` §1–§6
+  plus `test/unit/session-state.test.js`. It said "in review" while that was true and "live" once
+  Google's email arrived, because §4 forces a second look at the evidence rather than letting an
+  earlier claim stand.
+- **`CWS_PUBLISHER_ID` was never in the repo at all.** Three sessions theorised about *where* it
+  had gone — wrong tab, wrong page, environment scope, a typo — and PR #66 even widened the
+  workflow to read both tabs. Two screenshots ended it: Secrets held only the three OAuth
+  credentials, Variables only `CWS_AUTO_PUBLISH`. Nobody had checked *whether* it existed. The
+  maintainer has since added it; it stays recorded as **unverified** until a release log shows it
+  resolving. Worth remembering that the cancel step it feeds **has never once been needed** — all
+  four uploads went into free slots — so it was never the blocker it read as.
 - **Method failures worth not repeating:** a store outcome recorded as fact before reading the
   log (three times, corrected in #62, #70, #71); two rounds of scoring fixes validated against a
   corpus written by the person fixing the bug, which by construction could not exhibit the defect
   (§49); and a user-supplied log accepted without checking its `version` field — it was the same
-  pre-fix export twice (§49 again).
+  pre-fix export twice (§49 again). The through-line: three of this session's four "the filter is
+  broken" reports were not the filter — they were solo mode, a stale export, and a missing config
+  value. Look at the artifact before reasoning about the model (§51).
 
 ## 6. Key facts & gotchas (so a new session doesn't relearn them)
 
