@@ -39,14 +39,29 @@
       } catch (e) { return 0; }
     },
 
-    // Selector-INDEPENDENT "the feed actually rendered posts" probe. Counts post-like
-    // containers via LinkedIn's stable hooks that DON'T depend on our hidden-heading marker:
-    // role="article" (per-update a11y hook) and the activity-URN container (data hook). Used by
-    // the heartbeat to tell a real "selectors out of date" break (posts present, none match our
-    // marker) from an empty feed between page loads (nothing there yet — LinkedIn paging, not us).
+    // Selector-INDEPENDENT "the feed actually rendered posts" probe. Counts post-like containers
+    // via LinkedIn hooks that DON'T depend on our hidden-heading marker — that independence is the
+    // whole point, since the heartbeat uses this to tell a real "selectors out of date" break
+    // (posts present, none match our marker) from an empty feed between page loads.
+    //
+    // FH-052: LinkedIn's redesigned feed dropped BOTH hooks this used to rely on. Two live
+    // home-feed captures (2026-09-15, 8 and 42 posts) contain no role="article" and no
+    // data-urn/data-id activity container anywhere on the page — so the probe returned 0 on a
+    // fully rendered feed. heartbeatBreak() requires content > 0, so a probe pinned at 0 meant the
+    // break could NEVER fire: the one alarm that tells us our marker has stopped matching was
+    // silently dead. The per-post overflow control ("Open control menu for post by <name>") is
+    // LinkedIn's own a11y hook, emitted once per post and independent of the "Feed post" heading
+    // (40 of 42 and 7 of 8 posts in those captures). The retired hooks stay in the list so the
+    // probe keeps working anywhere they survive, and so this is purely additive.
+    //
+    // English-only, like MARKER_RE above — and deliberately no worse than it. On a localized
+    // LinkedIn both stop matching together, so the probe reads 0 exactly where the marker reads 0
+    // and the result is silence, not a false alarm. (FeedHacker not filtering a non-English feed
+    // at all is a separate, pre-existing gap; it is not this probe's to fix.)
+    CONTENT_SELECTOR: '[role="article"], [data-urn*="urn:li:activity"], [data-id*="urn:li:activity"], [aria-label^="Open control menu for post"]',
     contentCount: function (doc) {
       try {
-        var a = doc.querySelectorAll('[role="article"], [data-urn*="urn:li:activity"], [data-id*="urn:li:activity"]');
+        var a = doc.querySelectorAll(api.CONTENT_SELECTOR);
         return a ? a.length : 0;
       } catch (e) { return 0; }
     },

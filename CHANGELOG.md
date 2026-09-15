@@ -11,6 +11,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.6.0] — unreleased
+
+### Fixed
+- **FeedHacker can once again tell you when LinkedIn changes its layout and breaks filtering.**
+  LinkedIn redesigns its feed from time to time, and when it does FeedHacker can stop recognising
+  posts and quietly filter nothing at all — your feed simply fills back up with the stuff you
+  asked it to hide. There is a built-in check meant to notice exactly that and log it, so the
+  problem can be found and fixed instead of silently persisting. That check had itself stopped
+  working after LinkedIn's most recent redesign: it looked for parts of the page LinkedIn no
+  longer uses, so it always concluded the feed was empty and never raised a thing. It now
+  recognises today's LinkedIn feed (verified against two real feeds, one of 8 posts and one of
+  42), so the next time LinkedIn moves the furniture, FeedHacker will say so rather than going
+  quietly blind.
+
+  **You will not see any difference in your feed today** — nothing about which posts get hidden
+  has changed. This is the safety net that catches the next breakage, put back in working order.
+
 ## [0.5.0] — 2026-09-08
 
 ### Fixed

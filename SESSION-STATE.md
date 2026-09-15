@@ -21,16 +21,19 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 
 | # | Open item | Who | Detail |
 |---|---|---|---|
-| 1 | **Verify the AI-slop fix on a real feed** | maintainer | FH-049 (0.4.9) has still never been measured against a live feed — the two logs sent so far were byte-identical exports of the *same* pre-0.4.9 build. Turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**. Check `version` reads `0.5.0` before sending — 0.5.0 is what is live now. **Decisions should ≈ distinct posts** (it was 300 from 13). If it is still lopsided, the activity-URN lookup is not finding LinkedIn's post ids and the markup needs inspecting. |
-| 2 | **`CWS_PUBLISHER_ID` added — unverified** | next session (passive) | The maintainer added it on 2026-09-08 after it was confirmed absent from both Actions tabs. **Not yet proven working:** no session tool can read repository variables or secret names, so the only evidence will be the next release's `webstore` job log. Expect the env line to show a value (or `***` if it went in the Secrets tab) instead of `CWS_PUBLISHER_ID:` with nothing after it, and the cancel step to print `Cancelled the pending submission` or `No pending submission cancelled (HTTP 404)` — the 404 is normal and correct when nothing is in review — instead of the `::warning` it emitted on 0.4.7–0.5.0. **Nothing waits on this**: the step exists because the maintainer asked whether a pending version could be withdrawn and replaced, and every upload since has gone into a free slot anyway (turnaround 4h → 2h → 20min → 16min), so `cancelSubmission` has never had anything to cancel. Removing the step entirely is a reasonable alternative if it is not worth carrying. |
-| 3 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
-| 4 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
+| 1 | **Verify the AI-slop fix on a real feed — the decision log, over time** | maintainer | FH-049. **Partly answered 2026-09-15**: the maintainer's live home-feed DOM capture (42 posts, FeedHacker running) shows **42 posts → 42 distinct `data-feedhacker-key` values, zero duplicates**, so identity is holding *in a single snapshot*. That is not the 300-decisions-from-13-posts measurement, which is a **time series** — only an exported decision log can show a post being re-judged across re-renders. Still wanted: turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**; check `version` reads the installed build before sending. **Decisions should ≈ distinct posts.** The old "if lopsided, the URN lookup is failing" hypothesis is now **settled and can be dropped** — see item 2. |
+| 2 | **LinkedIn no longer exposes the activity URN — post identity now rests on the text hash alone** | next session (informational) | Settled 2026-09-15 by inspecting two live home-feed captures: there is **no `data-urn`, no `data-id` and no `role="article"` anywhere on the page**, and `postKey()` fell back to `textHash` for **42 of 42** posts. The id is still recoverable, but only sparsely — 3 posts carried a `/feed/update/urn:li:…` permalink and 5 a `replaceableComment_urn:li:comment:(activity:<postid>,…)` componentkey. **Deliberately not harvested**: the permalink route can pick up the *original* post's id inside a reshare and collide two feed entries onto one verdict, which is worse than the hash. Revisit only if the decision log in item 1 shows identity actually slipping. |
+| 3 | **`CWS_PUBLISHER_ID` added — unverified** | next session (passive) | The maintainer added it on 2026-09-08 after it was confirmed absent from both Actions tabs. **Not yet proven working:** no session tool can read repository variables or secret names, so the only evidence will be the next release's `webstore` job log. Expect the env line to show a value (or `***` if it went in the Secrets tab) instead of `CWS_PUBLISHER_ID:` with nothing after it, and the cancel step to print `Cancelled the pending submission` or `No pending submission cancelled (HTTP 404)` — the 404 is normal and correct when nothing is in review — instead of the `::warning` it emitted on 0.4.7–0.5.0. **Nothing waits on this**: the step exists because the maintainer asked whether a pending version could be withdrawn and replaced, and every upload since has gone into a free slot anyway (turnaround 4h → 2h → 20min → 16min), so `cancelSubmission` has never had anything to cancel. Removing the step entirely is a reasonable alternative if it is not worth carrying. |
+| 4 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
+| 5 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
+| 6 | **LinkedIn furniture still enters the scan as posts** | next session | "Who's viewed your profile" and "Jobs recommended for you" modules both carry the hidden `Feed post` heading, so `findPostContainers()` returns them and they get author-attributed (`"Jobs recommended for youVice President, Apps"`). FH-050 only gated the **AI-slop** path behind a 20-word prose minimum; the **solo** and **mute** paths have no such gate, so in the 2026-09-15 capture both modules were hidden as ordinary posts. Cosmetic today (they'd mostly be hidden anyway), but it pollutes author history and the hidden-run grouping. |
 
 ## 2. Current state
 
 | | |
 |---|---|
 | **Latest version** | **0.5.0** — shipped and **LIVE** 2026-09-08 (tag `v0.5.0`, GitHub Release, store published 20:55 UTC) |
+| **Dev cycle** | **0.6.0 open** — `manifest.json` / `package.json` / `package-lock.json` bumped, `CHANGELOG.md` has a `[0.6.0] — unreleased` section. Nothing tagged; **do not release without an explicit "ship"** |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
 | **Confirmed live on the store** | **0.5.0** (published 2026-09-08 20:55:30 UTC) |
 | **Submission slot** | **OPEN** — nothing pending review |
@@ -72,6 +75,47 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-09-15 — a dead session, two live DOM captures, and a watchdog that had quietly died
+
+- **Context: this session was asked to pick up a sibling session's work.** `Feedhacker LinkedIn
+  bug` (`session_01CtWmAPZukKJt83QZNhkNVr`) ran ~9 minutes and **failed with "Prompt is too
+  long"**. It never committed or pushed; its branch `claude/loving-cannon-hn62q0` does not exist
+  on the remote and its transcript is not readable from another session. **Its diagnosis is
+  unrecoverable** — treat a sibling session's findings as lost unless they are on a branch.
+- **The maintainer supplied two live home-feed DOM captures** (one without FeedHacker, one with).
+  Those are the first real-markup artifacts this project has had, and they settled three things
+  that three prior sessions could only theorise about.
+- **"The feed is empty" was NOT the filter — again (§51, third time).** The with-FeedHacker
+  capture: **42 posts, all 42 hidden** — **23** by `Solo mode: showing only Hiring posts` and
+  **19** by muted authors. Only **one** post in the whole capture classifies as hiring, and its
+  author (Richard King) is **himself muted**, so solo=Hiring had literally nothing left to show.
+  Working as designed; the 0.5.0 exit UX was rendering correctly (3 group rows, each naming solo
+  mode and carrying **Show everything**). No code defect.
+- **Fixed FH-052 — the "selectors are out of date" alarm had been dead since LinkedIn's
+  redesign.** `heartbeatBreak()` only fires on `markers === 0 && content > 0`, and `contentCount()`
+  looked for `role="article"` / `data-urn` / `data-id`. LinkedIn's current feed ships **none of
+  them**: **zero matches against 8 and 42 visible posts.** So `content` was pinned at 0, the alarm
+  could never fire, and the one mechanism that would tell us our marker had gone stale was itself
+  broken — silently, with nothing red. Fixed additively by also counting LinkedIn's per-post
+  overflow control (`[aria-label^="Open control menu for post"]`, 7/8 and 40/42). Codified as
+  **§53**: a watchdog needs a fixture cut from the real product, because its own tests built the
+  `role="article"` markup they tested against and so could never exhibit the bug (§49).
+- **Post identity: question closed.** Item 1 used to hypothesise that a lopsided decision count
+  meant "the activity-URN lookup is not finding LinkedIn's post ids". Confirmed, and it is not
+  fixable the obvious way: **LinkedIn no longer puts the URN on the post container at all**
+  (42/42 posts fell back to `textHash`). Harvesting it from reshare permalinks was considered and
+  **rejected** — a reshare embeds the *original* post's permalink, so it would collide two feed
+  entries onto one verdict. Recorded as open item 2.
+- **Encouraging, but not proof:** those 42 posts produced **42 distinct keys, zero duplicates**.
+  That is one snapshot, not the time series FH-049 was diagnosed from, so item 1 stays open —
+  narrowed to "export the decision log".
+- **New finding, not fixed:** LinkedIn furniture ("Who's viewed your profile", "Jobs recommended
+  for you") still enters the scan as posts. FH-050 gated only the AI-slop path behind a 20-word
+  prose minimum; solo and mute have no such gate. Open item 6.
+- **PR [#79](https://github.com/newellnarco/Feedhacker/pull/79) is still open from 2026-09-09** and
+  its version-bump half is now duplicated by this session's 0.6.0 bump. It can be closed, or
+  merged first and this branch rebased. Flagged to the maintainer; not actioned unilaterally.
 
 ### 2026-09-08 — "it hides everything", three releases, and the solo-mode red herring
 

@@ -26,7 +26,7 @@ fires **once per change** — the `pull_request` event is the review gate; `push
 A change to a module the whole app imports has repo-wide blast radius:
 
 - **`src/filters.ts`** (`DEFAULTS` / filter list) — read by popup, options, and content.
-- **`src/selectors.ts`** — the LinkedIn DOM contract every scan depends on.
+- **`src/selectors.ts`** — the LinkedIn DOM contract every scan depends on. Its DOM probes are guarded against **`test/fixtures/linkedin-feed-2026-09.html`**, transcribed from a live home-feed capture. When LinkedIn's markup moves, **re-capture the fixture** — a probe tested only against markup we wrote can't fail when reality changes (§53, FH-052).
 - **`src/scorer.ts`** — the AI-slop model consumed by feed + content + options.
 - **`scripts/build.mjs`, `manifest.json`, `tsconfig.json`, CI workflow** — build/packaging.
 
