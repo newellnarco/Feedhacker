@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.7.0] — unreleased
+## [0.7.0] — 2026-09-15
 
 ### Fixed
 - **Solo mode no longer throws away the very posts you asked for.** If you solo a kind (say
