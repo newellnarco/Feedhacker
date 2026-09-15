@@ -33,7 +33,8 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | **Latest version** | **0.5.0** — shipped and **LIVE** 2026-09-08 (tag `v0.5.0`, GitHub Release, store published 20:55 UTC) |
 | **Dev cycle** | **0.6.0 open** — `manifest.json` / `package.json` / `package-lock.json` bumped, `CHANGELOG.md` has a `[0.6.0] — unreleased` section. Nothing tagged; **do not release without an explicit "ship"** |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
-| **Confirmed live on the store** | **0.5.0** (published 2026-09-08 20:55:30 UTC) |
+| **Confirmed live on the store** | **0.5.0** — confirmed 2026-09-15 by reading the **store listing** ("Version 0.5.0, Updated September 8, 2026"). **Not** by email: no publish email for 0.5.0 exists, and the 20:55:30 UTC timestamp this file used to cite was inferred. See the 0.5.0 row in `RELEASES.md`. |
+| **How to check what is live** | **Read the store listing**, not the inbox: `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. This item has now published **silently, with no email, twice** (0.4.6 and 0.5.0), so an absent email means nothing either way. |
 | **Submission slot** | **OPEN** — nothing pending review |
 | **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change |
 | **Review** | no AI reviewer runs on this repo — **green CI is the merge gate** (`REVIEWERS_STATUS.md`) |
