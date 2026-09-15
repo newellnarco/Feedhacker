@@ -232,12 +232,34 @@ jobs:
           # -o/-w so the token is never echoed and only the status code reaches the log.
           code="$(curl -sS -o /tmp/cws-cancel.out -w '%{http_code}' -X POST "$url" \
                     -H "Authorization: Bearer $tok" -H "Content-Length: 0")"
-          if [ "$code" = "200" ] || [ "$code" = "204" ]; then
-            echo "Cancelled the pending submission — the slot is free for this upload."
-          else
-            echo "No pending submission cancelled (HTTP $code). This is normal when nothing is in review."
-            head -c 500 /tmp/cws-cancel.out || true; echo
-          fi
+          # FH-055: every non-2xx used to print "This is normal when nothing is in review".
+          # That is a guess for most codes and provably FALSE for 403 — on v0.6.0 and again on
+          # v0.7.0 the call came back 403 PERMISSION_DENIED and the log called it normal. Same
+          # false-green class §4 exists to prevent, and the one FH-048 fixed in the *empty id*
+          # branch while leaving it alive here.
+          #
+          # What we actually know: 401/403 is a REFUSAL — the request never got far enough to
+          # learn whether anything was pending. 400/404 are the plausible "nothing to cancel"
+          # replies (the API is called blind, so that is the common case on most releases).
+          # Anything else is genuinely unknown and says so rather than reassuring.
+          body="$(head -c 500 /tmp/cws-cancel.out 2>/dev/null || true)"
+          case "$code" in
+            200|204)
+              echo "Cancelled the pending submission — the slot is free for this upload."
+              ;;
+            400|404)
+              echo "No pending submission cancelled (HTTP $code) — nothing was in review."
+              [ -n "$body" ] && echo "$body"
+              ;;
+            401|403)
+              echo "::warning title=Store cancel REFUSED::cancelSubmission was REFUSED (HTTP $code). This is NOT 'nothing in review' — the request never got far enough to ask, so the slot state is unknown. CWS_PUBLISHER_ID is currently '${CWS_PUBLISHER_ID}'. A value shaped like 'project-<uuid>' is a Google Cloud project id; this API wants the Chrome Web Store PUBLISHER id from Dashboard -> Publisher > Settings. If the upload below fails with ITEM_NOT_UPDATABLE, this is why."
+              [ -n "$body" ] && echo "$body"
+              ;;
+            *)
+              echo "::warning title=Store cancel failed::cancelSubmission returned an unexpected HTTP $code, so the slot state is UNKNOWN. Do not read this as 'nothing in review'. If the upload below fails with ITEM_NOT_UPDATABLE, this is why."
+              [ -n "$body" ] && echo "$body"
+              ;;
+          esac
           exit 0
 
       - name: Upload to the Chrome Web Store

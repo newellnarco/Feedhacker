@@ -11,6 +11,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.8.0] — unreleased
+
+### Internal (no user-visible change)
+- **The release pipeline no longer reports a refused store request as "normal".** When FeedHacker
+  is released, CI first asks the Chrome Web Store to withdraw any version still in review. That
+  request was being refused (HTTP 403) and the build log described the refusal as *"normal when
+  nothing is in review"* — so a real misconfiguration read as routine, twice. Each outcome now
+  says what actually happened, and a refusal is flagged as a warning naming the likely cause.
+  Nothing about the extension itself changes.
+
 ## [0.7.0] — 2026-09-15
 
 ### Fixed

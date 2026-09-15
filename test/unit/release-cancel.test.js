@@ -117,11 +117,59 @@ test("a pending submission is reported as cancelled", () => {
 });
 
 test("nothing pending is normal, not a failure", () => {
-  // The API is called blind — there is no cheap way to ask first — so a 4xx is the
+  // The API is called blind — there is no cheap way to ask first — so 400/404 is the
   // EXPECTED result on most releases and must read as routine.
   const out = runCancel({ FAKE_CANCEL_CODE: "400", FAKE_CANCEL_BODY: '{"error":{"message":"No active submission"}}' });
   assert.match(out, /No pending submission cancelled \(HTTP 400\)/);
-  assert.match(out, /normal when nothing is in review/);
+  assert.match(out, /nothing was in review/);
+  assert.ok(!out.includes("::warning"), "a routine empty queue must not cry wolf");
+});
+
+test("a 404 also reads as an empty queue", () => {
+  const out = runCancel({ FAKE_CANCEL_CODE: "404", FAKE_CANCEL_BODY: '{"error":{"message":"Not found"}}' });
+  assert.match(out, /No pending submission cancelled \(HTTP 404\)/);
+  assert.ok(!out.includes("::warning"));
+});
+
+// --- FH-055: a refusal must never be reported as an empty queue ------------------------------
+//
+// This shipped twice. On v0.6.0 and again on v0.7.0 cancelSubmission returned
+// 403 PERMISSION_DENIED and the step printed "This is normal when nothing is in review" — the
+// exact false-green class §4 exists to prevent, and the one FH-048 fixed in the *empty id*
+// branch while leaving it alive in this one. A 403 means the request never got far enough to
+// learn whether anything was pending, so the slot state is UNKNOWN, not empty.
+
+test("a 403 is reported as a REFUSAL, never as 'nothing in review' (FH-055)", () => {
+  const out = runCancel({
+    FAKE_CANCEL_CODE: "403",
+    FAKE_CANCEL_BODY: '{"error":{"code":403,"status":"PERMISSION_DENIED","message":"Permission denied on resource"}}',
+  });
+  assert.match(out, /::warning title=Store cancel REFUSED::/, "it must warn, not reassure");
+  assert.match(out, /REFUSED \(HTTP 403\)/);
+  assert.ok(!/nothing was in review/.test(out),
+    "the empty-queue wording must NOT appear for a refusal — that is the bug");
+  assert.match(out, /ITEM_NOT_UPDATABLE/, "…and it names the symptom this would cause");
+  assert.match(out, /PERMISSION_DENIED/, "the real API error body is surfaced, not swallowed");
+});
+
+test("a 403 names the misconfigured id so the reader can fix it (FH-055)", () => {
+  const out = runCancel({ FAKE_CANCEL_CODE: "403", CWS_PUBLISHER_ID: "project-46303a79-fd20-4ed8-859" });
+  assert.match(out, /project-46303a79-fd20-4ed8-859/, "the offending value is echoed");
+  assert.match(out, /Google Cloud project id/, "…and the log says why that shape is wrong");
+  assert.match(out, /Dashboard -> Publisher > Settings/, "…and where the right one lives");
+});
+
+test("a 401 is treated as a refusal too", () => {
+  const out = runCancel({ FAKE_CANCEL_CODE: "401" });
+  assert.match(out, /::warning title=Store cancel REFUSED::/);
+  assert.ok(!/nothing was in review/.test(out));
+});
+
+test("an unexpected status admits the slot state is unknown", () => {
+  const out = runCancel({ FAKE_CANCEL_CODE: "500", FAKE_CANCEL_BODY: '{"error":"boom"}' });
+  assert.match(out, /::warning title=Store cancel failed::/);
+  assert.match(out, /UNKNOWN/);
+  assert.ok(!/nothing was in review/.test(out), "a 500 is not an empty queue either");
 });
 
 test("an auth failure skips the cancel instead of breaking the release", () => {
