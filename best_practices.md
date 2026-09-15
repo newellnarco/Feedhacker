@@ -465,6 +465,20 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     is the other half, and it is the half that catches a test asserting nothing.
 
 
+55. **Evaluate a positive selection before a negative one, or the negative silently voids it.**
+    Filters come in two shapes: *narrowing* ("show me only X") and *excluding* ("never show me
+    Y"). If the excluding pass runs first and returns, the narrowing pass never sees the item —
+    so a user who asked for X gets nothing, with no indication that X was found and discarded.
+    FH-056 was exactly this: an author mute ran before solo and `return`ed, so the single genuine
+    hiring post in a 63-post feed was thrown away *after* being correctly identified, and the
+    feed rendered empty as though detection had failed. The tell is brutal, because the two
+    settings are individually correct and only their **order** is wrong — nothing looks broken
+    when you read either one. So: compute the narrowing set first, gate the excluding branches on
+    it, and write a test for **each precedence direction** (matching item survives; non-matching
+    item still excluded; excluding still absolute when nothing is narrowed). The third case is
+    what stops the fix from quietly weakening the exclusion.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

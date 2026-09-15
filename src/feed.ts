@@ -1235,6 +1235,10 @@
       ledger[pkey] = { hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null };
     }
 
+    // Solo is a POSITIVE selection — "show me only these kinds" — so it has to be known BEFORE
+    // the author block, which is where an author mute would otherwise end the story (FH-056).
+    var solos = listActive(settings, "solo");
+
     // Author memory: an allowlisted author is always shown; a muted author is always
     // hidden — both independent of the per-kind toggles.
     var A = root.FeedHackerAuthors, info: any = null;
@@ -1245,7 +1249,17 @@
       var key = A.keyFor(author());
       if (key) {
         if (A.isAllowed(settings.authors, key)) { remember(false, [], false, null); return null; }
-        if (A.isMuted(settings.authors, key)) {
+        // FH-056: an author mute must NOT outrank solo. In solo mode the soloed kinds ARE the
+        // whitelist, so a muted author's post that matches one is something the user has
+        // positively asked to see — and their posts that do NOT match are hidden by solo a few
+        // lines below anyway, so deferring here costs the mute nothing.
+        //
+        // The real feed that found this: solo was set to Hiring and every post was hidden. One
+        // post in 63 was a genuine hiring ad ("Disney is hiring! Hundreds and hundreds of posted
+        // roles") — and its author was muted, so it died here, before solo was ever consulted.
+        // The user saw an empty feed and a filter that looked broken, when the one post they had
+        // asked for had been found correctly and then discarded by the other setting.
+        if (A.isMuted(settings.authors, key) && !solos.length) {
           // Soft block: an already-muted author's posts just don't appear — hidden
           // outright, no stub. (Manage/unmute them from the options page.)
           recordOutcome(settings, author(), true);
@@ -1257,7 +1271,6 @@
       }
     }
 
-    var solos = listActive(settings, "solo");
     var muted = listActive(settings, "mute");
     // Custom user filters act as always-on hides (only in mute mode; solo is already
     // restrictive). Computed here so they count toward "should we hide this".
