@@ -21,12 +21,10 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 
 | # | Open item | Who | Detail |
 |---|---|---|---|
-| 1 | **Verify the AI-slop fix on a real feed — the decision log, over time** | maintainer | FH-049. **Partly answered 2026-09-15**: the maintainer's live home-feed DOM capture (42 posts, FeedHacker running) shows **42 posts → 42 distinct `data-feedhacker-key` values, zero duplicates**, so identity is holding *in a single snapshot*. That is not the 300-decisions-from-13-posts measurement, which is a **time series** — only an exported decision log can show a post being re-judged across re-renders. Still wanted: turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**; check `version` reads the installed build before sending. **Decisions should ≈ distinct posts.** The old "if lopsided, the URN lookup is failing" hypothesis is now **settled and can be dropped** — see item 2. |
+| 1 | **Verify the AI-slop fix on a real feed — the decision log, over time** | maintainer | FH-049. **Partly answered 2026-09-15**: the maintainer's live home-feed DOM capture (42 posts, FeedHacker running) shows **42 posts → 42 distinct `data-feedhacker-key` values, zero duplicates**, so identity is holding *in a single snapshot*. That is not the 300-decisions-from-13-posts measurement, which is a **time series** — only an exported decision log can show a post being re-judged across re-renders. Still wanted: turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**; check `version` reads the installed build before sending. **Decisions should ≈ distinct posts.** The old "if lopsided, the URN lookup is failing" hypothesis is now **settled and can be dropped** — see item 2. **Read this before running it:** the **Reset AI-slop learning** button in that procedure was itself broken until 0.6.0 (**FH-054**) — it cleared the model's weights but kept the training data, observations and self-tuned threshold, so the model rebuilt itself within a scan or two. Any export taken after a pre-0.6.0 reset was measuring a model that had quietly restored itself, and is not evidence either way. Run this on **0.6.0 or later**. |
 | 2 | **LinkedIn no longer exposes the activity URN — post identity now rests on the text hash alone** | next session (informational) | Settled 2026-09-15 by inspecting two live home-feed captures: there is **no `data-urn`, no `data-id` and no `role="article"` anywhere on the page**, and `postKey()` fell back to `textHash` for **42 of 42** posts. The id is still recoverable, but only sparsely — 3 posts carried a `/feed/update/urn:li:…` permalink and 5 a `replaceableComment_urn:li:comment:(activity:<postid>,…)` componentkey. **Deliberately not harvested**: the permalink route can pick up the *original* post's id inside a reshare and collide two feed entries onto one verdict, which is worse than the hash. Revisit only if the decision log in item 1 shows identity actually slipping. |
 | 3 | **`CWS_PUBLISHER_ID` added — unverified** | next session (passive) | The maintainer added it on 2026-09-08 after it was confirmed absent from both Actions tabs. **Not yet proven working:** no session tool can read repository variables or secret names, so the only evidence will be the next release's `webstore` job log. Expect the env line to show a value (or `***` if it went in the Secrets tab) instead of `CWS_PUBLISHER_ID:` with nothing after it, and the cancel step to print `Cancelled the pending submission` or `No pending submission cancelled (HTTP 404)` — the 404 is normal and correct when nothing is in review — instead of the `::warning` it emitted on 0.4.7–0.5.0. **Nothing waits on this**: the step exists because the maintainer asked whether a pending version could be withdrawn and replaced, and every upload since has gone into a free slot anyway (turnaround 4h → 2h → 20min → 16min), so `cancelSubmission` has never had anything to cancel. Removing the step entirely is a reasonable alternative if it is not worth carrying. |
-| 4 | **Windows sideload users must re-install once** | maintainer | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user re-runs `installer\install.bat` from a current `feedhacker-<version>-win.zip`. |
-| 5 | **New-install default is unconfirmed** | maintainer | Shipped as: AI-slop filtering on, every other filter and solo off (today's defaults). The maintainer's phrasing — "neither mute or solo should be on … only the default AI algorithm" — could also mean a new install should filter **nothing** until opted in. One line (`defaultMute` on `sloppy`) if that is what was meant. |
-| 6 | **LinkedIn furniture still enters the scan as posts** | next session | "Who's viewed your profile" and "Jobs recommended for you" modules both carry the hidden `Feed post` heading, so `findPostContainers()` returns them and they get author-attributed (`"Jobs recommended for youVice President, Apps"`). FH-050 only gated the **AI-slop** path behind a 20-word prose minimum; the **solo** and **mute** paths have no such gate, so in the 2026-09-15 capture both modules were hidden as ordinary posts. Cosmetic today (they'd mostly be hidden anyway), but it pollutes author history and the hidden-run grouping. |
+| 4 | **Windows sideload users must re-install once** | maintainer (now partly self-serving) | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user must re-run `installer\install.bat` from a current `feedhacker-<version>-win.zip`. **0.6.0 ships a release note saying exactly this** (`CHANGELOG.md`, which `store/README.md` makes the source of the store's release notes), so anyone who reads the notes is told. It stays open because the people who most need it are precisely the ones **not receiving updates** — a note in a release they never get cannot reach them. Closing it needs a channel they still see (the repo README / releases page, or a direct message), not another release note. |
 
 ## 2. Current state
 
@@ -75,6 +73,50 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-09-15 (later) — the maintainer's reset spec, and the button that was lying
+
+Same session as the entry below; kept separate because it came from an explicit behaviour spec
+rather than from the captures.
+
+- **The maintainer specified what each reset must do.** Checked each clause against the code
+  rather than assuming:
+
+  | Clause | Was it already true? |
+  |---|---|
+  | Fresh install: AI-slop on, no other mute, nothing soloed | **Yes** — `buildDefaults()`, already tested |
+  | Upgrade leaves existing settings alone | **Yes** — `onInstalled` writes nothing, already tested |
+  | Factory reset: everything gone, back to AI-only, no muted users | **Yes** — `LOCAL_KEYS` + `sync.clear()` + `buildDefaults()` |
+  | Reset AI: wipe learned data, restore the shipped algorithm, **keep** mute/solo | **NO — this was broken** |
+
+  So **open item 5 closes as confirmed, not changed** — three of the four clauses were already
+  the shipped behaviour. They now have tests pinning the exact shape, which they did not before.
+- **Fixed FH-054 — "Reset AI-slop learning" did not reset the AI.** It removed `WEIGHTS_KEY`
+  alone. The training buffer, the observation pool, the calibration record and the tuned
+  `slopThreshold` in sync all survived, so auto-calibration rebuilt the same model from the
+  leftovers within a scan or two. The code's own comment on "clear log" already claimed this
+  button would "wipe the model itself".
+  **This one bites item 1**: that procedure says *reset, then export the decision log*. Any
+  export taken after a pre-0.6.0 reset measured a model that had quietly restored itself, so it
+  is not evidence either way. Item 1 now says to run it on 0.6.0 or later.
+- **Fixed FH-053 — LinkedIn's feed modules were being treated as posts.** Closes open item 6.
+  The guard needs **both** a known module heading and the absence of a per-post overflow
+  control, and fails CLOSED: mistaking a post for a module would silently exempt it from
+  filtering, whereas missing a module only keeps today's behaviour. Validated on the live
+  captures — 1 of 8 and 2 of 42 containers flagged, exactly the modules present, no false
+  positives on the other 40.
+- **Item 4 now ships a release note.** 0.6.0's CHANGELOG (which `store/README.md` makes the
+  source of the store's release notes) tells hand-installed Windows users on ≤0.4.5 to re-run
+  `installer\install.bat`, and says plainly that Chrome Web Store users are unaffected. The item
+  stays **open** on purpose: the people who need it are the ones **not receiving updates**, so a
+  note in a release they never get cannot reach them.
+- **Two of my own test bugs, caught by mutation-testing rather than by the suite going green.**
+  Worth recording because both would have shipped as false green: (1) a single-marker test
+  document makes `postContainerFor()` walk to the document root, so three cases were asserting
+  against `<html>` rather than the post — every test file here must keep **two or more** markers
+  on the page; (2) a muted-author case used the display name as the mute key when `keyFor()`
+  builds `/in/slug`, so it passed without the fix. Both now fail correctly when the fix is
+  removed. Codified as **§54**.
 
 ### 2026-09-15 — a dead session, two live DOM captures, and a watchdog that had quietly died
 

@@ -47,6 +47,23 @@ function resetKeys() {
   }));
 }
 
+// The key names SLOP_LOCAL_KEYS resolves to — the subset "Reset AI-slop learning" must clear.
+function slopResetKeys() {
+  const src = read("options.ts");
+  // Bind the list to its use: a perfect list the handler ignores is exactly the bug (it
+  // removed WEIGHTS_KEY alone), so every assertion below depends on the handler reading it.
+  assert.match(src, /storage\.local\.remove\(SLOP_LOCAL_KEYS/,
+    "the reset-learning handler must clear SLOP_LOCAL_KEYS");
+  const block = src.match(/var SLOP_LOCAL_KEYS = \[([\s\S]*?)\];/);
+  assert.ok(block, "options.ts must declare SLOP_LOCAL_KEYS");
+  const names = block[1].split(",").map((s) => s.trim()).filter(Boolean);
+  return new Set(names.map((n) => {
+    const decl = src.match(new RegExp("var " + n + ' = (?:[A-Za-z]+ \\? [A-Za-z._]+ : )?"(feedhacker:[^"]+)"'));
+    assert.ok(decl, `could not resolve ${n} to a storage key`);
+    return decl[1];
+  }));
+}
+
 test("LOCAL_KEYS names a real storage key for every entry", () => {
   assert.ok(resetKeys().size >= 10, "expected the full set of persisted keys");
 });
@@ -78,4 +95,61 @@ test("a clean install means AI slop on and nothing else", () => {
     if (f.id !== "sloppy") assert.strictEqual(d["mute" + f.key], false, "no other filter on");
   }
   for (const k of filters.DISPLAY_KEYS) assert.strictEqual(d[k], false);
+});
+
+
+// --- FH-054: "Reset AI-slop learning" must actually reset the AI -----------------------------
+
+test("Reset AI-slop learning clears EVERY piece of learned AI state, not just the weights", () => {
+  // The bug: it removed WEIGHTS_KEY alone. The training buffer, the observation pool and the
+  // self-tuned calibration all survived, so auto-calibration rebuilt the same model from them
+  // within a scan or two — the reset looked like it worked and changed nothing that lasted.
+  const keys = slopResetKeys();
+  for (const k of ["feedhacker:slopWeights", "feedhacker:sloptrain", "feedhacker:slopobs", "feedhacker:slopcal"]) {
+    assert.ok(keys.has(k), `${k} must be cleared by the AI reset — leaving it rebuilds the model`);
+  }
+  assert.ok(keys.has("feedhacker:sloplog"), "the AI decision log is the AI's own record of itself");
+});
+
+test("Reset AI-slop learning leaves everything that is NOT the AI alone", () => {
+  // The other half of the contract: resetting the model must not cost you your setup.
+  const keys = slopResetKeys();
+  for (const k of ["feedhacker:authors", "feedhacker:custom", "feedhacker:stats", "feedhacker:errorlog"]) {
+    assert.ok(!keys.has(k), `${k} is not the AI — only factory reset clears it`);
+  }
+});
+
+test("the AI reset removes SLOP_LOCAL_KEYS, not a lone key, and restores tuning from buildDefaults()", () => {
+  const src = read("options.ts");
+  const handler = src.match(/byId\("reset-learning"\)\.addEventListener\([\s\S]*?\n\}\);/);
+  assert.ok(handler, "options.ts must wire the reset-learning button");
+  const body = handler[0];
+  assert.match(body, /storage\.local\.remove\(SLOP_LOCAL_KEYS/,
+    "must clear the whole list, so a new AI key cannot be missed");
+  assert.doesNotMatch(body, /storage\.local\.remove\(WEIGHTS_KEY\b/,
+    "clearing the weights alone is the bug this replaced");
+  assert.match(body, /Filters\.buildDefaults\(\)/,
+    "the AI tuning must come from the shipped defaults, not a literal");
+  // And it must not reach for sync.clear() — that would wipe the user's mute/solo choices.
+  assert.doesNotMatch(body, /storage\.sync\.clear\(/,
+    "the AI reset must never clear sync — mute/solo/display settings are not the AI's to touch");
+});
+
+test("the AI tuning keys the reset restores are real defaults, and filter choices are not among them", () => {
+  const { filters } = require("../helper");
+  const src = read("options.ts");
+  const block = src.match(/var SLOP_SYNC_KEYS = \[([\s\S]*?)\];/);
+  assert.ok(block, "options.ts must declare SLOP_SYNC_KEYS");
+  const keys = block[1].split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+  const d = filters.buildDefaults();
+
+  assert.ok(keys.length > 0, "the AI reset must restore its sync-side tuning");
+  for (const k of keys) {
+    assert.ok(Object.prototype.hasOwnProperty.call(d, k), `${k} must exist in buildDefaults()`);
+    // A mute*/solo* key here would silently reset the user's filter choices.
+    assert.doesNotMatch(k, /^(mute|solo)/, `${k} is a filter choice — the AI reset must not restore it`);
+  }
+  // The self-tuned cutoff is the one that actually re-poisons a "reset" model if it survives.
+  assert.ok(keys.includes("slopThreshold"),
+    "the self-tuned threshold must go back to default — FH-050 found it pulled to 0.428–0.471");
 });

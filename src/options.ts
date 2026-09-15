@@ -28,6 +28,20 @@ var LOCAL_KEYS = [
   SLOPLOG_KEY, TRAIN_KEY, OBS_KEY, CAL_KEY, ERRLOG_KEY
 ];
 
+// Everything the AI-slop model learns or records about this user — the subset "Reset AI-slop
+// learning" must clear. FH-054: it used to remove WEIGHTS_KEY alone, which does not reset the
+// model. The training buffer, the observation pool and the self-tuned calibration all survived,
+// so auto-calibration rebuilt the very same model from them within a scan or two — including
+// the pulled-down threshold that FH-050 found sitting at 0.428–0.471. The button's own comment
+// on "clear log" already promised this one would "wipe the model itself"; now it does.
+// Author lists, custom filters, stats and the error log are NOT here: they are not the AI, and
+// clearing them is factory reset's job.
+var SLOP_LOCAL_KEYS = [WEIGHTS_KEY, TRAIN_KEY, OBS_KEY, CAL_KEY, SLOPLOG_KEY];
+// The sync-side AI tuning the model writes back — auto-calibration persists slopThreshold and
+// the popup's aggression slider persists both. Restored from buildDefaults(), never a literal.
+// Every mute*/solo*/display key in sync is deliberately left untouched.
+var SLOP_SYNC_KEYS = ["slopThreshold", "slopTargetFrac"];
+
 var LABELS = {};
 Filters.FILTERS.forEach(function (f) { LABELS[f.id] = f.label; });
 
@@ -227,11 +241,32 @@ byId("clear-errors").addEventListener("click", function () {
     try { chrome.runtime.sendMessage({ type: "feedhacker:clearError" }); } catch (e) {}
   });
 });
+// Reset the AI back to the algorithm a new install ships with — and nothing else. Your filter
+// choices are none of this: mute, solo, muted/always-shown authors, custom filters and display
+// settings are all left exactly as they are, so you can reset the model without rebuilding your
+// setup. (Factory reset is the one that clears those too.)
 byId("reset-learning").addEventListener("click", function () {
-  chrome.storage.local.remove(WEIGHTS_KEY, function () {
-    var b = byId("reset-learning");
-    b.textContent = "Learning reset ✓";
-    setTimeout(function () { b.textContent = "Reset AI-slop learning"; }, 1600);
+  if (!self.confirm(
+    "Reset the AI-slop model?\n\n" +
+    "This clears everything the AI has learned from you:\n" +
+    "  • the learned model and the training data behind it\n" +
+    "  • the posts it observed and its self-tuning\n" +
+    "  • the AI decision log\n\n" +
+    "The AI goes back to the algorithm a new install ships with. Your filter choices are " +
+    "untouched — mute, solo, muted authors, custom filters and display settings all stay " +
+    "exactly as they are. This cannot be undone."
+  )) return;
+  var b = byId("reset-learning");
+  var was = b.textContent;
+  b.disabled = true; b.textContent = "Resetting…";
+  chrome.storage.local.remove(SLOP_LOCAL_KEYS, function () {
+    // Restore ONLY the AI tuning keys, read off buildDefaults() so they cannot drift from it.
+    var d = Filters.buildDefaults(), patch = {};
+    for (var i = 0; i < SLOP_SYNC_KEYS.length; i++) patch[SLOP_SYNC_KEYS[i]] = d[SLOP_SYNC_KEYS[i]];
+    chrome.storage.sync.set(patch, function () {
+      b.textContent = "Learning reset ✓";
+      setTimeout(function () { b.disabled = false; b.textContent = was; loadAll(); }, 1600);
+    });
   });
 });
 byId("refresh").addEventListener("click", loadAll);
@@ -302,7 +337,8 @@ byId("slop-log-export").addEventListener("click", function () {
 });
 byId("slop-log-clear").addEventListener("click", function () {
   // Clears the human-readable log only; the labeled training data that tunes the model is
-  // kept (use "Reset AI-slop learning" in the Error log panel to wipe the model itself).
+  // kept. "Reset AI-slop learning" in the Error log panel is the one that wipes the model
+  // itself — weights, training data, observations, self-tuning and this log (FH-054).
   var patch = {}; patch[SLOPLOG_KEY] = [];
   chrome.storage.local.set(patch, function () { renderSlopLog([]); slopStatus("Log cleared (model kept)."); });
 });

@@ -7,6 +7,37 @@
 
   var SEL = root.FeedHackerSelectors;
   var MARKER_RE = SEL ? SEL.MARKER_RE : /^(feed post|promoted)/i;
+  var POST_CONTROL = SEL && SEL.POST_CONTROL_SELECTOR
+    ? SEL.POST_CONTROL_SELECTOR : '[aria-label^="Open control menu for post"]';
+  // Kept byte-identical to selectors.ts's canonical copy, trailing \b and all (there is none:
+  // LinkedIn renders the heading adjacent to the next node, so the text really is
+  // "Who's viewed your profileSteve Hawkins" with no boundary to match).
+  var FURNITURE_RE = SEL && SEL.FURNITURE_RE ? SEL.FURNITURE_RE
+    : /^(who[’'`]s viewed your profile|jobs recommended for you|people you may know|add to your feed|suggested for you|recommended for you)/i;
+  var stripMarker = SEL && SEL.stripMarker ? SEL.stripMarker
+    : function (t) { return String(t || "").replace(/^\s*(?:feed post|promoted)\s*/i, ""); };
+
+  // FH-053: LinkedIn's own feed modules ("Who's viewed your profile", "Jobs recommended for
+  // you") carry the same hidden "Feed post" heading a real post does, so findPostContainers()
+  // hands them to the scan and we judged, author-attributed and hid them as member posts — one
+  // was attributed to "Jobs recommended for youVice President, Apps". FH-050 only stopped them
+  // being hidden as AI SLOP (it requires 20 words of prose); solo and mute have no such gate, so
+  // on the 2026-09-15 capture both modules were hidden as ordinary posts.
+  //
+  // The cost here is asymmetric, so identification is deliberately conservative and fails
+  // CLOSED. Missing a module only keeps today's behaviour; mistaking a real post for one would
+  // silently exempt it from filtering altogether. Both signals must therefore agree:
+  //   1. the container leads with a module heading we have actually seen, and
+  //   2. it has no per-post overflow control — LinkedIn gives every real post one and gives its
+  //      modules none (exactly 8-7 and 42-40 across the two captures: one and two modules).
+  // So a member post that happens to open with "People you may know" still has its control and
+  // is still filtered, and a module we do not recognise is scanned exactly as before.
+  function isFurniture(el, text) {
+    try {
+      if (!FURNITURE_RE.test(stripMarker(text).trim())) return false;
+      return !(el.querySelector && el.querySelector(POST_CONTROL));
+    } catch (e) { return false; }
+  }
 
   function getText(el) {
     if (!el) return "";
@@ -1181,6 +1212,10 @@
     if (!text.trim()) return null;                           // body not rendered yet — retried on a later scan
     el.dataset.feedhackerScanned = "1";
 
+    // LinkedIn's own furniture is not a post: never judged, never author-attributed, never
+    // hidden — by ANY path, solo and mute included (FH-053). Marked so a later pass skips it.
+    if (isFurniture(el, text)) { el.dataset.feedhackerFurniture = "1"; return null; }
+
     // Has this POST (not this node) already been judged? Re-apply the same verdict SILENTLY —
     // no fresh decision log entry, no fresh observation, no fresh training label. Without this
     // a re-rendered node is a brand-new post to us and the learner ends up training on the same
@@ -1440,11 +1475,12 @@
       hid[j].classList.remove("feedhacker-gone");
       hid[j].classList.remove("feedhacker-dismissing");
     }
-    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-actor-url],[data-feedhacker-preview],[data-feedhacker-repeat],[data-feedhacker-key],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
+    var marked = doc.querySelectorAll("[data-feedhacker-scanned],[data-feedhacker-furniture],[data-feedhacker-hidden],[data-feedhacker-reveal],[data-feedhacker-dismissed],[data-feedhacker-actor],[data-feedhacker-actor-url],[data-feedhacker-preview],[data-feedhacker-repeat],[data-feedhacker-key],[data-feedhacker-len],[data-feedhacker-reasons],[data-feedhacker-features],[data-feedhacker-dismissing],[data-feedhacker-group],[data-feedhacker-grouphead],[data-feedhacker-ungrouped]");
     for (var k = 0; k < marked.length; k++) {
       var el = marked[k];
       if (kept(el)) continue;
       delete el.dataset.feedhackerScanned; delete el.dataset.feedhackerLen;
+      delete el.dataset.feedhackerFurniture;
       delete el.dataset.feedhackerHidden; delete el.dataset.feedhackerReveal;
       delete el.dataset.feedhackerDismissed;
       delete el.dataset.feedhackerReasons;
@@ -1472,6 +1508,7 @@
     groupRuns: groupRuns, recompute: recompute,
     anyActive: anyActive, matchedFlags: matchedFlags, findCommentContainers: findCommentContainers, scanComments: scanComments, listActive: listActive, FILTER_IDS: FILTER_IDS, collapsedText: collapsedText, explainerText: explainerText,
     isOwnNode: isOwnNode, mutationsRelevant: mutationsRelevant, scoreSloppy: scoreSloppy,
+    isFurniture: isFurniture,
     authorInfo: authorInfo, actorAnchor: actorAnchor, postKey: postKey,
     firstBodyLine: firstBodyLine
   };
