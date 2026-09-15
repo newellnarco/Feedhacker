@@ -83,3 +83,67 @@ test("the exit is omitted when the glue provides no handler", () => {
   assert.ok(doc.querySelector(".feedhacker-stub"), "still hidden");
   assert.strictEqual(doc.querySelector('[data-fh-act="unsolo"]'), null, "no dead button");
 });
+
+
+// --- FH-056: an author mute must not outrank solo -------------------------------------------
+//
+// Found on a real 63-post feed capture. Solo was set to Hiring and EVERY post was hidden.
+// Exactly one post qualified — a genuine ad, "Disney is hiring! Hundreds and hundreds of posted
+// roles" — and its author was muted, so `consider()` hid it in the author block and returned
+// before solo was ever consulted. The user saw an empty feed and concluded the hiring filter
+// was broken, when in fact it had identified the one post they wanted and the other setting
+// then threw it away.
+//
+// In solo mode the soloed kinds ARE the whitelist, so a muted author's matching post is
+// something the user has positively asked for; their non-matching posts are still hidden by
+// solo itself, so the mute loses nothing.
+
+const HIRING = "Disney is hiring! Hundreds and hundreds of posted roles, apply here.";
+function mutedAuthorPost(text, slug, name) {
+  return `<div class="post" data-urn="urn:li:activity:${++urn}"><h2>Feed post</h2>` +
+    `<a href="https://www.linkedin.com/in/${slug}/">${name}</a><div>${text}</div></div>`;
+}
+function mutedSettings(slug, over) {
+  const { authors } = require("../helper");
+  const key = authors.keyFor({ name: "Richard King", url: `https://www.linkedin.com/in/${slug}/` });
+  const muted = {}; muted[key] = 1;
+  return baseSettings(Object.assign({
+    authors: { muted, allowed: {} }, authorMutesActive: true, onClearSolo() {}
+  }, over || {}));
+}
+
+test("solo SHOWS a muted author's post when it matches the soloed kind (FH-056)", () => {
+  const doc = makeDoc(feedHtml(
+    mutedAuthorPost(HIRING, "richard-king", "Richard King") + post(HUMAN)
+  ));
+  feed.scan(doc, [], mutedSettings("richard-king", { soloHiring: true }));
+
+  const rk = doc.querySelectorAll(".post")[0];
+  assert.notStrictEqual(rk.dataset.feedhackerHidden, "1",
+    "the one genuine hiring post must survive — solo is what the user asked for");
+  assert.strictEqual(doc.querySelectorAll(".post")[1].dataset.feedhackerHidden, "1",
+    "and an ordinary post is still hidden by solo");
+});
+
+test("solo still hides a muted author's post that does NOT match the soloed kind (FH-056)", () => {
+  // The mute loses nothing: solo itself removes everything off-category.
+  const doc = makeDoc(feedHtml(
+    mutedAuthorPost("Shoot your shot has become the bane of recruiters everywhere.", "richard-king", "Richard King") +
+    post(HUMAN)
+  ));
+  feed.scan(doc, [], mutedSettings("richard-king", { soloHiring: true }));
+  assert.strictEqual(doc.querySelectorAll(".post")[0].dataset.feedhackerHidden, "1",
+    "off-category chatter from a muted author stays hidden");
+});
+
+test("with NO solo active, an author mute still wins outright (FH-056 must not weaken mute)", () => {
+  const doc = makeDoc(feedHtml(
+    mutedAuthorPost(HIRING, "richard-king", "Richard King") + post(HUMAN)
+  ));
+  feed.scan(doc, [], mutedSettings("richard-king", { muteHiring: false }));
+
+  const rk = doc.querySelectorAll(".post")[0];
+  assert.strictEqual(rk.dataset.feedhackerHidden, "1", "mute mode: a muted author is gone");
+  assert.match(rk.dataset.feedhackerReasons || "", /Muted author/,
+    "and it is recorded as an author mute, not as a kind filter");
+});

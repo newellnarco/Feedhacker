@@ -11,6 +11,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.7.0] — unreleased
+
+### Fixed
+- **Solo mode no longer throws away the very posts you asked for.** If you solo a kind (say
+  **Hiring posts**) *and* you have muted some authors, a muted author's post was dropped before
+  solo ever looked at it — so a post that genuinely matched what you soloed vanished, and the
+  feed came up empty as though the filter were broken. On the feed that found this, exactly one
+  post of 63 was a real hiring ad ("Disney is hiring! Hundreds and hundreds of posted roles")
+  and it was discarded this way. **In solo mode the kinds you solo are the whitelist**, so a
+  muted author's post that matches one now shows; their other posts are still hidden by solo
+  itself, so muting loses nothing. With solo off, muting an author works exactly as before.
+
 ## [0.6.0] — 2026-09-15
 
 ### Fixed
