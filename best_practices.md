@@ -479,6 +479,21 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     what stops the fix from quietly weakening the exclusion.
 
 
+56. **A negative search result is evidence only if the search covered everywhere it could be.**
+    "I looked and it isn't there" is a claim about your query at least as much as about the world,
+    and the two are easy to confuse once the result is written down as a fact. On 2026-09-15 a
+    Gmail search for a Chrome Web Store publish email returned nothing, and that absence was
+    recorded — twice, in two files — as evidence the store "publishes silently". The email
+    existed. It was in **Trash**, which Gmail excludes from search unless you pass `in:anywhere`.
+    An earlier search in the same session *had* used `in:anywhere` and was sound; the newer,
+    narrower one silently inherited its credibility. So: before recording an absence, state the
+    scope you actually searched, prefer the query that covers hidden folders, archives, closed
+    items and deleted state (`in:anywhere`, `--all`, `state=all`, include-deleted), and **prefer
+    a positive source that cannot be scoped away** — here, the store listing, which was right the
+    whole time and never depended on where a message landed. Absence of evidence is worth writing
+    down only alongside the reach of the search that failed to find it.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
