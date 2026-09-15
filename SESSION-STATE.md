@@ -23,15 +23,17 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 |---|---|---|---|
 | 1 | **Verify the AI-slop fix on a real feed — the decision log, over time** | maintainer | FH-049. **Partly answered 2026-09-15**: the maintainer's live home-feed DOM capture (42 posts, FeedHacker running) shows **42 posts → 42 distinct `data-feedhacker-key` values, zero duplicates**, so identity is holding *in a single snapshot*. That is not the 300-decisions-from-13-posts measurement, which is a **time series** — only an exported decision log can show a post being re-judged across re-renders. Still wanted: turn solo off, browse, **Reset AI-slop learning**, then **Export log (JSON)**; check `version` reads the installed build before sending. **Decisions should ≈ distinct posts.** The old "if lopsided, the URN lookup is failing" hypothesis is now **settled and can be dropped** — see item 2. **Read this before running it:** the **Reset AI-slop learning** button in that procedure was itself broken until 0.6.0 (**FH-054**) — it cleared the model's weights but kept the training data, observations and self-tuned threshold, so the model rebuilt itself within a scan or two. Any export taken after a pre-0.6.0 reset was measuring a model that had quietly restored itself, and is not evidence either way. Run this on **0.6.0 or later**. |
 | 2 | **LinkedIn no longer exposes the activity URN — post identity now rests on the text hash alone** | next session (informational) | Settled 2026-09-15 by inspecting two live home-feed captures: there is **no `data-urn`, no `data-id` and no `role="article"` anywhere on the page**, and `postKey()` fell back to `textHash` for **42 of 42** posts. The id is still recoverable, but only sparsely — 3 posts carried a `/feed/update/urn:li:…` permalink and 5 a `replaceableComment_urn:li:comment:(activity:<postid>,…)` componentkey. **Deliberately not harvested**: the permalink route can pick up the *original* post's id inside a reshare and collide two feed entries onto one verdict, which is worse than the hash. Revisit only if the decision log in item 1 shows identity actually slipping. |
-| 3 | **`CWS_PUBLISHER_ID` added — unverified** | next session (passive) | The maintainer added it on 2026-09-08 after it was confirmed absent from both Actions tabs. **Not yet proven working:** no session tool can read repository variables or secret names, so the only evidence will be the next release's `webstore` job log. Expect the env line to show a value (or `***` if it went in the Secrets tab) instead of `CWS_PUBLISHER_ID:` with nothing after it, and the cancel step to print `Cancelled the pending submission` or `No pending submission cancelled (HTTP 404)` — the 404 is normal and correct when nothing is in review — instead of the `::warning` it emitted on 0.4.7–0.5.0. **Nothing waits on this**: the step exists because the maintainer asked whether a pending version could be withdrawn and replaced, and every upload since has gone into a free slot anyway (turnaround 4h → 2h → 20min → 16min), so `cancelSubmission` has never had anything to cancel. Removing the step entirely is a reasonable alternative if it is not worth carrying. |
+| 3 | **`CWS_PUBLISHER_ID` resolves now — and Google refuses it (FH-055)** | maintainer | **Answered 2026-09-15 by Release run #24**, after five releases of “empty” warnings. The variable IS reaching Actions: it resolved to `project-46303a79-fd20-4ed8-859`. But the first real call to `cancelSubmission` came back **HTTP 403 `PERMISSION_DENIED`** — *“Permission denied on resource 'publishers/project-46303a79-…/items/kccajfog…' (or it might not exist)”*. That value looks like a **Google Cloud project id**, not a Chrome Web Store **publisher** id. **Maintainer action:** Dashboard → Publisher → Settings shows the publisher id; replace the variable with that. **Nothing waits on this** — the slot has been free for every upload since 0.4.7, so the step has never been needed. Removing it entirely remains a reasonable alternative. A second, separate fault is **ours**: the step prints “HTTP 403 … normal when nothing is in review”, which is false and is the FH-048 false-green class surviving in the non-200 branch. |
 | 4 | **Windows sideload users must re-install once** | maintainer (now partly self-serving) | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user must re-run `installer\install.bat` from a current `feedhacker-<version>-win.zip`. **0.6.0 ships a release note saying exactly this** (`CHANGELOG.md`, which `store/README.md` makes the source of the store's release notes), so anyone who reads the notes is told. It stays open because the people who most need it are precisely the ones **not receiving updates** — a note in a release they never get cannot reach them. Closing it needs a channel they still see (the repo README / releases page, or a direct message), not another release note. |
+| 5 | **Confirm 0.6.0 actually publishes on the store** | next session | Uploaded and auto-submitted **2026-09-15 18:10:48 UTC** (Release run #24, `Publish successful` = *submitted for review*, not approved). **Verify by loading the store listing** — `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb` — and reading its Version field; **do not wait for an email**, this item has published silently twice (0.4.6, 0.5.0). Mark 0.6.0 **Live** in `RELEASES.md` only once the listing says 0.6.0. Past turnaround has run 4h → 2h → 20min → 16min. |
 
 ## 2. Current state
 
 | | |
 |---|---|
-| **Latest version** | **0.5.0** — shipped and **LIVE** 2026-09-08 (tag `v0.5.0`, GitHub Release, store published 20:55 UTC) |
-| **Dev cycle** | **0.6.0 open** — `manifest.json` / `package.json` / `package-lock.json` bumped, `CHANGELOG.md` has a `[0.6.0] — unreleased` section. Nothing tagged; **do not release without an explicit "ship"** |
+| **Latest version** | **0.6.0** — released on GitHub 2026-09-15 (tag `v0.6.0` @ `382ba04`, Release run #24), **uploaded and submitted to the store 18:10:48 UTC — NOT yet confirmed live** |
+| **Previous version** | 0.5.0 — live on the store since 2026-09-08 |
+| **Dev cycle** | **0.6.0 is cut and tagged.** The next change opens 0.7.0: bump `manifest.json` / `package.json` / `package-lock.json` and start a `[0.7.0] — unreleased` CHANGELOG section. **Do not release without an explicit "ship"** |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
 | **Confirmed live on the store** | **0.5.0** — confirmed 2026-09-15 by reading the **store listing** ("Version 0.5.0, Updated September 8, 2026"). **Not** by email: no publish email for 0.5.0 exists, and the 20:55:30 UTC timestamp this file used to cite was inferred. See the 0.5.0 row in `RELEASES.md`. |
 | **How to check what is live** | **Read the store listing**, not the inbox: `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. This item has now published **silently, with no email, twice** (0.4.6 and 0.5.0), so an absent email means nothing either way. |
@@ -43,10 +45,17 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 
 1. **Read this file** — §1 Open items, then §2 Current state, then §6 Key facts.
 2. **Skim the record** — `RELEASES.md`, then the top of `CHANGELOG.md`.
-3. **Check what is LIVE on the Chrome Web Store.** Gmail:
-   `from:chromewebstore-noreply@google.com newer_than:14d` — the **Version** field of the newest
-   "Item successfully published" email is what users are running. Update `RELEASES.md` if it has
-   moved since the last session wrote it down.
+3. **Check what is LIVE on the Chrome Web Store — from the LISTING, not the inbox.** Load
+   `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb` and read
+   its **Version** field. That is what users are running. Update `RELEASES.md` if it has moved.
+
+   > **This step used to say "read the newest publish email", and that is wrong.** This item
+   > publishes **silently**: neither 0.4.6 nor 0.5.0 ever produced an "Item successfully
+   > published" email, yet 0.5.0 is live. On 2026-09-15 the old wording would have concluded
+   > 0.4.9 was live and 0.5.0 was stuck in review, and **refused a ship that was perfectly safe**.
+   > An absent email is evidence of **nothing**, in either direction. The email is still a useful
+   > *positive* signal when it arrives (`from:chromewebstore-noreply@google.com`) — just never
+   > treat its absence as a verdict, and never cite a timestamp you have not read.
 4. **Check the submission slot.** The store accepts **one pending version at a time**. It is OPEN
    when the newest email is a published/rejected decision for the latest submitted version;
    **BLOCKED** if a version was uploaded and has no decision yet (a new upload then fails
@@ -74,6 +83,35 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-09-15 (ship) — v0.6.0 cut, and the cancel step finally failed out loud
+
+- **Shipped 0.6.0 on the maintainer's explicit "ship it".** Release run #24: `build` ✅,
+  `webstore` ✅, `release` ✅, best-effort `msi` ❌ on the WiX gate as every release.
+  **GitHub Release published 18:11:27 UTC** with all four prebuilt zips. Store upload log:
+  `Uploading feedhacker-0.6.0-store.zip… / Publishing… / Publish successful` at **18:10:48 UTC** —
+  **submitted for review, not approved.** Open item 5 tracks confirming it.
+- **The pre-flight slot check caught a false record, and the checklist that produced it.**
+  `RELEASES.md` and this file both claimed 0.5.0 was confirmed live by a Google email at
+  "2026-09-08 20:55:30 UTC". **No such email exists** — the newest publish email this account has
+  ever received is Version 0.4.9. The webstore job for 0.5.0 finished at 20:39:05 UTC and the
+  rest was inferred, then written down as a quotation. Fifth instance of §44/§45.
+  0.5.0 **is** live — the **store listing** says so ("Version 0.5.0, Updated September 8, 2026").
+  **The deeper problem was the procedure**: §3 step 3 of this file said to read the newest
+  publish email. Followed literally today, it would have concluded 0.4.9 was live and 0.5.0 was
+  stuck in review, and **refused to ship**. This item publishes silently — 0.4.6 and 0.5.0 both
+  did — so §2 now carries a standing **"How to check what is live"** row: read the listing.
+- **FH-055 — the store cancel step reached Google for the first time and was refused.**
+  `CWS_PUBLISHER_ID` is no longer empty (it resolved to `project-46303a79-fd20-4ed8-859`), which
+  answers the question five releases of warnings could not. But `cancelSubmission` returned
+  **403 `PERMISSION_DENIED`**, and the value has the shape of a **GCP project id**, not a Chrome
+  Web Store **publisher** id. Separately, and this half is ours: the step prints *"HTTP 403 …
+  This is normal when nothing is in review"*, which is **false** — a refusal is not an empty
+  queue. That is the FH-048 false-green class surviving in the non-200 branch. Neither blocked
+  the release; the slot was free, as it has been for every upload since 0.4.7.
+- **Method note worth keeping:** every claim in this entry came from the job log, the store
+  listing or the Releases API. The one thing not yet verifiable — whether 0.6.0 publishes — is
+  recorded as *submitted*, not as *live*.
 
 ### 2026-09-15 (later) — the maintainer's reset spec, and the button that was lying
 
