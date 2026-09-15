@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.6.0] — unreleased
+## [0.6.0] — 2026-09-15
 
 ### Fixed
 - **LinkedIn's own feed boxes are no longer treated as posts.** "Who's viewed your profile" and
