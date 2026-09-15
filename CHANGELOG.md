@@ -14,19 +14,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.6.0] — unreleased
 
 ### Fixed
+- **LinkedIn's own feed boxes are no longer treated as posts.** "Who's viewed your profile" and
+  "Jobs recommended for you" are panels LinkedIn inserts into the feed, but they are built the
+  same way a real post is, so FeedHacker was reading them as posts someone had written — giving
+  them an "author" and hiding them along with everything else. They are now recognised for what
+  they are and left alone, and they no longer turn up in your author history.
+
+- **"Reset AI-slop learning" now actually resets it.** The button cleared the model's weights but
+  kept the training data, the observations and the self-tuning behind them — so the model rebuilt
+  itself from the leftovers within a scan or two and the reset didn't stick. It now clears all of
+  it and puts the AI back to exactly what a new install ships with, including the sensitivity it
+  had tuned for itself. **Your filter choices are untouched**: mute, solo, muted authors, custom
+  filters and display settings all stay exactly as they were. It asks for confirmation first,
+  because it now genuinely cannot be undone. (Factory reset is still the one that clears
+  everything, filter choices and authors included.)
+
 - **FeedHacker can once again tell you when LinkedIn changes its layout and breaks filtering.**
   LinkedIn redesigns its feed from time to time, and when it does FeedHacker can stop recognising
   posts and quietly filter nothing at all — your feed simply fills back up with the stuff you
-  asked it to hide. There is a built-in check meant to notice exactly that and log it, so the
-  problem can be found and fixed instead of silently persisting. That check had itself stopped
-  working after LinkedIn's most recent redesign: it looked for parts of the page LinkedIn no
-  longer uses, so it always concluded the feed was empty and never raised a thing. It now
-  recognises today's LinkedIn feed (verified against two real feeds, one of 8 posts and one of
-  42), so the next time LinkedIn moves the furniture, FeedHacker will say so rather than going
-  quietly blind.
+  asked it to hide. There is a built-in check meant to notice exactly that and log it. That check
+  had itself stopped working after LinkedIn's most recent redesign: it looked for parts of the
+  page LinkedIn no longer uses, so it always concluded the feed was empty and never raised a
+  thing. It now recognises today's LinkedIn feed (verified against two real feeds, one of 8 posts
+  and one of 42), so the next time LinkedIn moves the furniture, FeedHacker will say so rather
+  than going quietly blind.
 
-  **You will not see any difference in your feed today** — nothing about which posts get hidden
-  has changed. This is the safety net that catches the next breakage, put back in working order.
+  **You will not see any difference in your feed from this one** — nothing about which posts get
+  hidden has changed. This is the safety net that catches the next breakage, put back in order.
+
+### Unchanged, and confirmed
+- **What a fresh install filters:** AI-slop filtering on, and **nothing else** — no other filter
+  muted, nothing soloed, no muted authors. **Upgrading never changes your settings.** Both were
+  already true; they now have tests pinning the exact shape so a future change cannot drift them.
+
+### Note for people who installed the Windows version by hand
+If you installed FeedHacker on Windows by **downloading a `.zip` and running `install.bat`**
+(rather than from the Chrome Web Store) **at version 0.4.5 or earlier**, automatic updating on
+that copy is broken and cannot repair itself — the broken updater is the thing that would have
+had to deliver the fix. You are stuck on an old version without any sign that anything is wrong.
+
+**To fix it, once:** download the current `feedhacker-<version>-win.zip` from the
+[latest release](https://github.com/newellnarco/Feedhacker/releases/latest) and run
+`installer\install.bat` from it again. Automatic updates work normally from then on.
+
+**If you installed from the Chrome Web Store, this does not affect you** and there is nothing to
+do — Chrome updates you.
 
 ## [0.5.0] — 2026-09-08
 

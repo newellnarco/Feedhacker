@@ -451,6 +451,20 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     surviving keeps the alarm armed.
 
 
+54. **A test that cannot fail is worse than no test — mutation-test every regression case.**
+    Green proves nothing on its own: the case may be asserting against the wrong node, with the
+    wrong key shape, or on a path the bug never touched. Both of FH-053's weak cases passed
+    *before* the fix existed. (a) A jsdom document with a **single** post marker makes
+    `postContainerFor()` walk to the document root, because it only stops at a parent holding
+    more than one — so the assertions ran against `<html>`, not the post. Every DOM fixture
+    keeps **two or more** markers, as a real feed always has. (b) A muted-author case used the
+    display name as the mute key when `Authors.keyFor()` builds `/in/slug`; it never matched, so
+    it passed with the guard removed. Build the key with the real function rather than writing
+    its output by hand. **The discipline: reintroduce the bug, confirm the new cases go red and
+    the pre-existing ones stay green, then restore.** Green-after is half the evidence; red-before
+    is the other half, and it is the half that catches a test asserting nothing.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

@@ -7,9 +7,32 @@
 (function (root) {
   "use strict";
 
+  // LinkedIn gives every real member post an overflow control ("Open control menu for post by
+  // <name>") and gives its OWN feed modules none. That single asymmetry does two jobs here: it
+  // is the marker-independent "posts rendered" probe (contentCount, FH-052) and it is the
+  // corroborating signal that separates a module from a post (FURNITURE_RE, FH-053).
+  var POST_CONTROL = '[aria-label^="Open control menu for post"]';
+
   var api = {
     // Hidden heading that marks each feed post ("Feed post" / "Promoted").
     MARKER_RE: /^(feed post|promoted)/i,
+    POST_CONTROL_SELECTOR: POST_CONTROL,
+
+    // LinkedIn's own feed modules wear the same hidden "Feed post" heading real posts do, so the
+    // scan picks them up as if a member had written them. Matched against the post's text with
+    // the marker prefix removed. Deliberately a short list of headings we have actually seen:
+    // an unrecognised module is simply scanned as before (fail CLOSED), whereas guessing wide
+    // risks silently exempting real posts from filtering. See isFurniture() in feed.ts, which
+    // additionally requires POST_CONTROL to be absent before believing any of these.
+    // No trailing \b: LinkedIn renders the heading and the next element's text as adjacent
+    // nodes, so the string really is "Who's viewed your profileSteve Hawkins" with no boundary
+    // to match. Both apostrophes are accepted — LinkedIn uses the curly one in places.
+    FURNITURE_RE: /^(who[’'`]s viewed your profile|jobs recommended for you|people you may know|add to your feed|suggested for you|recommended for you)/i,
+    // Strips the hidden marker heading off the front of a post's text so FURNITURE_RE can see
+    // what the container actually leads with.
+    stripMarker: function (text) {
+      return String(text || "").replace(/^\s*(?:feed post|promoted)\s*/i, "");
+    },
     // Per-comment text node attribute prefix.
     COMMENT_KEY_PREFIX: "comment-commentary",
     COMMENT_KEY_SELECTOR: '[componentkey^="comment-commentary"]',
@@ -58,7 +81,7 @@
     // LinkedIn both stop matching together, so the probe reads 0 exactly where the marker reads 0
     // and the result is silence, not a false alarm. (FeedHacker not filtering a non-English feed
     // at all is a separate, pre-existing gap; it is not this probe's to fix.)
-    CONTENT_SELECTOR: '[role="article"], [data-urn*="urn:li:activity"], [data-id*="urn:li:activity"], [aria-label^="Open control menu for post"]',
+    CONTENT_SELECTOR: '[role="article"], [data-urn*="urn:li:activity"], [data-id*="urn:li:activity"], ' + POST_CONTROL,
     contentCount: function (doc) {
       try {
         var a = doc.querySelectorAll(api.CONTENT_SELECTOR);

@@ -40,6 +40,21 @@ const DIRTY_LOCAL = {
 };
 const DIRTY_SYNC = { muteSloppy: false, mutePromoted: true, soloPromoted: true, nameNames: true };
 
+// The learned AI state FH-054 used to leave behind. slopThreshold is the one that matters most:
+// auto-calibration writes it to sync, and FH-050 found it self-tuned down to 0.428–0.471, so a
+// "reset" that leaves it there hands the rebuilt model the same pulled-down cutoff.
+const TRAIN_KEY = "feedhacker:sloptrain";
+const OBS_KEY = "feedhacker:slopobs";
+const CAL_KEY = "feedhacker:slopcal";
+const SLOPLOG_KEY = "feedhacker:sloplog";
+const DIRTY_AI_LOCAL = Object.assign({}, DIRTY_LOCAL, {
+  [TRAIN_KEY]: [{ label: "slop", f: { emoji: 1 } }, { label: "ok", f: { emoji: 0 } }],
+  [OBS_KEY]: [{ emoji: 1 }, { emoji: 0 }],
+  [CAL_KEY]: { at: 1, threshold: 0.43, flaggedFrac: 0.6, n: 40 },
+  [SLOPLOG_KEY]: [{ at: 1, prob: 0.9 }],
+});
+const DIRTY_AI_SYNC = Object.assign({}, DIRTY_SYNC, { slopThreshold: 0.43, slopTargetFrac: 0.6 });
+
 test("the options page loads without a script error", { skip, timeout: 60000 }, async () => {
   const { page, close } = await launchOptions({});
   try {
@@ -104,5 +119,50 @@ test("cancelling the factory-reset confirm changes nothing", { skip, timeout: 60
     assert.strictEqual(Object.keys(store.muted).length, 2, "a dismissed confirm must not delete anything");
     const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
     assert.strictEqual(sync.soloPromoted, true, "settings untouched too");
+  } finally { await close(); }
+});
+
+// --- FH-054: "Reset AI-slop learning" must reset the AI, and ONLY the AI -----------------
+
+test("Reset AI-slop learning wipes the model but leaves the user's setup standing", { skip, timeout: 60000 }, async () => {
+  // The bug: it removed the weights alone, so the training data, observations and self-tuned
+  // threshold survived and auto-calibration rebuilt the same model from them. Driven against
+  // real chrome.storage because that is the only place the leftovers are visible (§52).
+  const { page, sw, close } = await launchOptions({ local: DIRTY_AI_LOCAL, sync: DIRTY_AI_SYNC });
+  try {
+    await openPanels(page);
+    page.on("dialog", (d) => d.accept());
+    await page.click("#reset-learning");
+    await page.waitForFunction(() => /Learning reset/.test(document.getElementById("reset-learning").textContent));
+
+    const local = await sw.evaluate(() => new Promise((r) => chrome.storage.local.get(null, r)));
+    for (const k of ["feedhacker:slopWeights", "feedhacker:sloptrain", "feedhacker:slopobs", "feedhacker:slopcal", "feedhacker:sloplog"]) {
+      assert.ok(!(k in local), `${k} must be gone — leaving it rebuilds the model`);
+    }
+    // ...and everything that is NOT the AI is untouched.
+    assert.ok(local[AUTHORS_KEY], "muted/allowed authors survive an AI reset");
+    assert.deepStrictEqual(Object.keys(local[AUTHORS_KEY].muted).sort(), ["acme-co", "jane-doe"]);
+    assert.ok(local[CUSTOM_KEY], "custom filters survive");
+
+    const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
+    assert.strictEqual(sync.mutePromoted, true, "mute choices are not the AI's to reset");
+    assert.strictEqual(sync.soloPromoted, true, "nor solo");
+    assert.strictEqual(sync.nameNames, true, "nor display settings");
+    assert.strictEqual(sync.muteSloppy, false, "nor even whether the AI filter is switched on");
+    // The AI's own tuning IS reset, back to the shipped default.
+    assert.strictEqual(sync.slopThreshold, 0.5, "the self-tuned cutoff goes back to the default");
+  } finally { await close(); }
+});
+
+test("cancelling the AI-reset confirm changes nothing", { skip, timeout: 60000 }, async () => {
+  const { page, sw, close } = await launchOptions({ local: DIRTY_AI_LOCAL, sync: DIRTY_AI_SYNC });
+  try {
+    await openPanels(page);
+    page.on("dialog", (d) => d.dismiss());
+    await page.click("#reset-learning");
+    const local = await sw.evaluate(() => new Promise((r) => chrome.storage.local.get(null, r)));
+    assert.ok(local[WEIGHTS_KEY], "a dismissed confirm must not delete the model");
+    const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
+    assert.strictEqual(sync.slopThreshold, 0.43, "nor restore its tuning");
   } finally { await close(); }
 });

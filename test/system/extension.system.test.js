@@ -37,6 +37,33 @@ test("hides a Promoted post end-to-end when Promoted muting is on", { skip, time
   }
 });
 
+// FH-053: LinkedIn's own feed modules wear the same hidden "Feed post" heading a real post
+// does. Solo hides everything that is not a soloed kind and has no prose gate, so before the
+// guard these were hidden as if a member had written them. Driven in a real browser because a
+// scan change is only done on the live feed (best_practices §28): the module carries no
+// per-post overflow control, the real post does, and that asymmetry is what tells them apart.
+const FURNITURE_FIXTURE = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
+  <div class="post" id="p-mod"><h2>Feed post</h2><div>Who's viewed your profile</div><div><a href="/in/steve-hawkins">Steve Hawkins</a> - 1st Director of Security</div></div>
+  ${post("p-ad", `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy our thing</div>`)}
+  ${post("p-human", `<button aria-label="Open control menu for post by Avery Lindqvist"></button><div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}
+</div></main></body></html>`;
+
+test("solo mode never hides LinkedIn's own feed modules end-to-end", { skip, timeout: 60000 }, async () => {
+  // Solo on Promoted: the ad survives, the human post is hidden, the module is left alone.
+  const { page, close } = await launchFeed({ fixtureHtml: FURNITURE_FIXTURE, sync: { soloPromoted: true } });
+  try {
+    await page.waitForSelector("#p-human.feedhacker-hidden", { timeout: 20000 });
+    const modHidden = await page.locator("#p-mod").evaluate((el) => el.classList.contains("feedhacker-hidden"));
+    assert.strictEqual(modHidden, false, "a LinkedIn module must survive solo mode");
+    const marked = await page.locator("#p-mod").evaluate((el) => el.dataset.feedhackerFurniture);
+    assert.strictEqual(marked, "1", "and be recognised as furniture, not judged as a post");
+    const adHidden = await page.locator("#p-ad").evaluate((el) => el.classList.contains("feedhacker-hidden"));
+    assert.strictEqual(adHidden, false, "the soloed kind is what stays visible");
+  } finally {
+    await close();
+  }
+});
+
 const RUN_FIXTURE = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
   ${[0, 1, 2, 3].map((i) => post("promo-" + i, `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy thing ${i}</div>`)).join("\n")}
   ${post("p-ok", `<div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}

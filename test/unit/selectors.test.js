@@ -119,3 +119,31 @@ test("heartbeatBreak alarms ONLY on a genuine selector break, never on paging co
   assert.strictEqual(selectors.heartbeatBreak({ active: true, loading: false, markers: 3, content: 4 }), false, "markers present — healthy");
   assert.strictEqual(selectors.heartbeatBreak(null), false);
 });
+
+test("feed.ts's defensive fallbacks stay byte-identical to the canonical contract", () => {
+  // feed.ts inlines copies of MARKER_RE / FURNITURE_RE / POST_CONTROL_SELECTOR for the case
+  // where selectors.js has not loaded. A copy that drifts is a bug you only meet in the
+  // fallback path, where nobody looks — and it happened: the first cut of FURNITURE_RE kept a
+  // trailing \b here after it had been dropped there, so the fallback could never match.
+  const src = fs.readFileSync(path.join(__dirname, "..", "..", "src", "feed.ts"), "utf8");
+
+  assert.ok(src.includes(String(selectors.MARKER_RE)),
+    "feed.ts's MARKER_RE fallback must match selectors.ts");
+  assert.ok(src.includes(String(selectors.FURNITURE_RE)),
+    "feed.ts's FURNITURE_RE fallback must match selectors.ts");
+  assert.ok(src.includes(JSON.stringify(selectors.POST_CONTROL_SELECTOR).replace(/"/g, "'")) ||
+            src.includes(selectors.POST_CONTROL_SELECTOR),
+    "feed.ts's POST_CONTROL fallback must match selectors.ts");
+});
+
+test("FURNITURE_RE matches the real, un-spaced text LinkedIn renders", () => {
+  // The heading and the next element's text are adjacent nodes, so there is no whitespace
+  // between them. Anchoring on a word boundary here silently matches nothing.
+  const real = "Feed postWho's viewed your profileSteve Hawkins • 1stDirector of Security";
+  assert.match(selectors.stripMarker(real), selectors.FURNITURE_RE);
+  assert.match(selectors.stripMarker("Feed postJobs recommended for youVice President, Apps"), selectors.FURNITURE_RE);
+  // Curly apostrophe too — LinkedIn uses it in places.
+  assert.match(selectors.stripMarker("Feed postWho\u2019s viewed your profileX"), selectors.FURNITURE_RE);
+  // And an ordinary post must not match.
+  assert.doesNotMatch(selectors.stripMarker("Feed postAvery Lindqvist • 1st Platform lead"), selectors.FURNITURE_RE);
+});
