@@ -1,7 +1,12 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
 const { selectors, makeDoc } = require("../helper");
+
+// LinkedIn's redesigned feed, transcribed from two live 2026-09-15 home-feed captures.
+const FEED_2026_09 = fs.readFileSync(path.join(__dirname, "..", "fixtures", "linkedin-feed-2026-09.html"), "utf8");
 
 test("isHomeFeed matches only the home feed path", () => {
   assert.strictEqual(selectors.isHomeFeed("/feed/"), true);
@@ -51,6 +56,43 @@ test("contentCount counts post-like containers independently of our marker", () 
     "</body>"
   );
   assert.strictEqual(selectors.contentCount(doc), 3);
+});
+
+test("contentCount sees LinkedIn's CURRENT markup, which has none of the retired hooks (FH-052)", () => {
+  // The regression that mattered: the probe was only ever exercised against synthetic markup
+  // carrying role="article", which by construction could not exhibit the bug (best_practices §49).
+  // This runs it against the shape LinkedIn actually ships, captured live on 2026-09-15.
+  const doc = makeDoc("<!doctype html><body>" + FEED_2026_09 + "</body>");
+
+  // Guard the fixture itself: if it ever drifts back into carrying a retired hook, this test
+  // would start passing for the wrong reason, so assert the absence that makes it meaningful.
+  assert.strictEqual(doc.querySelectorAll('[role="article"]').length, 0, "fixture must have no role=article");
+  assert.strictEqual(doc.querySelectorAll('[data-urn],[data-id]').length, 0, "fixture must have no data-urn/data-id");
+
+  // Our marker still matches on this markup, so the feed is healthy...
+  assert.strictEqual(selectors.markerCount(doc), 3, "the hidden 'Feed post' headings still parse");
+  // ...and the INDEPENDENT probe must agree that posts are on the page. Pre-fix this was 0.
+  assert.strictEqual(selectors.contentCount(doc), 3, "content probe must see today's posts");
+});
+
+test("a marker break on CURRENT markup actually alarms — the heartbeat is not disarmed (FH-052)", () => {
+  // The whole point of the probe: heartbeatBreak() requires content > 0, so a probe blind to
+  // today's markup pins content at 0 and the alarm can NEVER fire. Simulate our marker going
+  // stale (LinkedIn renames the hidden heading) and assert we would notice.
+  const doc = makeDoc("<!doctype html><body>" + FEED_2026_09.replace(/Feed post/g, "Update") + "</body>");
+
+  assert.strictEqual(selectors.markerCount(doc), 0, "marker no longer matches — this is the break");
+  assert.ok(selectors.contentCount(doc) > 0, "but the posts are plainly still there");
+  assert.strictEqual(
+    selectors.heartbeatBreak({
+      active: true,
+      loading: selectors.isLoading(doc),
+      markers: selectors.markerCount(doc),
+      content: selectors.contentCount(doc)
+    }),
+    true,
+    "a real selector break on today's markup must alarm"
+  );
 });
 
 test("contentCount is 0 on an empty/loading feed and defensive on a broken doc", () => {

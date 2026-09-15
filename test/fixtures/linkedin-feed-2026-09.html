@@ -1,0 +1,72 @@
+<!--
+  FeedHacker test fixture — the SHAPE of LinkedIn's redesigned home feed, as captured from two
+  live home-feed dumps on 2026-09-15 (8 posts and 42 posts). Names, headlines, profile URLs and
+  body copy are invented; every tag, attribute and hook below is transcribed from the real
+  markup, including the hashed class names, the `componentkey` GUIDs, the hidden "Feed post"
+  heading, and the per-post "Open control menu for post by <name>" overflow control.
+
+  What makes this fixture worth having (best_practices.md §49): the old contentCount probe was
+  only ever tested against synthetic markup carrying role="article", which BY CONSTRUCTION could
+  not exhibit FH-052. This fixture reproduces what LinkedIn actually ships today, where:
+
+    * there is NO role="article" anywhere on the page,
+    * there is NO data-urn / data-id activity container anywhere on the page,
+    * the per-post overflow control IS present, one per post.
+
+  test/unit/selectors.test.js asserts those three properties directly, so if this fixture is ever
+  edited into something unrepresentative the guard fails loudly instead of quietly passing.
+-->
+<div class="_640d46ae d41b79e1 _26009079 ae20c373" data-testid="mainFeed">
+
+  <div class="_9d736a80 ae20c373" componentkey="77eda665-1c61-4b0e-9a1f-2f4c1d0a6b31">
+    <h2 class="b7895f36 _130a2809 _66e44bee c40dac9f _35ecce8f"><span class="bd5f5701 ae20c373">Feed post</span><span aria-hidden="true"></span></h2>
+    <div class="_1e978533 a1aea63d _0a5615aa e60c410c ae20c373">
+      <a tabindex="0" class="d951ce81 _9ec0a1f2" href="https://www.linkedin.com/in/avery-lindqvist/">
+        <div class="_4c0cad7b ae20c373" componentkey="716afa14-19da-4fc1-bc22-66d574828a14" aria-label="Avery Lindqvist Verified Profile 1st"></div>
+      </a>
+      <span class="_7bf4db48 c4a1e0d2">Avery Lindqvist</span>
+      <span class="_2a9bd03a d05e5887">Platform Engineering Lead</span>
+    </div>
+    <button class="_5dfaadcf _11c561b9 _752db2a5 bc468672" type="button" componentkey="a0a0a398-680f-4056-a573-fa6d0d7df6fa" aria-label="Open control menu for post by Avery Lindqvist"></button>
+    <div class="_8aaf5c5f _8b0f2e71 ae20c373" data-testid="expandable-text-box">
+      We spent three weeks shaving cold-start latency off the build cache and the win came from
+      somewhere nobody predicted. Writing up the whole path next week.
+    </div>
+    <div class="_45540eea bc468672" role="button" tabindex="0" aria-label="Open reactions menu"></div>
+  </div>
+
+  <div class="_9d736a80 ae20c373" componentkey="2b5c9e10-88a4-4d77-9c03-15ab7f0e2c44">
+    <h2 class="b7895f36 _130a2809 _66e44bee c40dac9f _35ecce8f"><span class="bd5f5701 ae20c373">Feed post</span><span aria-hidden="true"></span></h2>
+    <div class="_1e978533 a1aea63d _0a5615aa e60c410c ae20c373">
+      <a tabindex="0" class="d951ce81 _9ec0a1f2" href="https://www.linkedin.com/company/northwind-robotics/">
+        <div class="_4c0cad7b ae20c373" componentkey="c3d8b921-5f0a-49e7-a2b6-7d1e4c85a903" aria-label="Northwind Robotics"></div>
+      </a>
+      <span class="_7bf4db48 c4a1e0d2">Northwind Robotics</span>
+      <span class="_2a9bd03a d05e5887">4,112 followers</span>
+      <span class="_66e44bee">Promoted</span>
+    </div>
+    <button class="_5dfaadcf _11c561b9 _752db2a5 bc468672" type="button" componentkey="f47b2ce6-31d9-4a58-8e0c-90b3fa17d5e2" aria-label="Open control menu for post by Northwind Robotics"></button>
+    <div class="_8aaf5c5f _8b0f2e71 ae20c373" data-testid="expandable-text-box">
+      Cut your picking costs in half with the arm that installs in an afternoon. Book a demo.
+    </div>
+    <div class="_45540eea bc468672" role="button" tabindex="0" aria-label="Open reactions menu"></div>
+  </div>
+
+  <div class="_9d736a80 ae20c373" componentkey="9ac10f3e-6d22-4b18-bf75-c806e2914a7d">
+    <h2 class="b7895f36 _130a2809 _66e44bee c40dac9f _35ecce8f"><span class="bd5f5701 ae20c373">Feed post</span><span aria-hidden="true"></span></h2>
+    <div class="_1e978533 a1aea63d _0a5615aa e60c410c ae20c373">
+      <a tabindex="0" class="d951ce81 _9ec0a1f2" href="https://www.linkedin.com/in/priya-raghunathan/">
+        <div class="_4c0cad7b ae20c373" componentkey="5e0f7a44-2c93-4d6f-91ab-3b8e0c47f215" aria-label="Priya Raghunathan Premium Profile 2nd"></div>
+      </a>
+      <span class="_7bf4db48 c4a1e0d2">Priya Raghunathan</span>
+      <span class="_2a9bd03a d05e5887">Staff Data Engineer</span>
+    </div>
+    <button class="_5dfaadcf _11c561b9 _752db2a5 bc468672" type="button" componentkey="8f2a6b03-7e51-4c29-ad84-1f6b93d0e5c7" aria-label="Open control menu for post by Priya Raghunathan"></button>
+    <div class="_8aaf5c5f _8b0f2e71 ae20c373" data-testid="expandable-text-box">
+      Six months of on-call data says our paging thresholds were tuned for a system we stopped
+      running in March. Retuned them against the real distribution and the noise dropped hard.
+    </div>
+    <div class="_45540eea bc468672" role="button" tabindex="0" aria-label="Open reactions menu"></div>
+  </div>
+
+</div>

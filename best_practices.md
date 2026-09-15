@@ -436,6 +436,21 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     key isn't covered (it immediately caught `feedhacker:errorlog`), plus a system test that runs
     the real button against real `chrome.storage` and asserts nothing survives.
 
+53. **A watchdog needs its own watchdog — and a fixture cut from the real thing.** A probe that
+    exists to detect "our selectors stopped matching" is itself made of selectors, so when the
+    upstream markup moves the probe can quietly return zero and take the alarm down with it —
+    failing *safe*, silently, which is the worst shape: nothing is red, and the one thing that
+    would have told you is the thing that broke. FH-052 sat exactly here: `contentCount()` looked
+    only for `role="article"` and `data-urn`, LinkedIn's 2026-09 feed ships neither, and since
+    `heartbeatBreak()` requires `content > 0` the break could never fire on any real page. Its
+    unit tests passed throughout — they built their own `role="article"` markup, so by
+    construction they could not exhibit it (§49). So: **test every DOM probe against a fixture
+    captured from the live product, not one you wrote**, assert in the test the properties that
+    make the fixture representative (here: *no* `role="article"`, *no* `data-urn`) so it fails
+    loudly if it drifts, and give a probe **two independent hooks** where you can, so one
+    surviving keeps the alarm armed.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
