@@ -26,18 +26,17 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 3 | **LinkedIn no longer exposes the activity URN — post identity now rests on the text hash alone** | next session (informational) | Settled 2026-09-15 by inspecting two live home-feed captures: there is **no `data-urn`, no `data-id` and no `role="article"` anywhere on the page**, and `postKey()` fell back to `textHash` for **42 of 42** posts. The id is still recoverable, but only sparsely — 3 posts carried a `/feed/update/urn:li:…` permalink and 5 a `replaceableComment_urn:li:comment:(activity:<postid>,…)` componentkey. **Deliberately not harvested**: the permalink route can pick up the *original* post's id inside a reshare and collide two feed entries onto one verdict, which is worse than the hash. Revisit only if the decision log in item 1 shows identity actually slipping. |
 | 4 | **`CWS_PUBLISHER_ID` resolves now — and Google refuses it (FH-055)** | maintainer | **Answered 2026-09-15 by Release run #24**, after five releases of “empty” warnings. The variable IS reaching Actions: it resolved to `project-46303a79-fd20-4ed8-859`. But the first real call to `cancelSubmission` came back **HTTP 403 `PERMISSION_DENIED`** — *“Permission denied on resource 'publishers/project-46303a79-…/items/kccajfog…' (or it might not exist)”*. That value looks like a **Google Cloud project id**, not a Chrome Web Store **publisher** id. **Maintainer action:** Dashboard → Publisher → Settings shows the publisher id; replace the variable with that. **Nothing waits on this** — the slot has been free for every upload since 0.4.7, so the step has never been needed. Removing it entirely remains a reasonable alternative. A second, separate fault is **ours**: the step prints “HTTP 403 … normal when nothing is in review”, which is false and is the FH-048 false-green class surviving in the non-200 branch. |
 | 5 | **Windows sideload users must re-install once** | maintainer (now partly self-serving) | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user must re-run `installer\install.bat` from a current `feedhacker-<version>-win.zip`. **0.6.0 ships a release note saying exactly this** (`CHANGELOG.md`, which `store/README.md` makes the source of the store's release notes), so anyone who reads the notes is told. It stays open because the people who most need it are precisely the ones **not receiving updates** — a note in a release they never get cannot reach them. Closing it needs a channel they still see (the repo README / releases page, or a direct message), not another release note. |
-| 6 | **Confirm 0.6.0 actually publishes on the store** | next session | Uploaded and auto-submitted **2026-09-15 18:10:48 UTC** (Release run #24, `Publish successful` = *submitted for review*, not approved). **Verify by loading the store listing** — `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb` — and reading its Version field; **do not wait for an email**, this item has published silently twice (0.4.6, 0.5.0). Mark 0.6.0 **Live** in `RELEASES.md` only once the listing says 0.6.0. Past turnaround has run 4h → 2h → 20min → 16min. |
 
 ## 2. Current state
 
 | | |
 |---|---|
-| **Latest version** | **0.6.0** — released on GitHub 2026-09-15 (tag `v0.6.0` @ `382ba04`, Release run #24), **uploaded and submitted to the store 18:10:48 UTC — NOT yet confirmed live** |
-| **Previous version** | 0.5.0 — live on the store since 2026-09-08 |
-| **Dev cycle** | **0.7.0 open** — `manifest.json` / `package.json` / `package-lock.json` bumped, `CHANGELOG.md` has a `[0.7.0] — unreleased` section carrying FH-056. **Do not release without an explicit "ship"** |
+| **Latest version** | **0.6.0** — **LIVE on the store**, confirmed 2026-09-15 19:04 UTC from the listing (“Version 0.6.0, Updated September 15, 2026”) |
+| **Shipping now** | **0.7.0** — records cut, Release workflow dispatched on the maintainer's explicit “ship 0.7.0”. Carries FH-056 |
+| **Dev cycle** | **0.7.0 is being cut.** The next change opens 0.8.0. **Do not release without an explicit “ship”** |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
 | **Confirmed live on the store** | **0.5.0** — confirmed 2026-09-15 by reading the **store listing** ("Version 0.5.0, Updated September 8, 2026"). **Not** by email: no publish email for 0.5.0 exists, and the 20:55:30 UTC timestamp this file used to cite was inferred. See the 0.5.0 row in `RELEASES.md`. |
-| **How to check what is live** | **Read the store listing**, not the inbox: `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. This item has now published **silently, with no email, twice** (0.4.6 and 0.5.0), so an absent email means nothing either way. |
+| **How to check what is live** | **Read the store listing**, never the inbox: `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. This is now **established, not suspected**: 0.4.6, 0.5.0 **and** 0.6.0 all published with **no email at all** — three for three. A publish email is a nice-to-have when it appears; its absence means nothing. |
 | **Submission slot** | **OPEN** — nothing pending review |
 | **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change |
 | **Review** | no AI reviewer runs on this repo — **green CI is the merge gate** (`REVIEWERS_STATUS.md`) |
@@ -84,6 +83,22 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-09-15 (late) — 0.6.0 confirmed live, 0.7.0 cut
+
+- **0.6.0 is LIVE.** Confirmed 19:04 UTC by reading the store listing: *"Version 0.6.0, Updated
+  September 15, 2026"*. Submitted 18:10:48 UTC, so it published inside ~54 minutes — the exact
+  instant is not knowable from the listing and is deliberately not invented. Open item closed.
+- **No publish email arrived, again.** `from:chromewebstore-noreply@google.com newer_than:2d`
+  returns nothing. That is **three consecutive silent publishes** — 0.4.6, 0.5.0, 0.6.0 — so the
+  corrected checklist step 3 is no longer a correction to a one-off mistake; it is a property of
+  this store item. §2's "how to check" row now says so.
+- **Shipped 0.7.0 on the maintainer's explicit "ship 0.7.0"**, into a slot confirmed open by that
+  same listing read. It carries **FH-056** — the author mute that outranked solo and discarded
+  the one genuine hiring post in a 63-post feed.
+- **Method note:** the ship pre-flight and the scheduled 0.6.0 check-in turned out to be the same
+  action. Reading the listing answered both "did 0.6.0 publish?" and "is the slot free?" in one
+  call. Worth remembering: for this project those two questions have one source.
 
 ### 2026-09-15 (evening) — FH-056: the filter found the post, the other setting threw it away
 
