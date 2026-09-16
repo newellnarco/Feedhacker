@@ -9,6 +9,10 @@ name: Release
 # Release → Run workflow) with `publish: true`. It cuts the release straight from the
 # chosen branch, tagging it `v<manifest version>` from inside the Action — handy when
 # your local git can't push tags. Leave `publish` false for a build-only dry run.
+# The two destinations are separately switchable on a manual run: `store: false` cuts the
+# GitHub Release and HOLDS the Chrome Web Store upload, for a version you want installable
+# from GitHub while something store-side (screenshots, a listing edit, a version still in
+# review) isn't ready. A tag push always does both, as it always has.
 on:
   push:
     tags: ["v*"]
@@ -18,6 +22,10 @@ on:
         description: "Cut the GitHub Release and upload to the Chrome Web Store from this branch (tag = v<manifest version>). Off = build-only dry run."
         type: boolean
         default: false
+      store:
+        description: "Also upload to the Chrome Web Store. Turn OFF to cut a GitHub-only release and hold the store upload. Ignored unless publish is on."
+        type: boolean
+        default: true
 
 # Least privilege by default; only the job that publishes the release gets write.
 permissions:
@@ -163,7 +171,11 @@ jobs:
   # every release (package.json is kept in lockstep).
   webstore:
     needs: build
-    if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
+    # Two conditions, deliberately different. A TAG push has no inputs, so it publishes to both
+    # destinations exactly as it always has. A MANUAL run additionally honours `store`, so the
+    # GitHub Release above can be cut on its own — the store upload auto-publishes to every
+    # existing install, so "GitHub only" has to be reachable without commenting out a job.
+    if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.publish && inputs.store) }}
     runs-on: ubuntu-latest
     continue-on-error: true
     env:
