@@ -13,12 +13,13 @@ test("FILTER_IDS matches the FILTERS list order", () => {
   assert.deepStrictEqual(filters.FILTER_IDS, filters.FILTERS.map((f) => f.id));
 });
 
-test("DEFAULTS has mute/solo booleans for every filter", () => {
+test("DEFAULTS has a mute boolean for every filter, and no solo state", () => {
   for (const f of filters.FILTERS) {
     assert.strictEqual(typeof filters.DEFAULTS["mute" + f.key], "boolean");
-    assert.strictEqual(typeof filters.DEFAULTS["solo" + f.key], "boolean");
-    assert.strictEqual(filters.DEFAULTS["solo" + f.key], false, "solo defaults must be off");
   }
+  // Solo mode was removed in 0.8.0: mute is the only per-kind setting there is.
+  assert.deepStrictEqual(Object.keys(filters.DEFAULTS).filter((k) => /^solo[A-Z]/.test(k)), [],
+    "no solo key may be shipped, or installs would inherit it all over again");
 });
 
 test("only AI slop is muted by default", () => {

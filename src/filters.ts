@@ -1,7 +1,7 @@
 // FeedHacker — shared filter definitions. Single source of truth for the filter
 // list, storage keys, and defaults. Consumed by content.js (glue), popup.js (UI),
 // feed.js (DOM layer), and the test suite, so a filter is defined in exactly one
-// place. Storage keys are "mute<Key>" / "solo<Key>"; the DOM layer uses the
+// place. Storage keys are "mute<Key>"; the DOM layer uses the
 // lowercase "id". key === cap(id) is an invariant enforced by a test.
 (function (root) {
   "use strict";
@@ -34,7 +34,6 @@
     for (var i = 0; i < FILTERS.length; i++) {
       var f = FILTERS[i];
       d["mute" + f.key] = !!f.defaultMute;
-      d["solo" + f.key] = false;
     }
     for (var j = 0; j < DISPLAY_KEYS.length; j++) d[DISPLAY_KEYS[j]] = false;
     d.enabled = true;            // master on/off; pause without uninstalling
@@ -60,11 +59,34 @@
     s.autoCalibrate = DEFAULTS.autoCalibrate;
     s.implicitLearning = DEFAULTS.implicitLearning;
     s.scanEverywhere = DEFAULTS.scanEverywhere;
+    return dropLegacySolo(s);
+  }
+
+  // Solo mode was removed in 0.8.0 (see CHANGELOG). Installs that had it on still carry
+  // "solo<Key>": true in chrome.storage.sync, and a stale truthy key must never be able to
+  // influence anything again — so it is deleted from the live settings object on every load and
+  // on every sync change, not merely ignored. content.ts additionally evicts the keys from
+  // storage once, so they stop travelling between devices.
+  //
+  // Why solo went: every "FeedHacker is hiding everything" report ever filed traced to it, and
+  // none to the AI. It also short-circuited before the scorer, which silently disabled the
+  // AI-slop model and froze its decision log for as long as it was on.
+  function legacySoloKeys(s) {
+    var out: any[] = [];
+    if (!s || typeof s !== "object") return out;
+    for (var k in s) {
+      if (Object.prototype.hasOwnProperty.call(s, k) && /^solo[A-Z]/.test(k)) out.push(k);
+    }
+    return out;
+  }
+  function dropLegacySolo(s) {
+    var keys = legacySoloKeys(s);
+    for (var i = 0; i < keys.length; i++) delete s[keys[i]];
     return s;
   }
 
-  // Display label for a filter id ("sloppy" -> "AI slop"). Used by the solo stub so it can
-  // name the kinds it is showing without duplicating the FILTERS table.
+  // Display label for a filter id ("sloppy" -> "AI slop"), so UI can name a kind without
+  // duplicating the FILTERS table.
   function labelFor(id) {
     for (var i = 0; i < FILTERS.length; i++) if (FILTERS[i].id === id) return FILTERS[i].label;
     return "";
@@ -80,6 +102,8 @@
     DEFAULTS: DEFAULTS,
     buildDefaults: buildDefaults,
     applyFixed: applyFixed,
+    legacySoloKeys: legacySoloKeys,
+    dropLegacySolo: dropLegacySolo,
     cap: cap
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

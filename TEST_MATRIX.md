@@ -25,7 +25,7 @@ fires **once per change** — the `pull_request` event is the review gate; `push
 
 A change to a module the whole app imports has repo-wide blast radius:
 
-- **`src/filters.ts`** (`DEFAULTS` / filter list) — read by popup, options, and content.
+- **`src/filters.ts`** (`DEFAULTS` / filter list) — read by popup, options, and content. Also owns the **removed-feature migration** (`applyFixed` → `dropLegacySolo`): a setting that no longer exists must be **deleted** from live settings and evicted from sync, never merely ignored — `test/integration/solo-removed.test.js` pins that (§57, FH-057).
 - **`src/selectors.ts`** — the LinkedIn DOM contract every scan depends on. Its DOM probes are guarded against **`test/fixtures/linkedin-feed-2026-09.html`**, transcribed from a live home-feed capture. When LinkedIn's markup moves, **re-capture the fixture** — a probe tested only against markup we wrote can't fail when reality changes (§53, FH-052).
 - **`src/scorer.ts`** — the AI-slop model consumed by feed + content + options.
 - **`scripts/build.mjs`, `manifest.json`, `tsconfig.json`, CI workflow** — build/packaging.
@@ -45,6 +45,7 @@ A change to a module the whole app imports has repo-wide blast radius:
 | Update check | `update.ts` | `update` (unit) | options "check for updates" | ✅ if isolated |
 | Popup / options UI | `popup.ts`, `options.ts`, `*.html`, `styles.css` | drive in real Chromium (system) | UI only; gated by `tsc` + build, not model tests | ✅ if presentational + `tsc`/build green |
 | **Release pipeline** | `.github/workflows/release.yml` | `release-cancel` (unit) | what the release log **claims happened** — a step that misreports its own outcome is a false green (§4): FH-048 was a silent skip, FH-055 a refusal printed as “nothing in review”. Every status branch needs a case | ❌ run row |
+| **Popup mixer** | `popup.ts`, `popup.html` | `popup.system` (system) | whether a control is actually **wired**. The AI-slop toggle is static markup bound by a `querySelectorAll` that also binds generated rows — markup and wiring can disagree, and that shape typechecks, unit-tests green and then does nothing when clicked. Only a browser catches it | ❌ run row + system |
 | **Destructive controls** | `options.ts` reset paths, `LOCAL_KEYS`, `SLOP_LOCAL_KEYS` | `factory-reset` (unit), `options.system` (system) | what a reset actually clears **and what it must leave alone** — never "presentational": it deletes user data, so it needs the real button against real storage (§52). The two resets have different scopes and both halves need pinning: **factory reset** clears everything, **Reset AI-slop learning** clears only the AI and must leave mute/solo/authors/custom filters standing (FH-054) | ❌ run row + system |
 | **Install / upgrade** | `background.ts` `onInstalled`, `filters.ts` `DEFAULTS` | `install-upgrade` (integration), `filters` (unit) | an upgrade must preserve every stored setting; a new install gets the shipped defaults | ❌ run row |
 | **Session handoff docs** | `SESSION-STATE.md`, `CLAUDE.md` | `session-state` (unit) | that the start/close contract survives — sections present and ordered, open items a real table, both ends wired in `CLAUDE.md` | ❌ run row |

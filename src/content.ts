@@ -164,22 +164,6 @@
     } catch (e) { logError(e, "allow-author"); }
   }
   settings.onAllowAuthor = onAllowAuthor;
-  // Leave solo mode from the feed itself. Solo hides every post that isn't a soloed kind, so
-  // one stray click on a green S in the popup can empty the whole feed with no on-feed clue as
-  // to why (FH-051). Clearing every solo* key restores the user's mute settings untouched.
-  function onClearSolo() {
-    try {
-      var patch: any = {};
-      for (var i = 0; i < Filters.FILTER_IDS.length; i++) {
-        var k = "solo" + Filters.cap(Filters.FILTER_IDS[i]);
-        patch[k] = false;
-        settings[k] = false;
-      }
-      chrome.storage.sync.set(patch);   // the storage.onChanged handler re-applies and rescans
-      if (ready) { F.reset(document, true); scanNow(); reportBadge(); }
-    } catch (e) { logError(e, "clear-solo"); }
-  }
-  settings.onClearSolo = onClearSolo;
   function onAuthorOutcome(info, hidden) {
     try {
       if (!Authors) return;
@@ -705,6 +689,14 @@
   chrome.storage.sync.get(DEFAULTS, function (s) {
     Object.assign(settings, DEFAULTS, s);   // mutate in place so runtime callbacks survive
     if (Filters.applyFixed) Filters.applyFixed(settings);   // removed-toggle behaviours stay fixed over any stale stored value
+    // Solo mode was removed in 0.8.0. applyFixed() has just dropped any legacy "solo<Key>" from
+    // the live settings, but the keys are still in sync storage, where they would keep syncing
+    // between the user's devices forever. Evict them once, best-effort — nothing reads them, so
+    // a failure here is cosmetic.
+    try {
+      var stale = Filters.legacySoloKeys ? Filters.legacySoloKeys(s) : [];
+      if (stale.length) chrome.storage.sync.remove(stale);
+    } catch (e) { /* cosmetic cleanup only */ }
     chrome.storage.local.get([WEIGHTS_KEY, CUSTOM_KEY, AUTHORS_KEY], function (o) {
       var stored = o && o[WEIGHTS_KEY];
       settings.slopWeights = (stored && typeof stored === "object") ? stored : (Scorer ? Scorer.defaultWeights() : null);

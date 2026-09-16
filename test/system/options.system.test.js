@@ -38,6 +38,8 @@ const DIRTY_LOCAL = {
   [WEIGHTS_KEY]: { bias: -1, emoji: 5 },
   [CUSTOM_KEY]: { phrases: ["synergy"] },
 };
+// soloPromoted is a LEGACY key from a pre-0.8.0 install — deliberately left in the dirty
+// fixture so the reset paths are exercised against real leftover state, not a tidy one.
 const DIRTY_SYNC = { muteSloppy: false, mutePromoted: true, soloPromoted: true, nameNames: true };
 
 // The learned AI state FH-054 used to leave behind. slopThreshold is the one that matters most:
@@ -98,11 +100,11 @@ test("Factory reset returns a dirty profile to a clean install", { skip, timeout
     const leftover = Object.keys(local).filter((k) => k.startsWith("feedhacker:"));
     assert.deepStrictEqual(leftover, [], "no stored FeedHacker state survives a factory reset");
 
-    // …and settings are exactly a clean install: AI slop on, nothing else, no solo.
+    // …and settings are exactly a clean install: AI slop on, nothing else.
     const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
     assert.strictEqual(sync.muteSloppy, true, "the default AI algorithm is back on");
     assert.strictEqual(sync.mutePromoted, false, "other filters are off");
-    assert.strictEqual(sync.soloPromoted, false, "solo mode is off");
+    assert.ok(!("soloPromoted" in sync), "the legacy solo key is gone, not merely falsified");
     assert.strictEqual(sync.nameNames, false, "display toggles are back to default");
     assert.strictEqual(sync.enabled, true);
   } finally { await close(); }
@@ -118,7 +120,7 @@ test("cancelling the factory-reset confirm changes nothing", { skip, timeout: 60
       chrome.storage.local.get([k], (o) => r(o[k]))), AUTHORS_KEY);
     assert.strictEqual(Object.keys(store.muted).length, 2, "a dismissed confirm must not delete anything");
     const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
-    assert.strictEqual(sync.soloPromoted, true, "settings untouched too");
+    assert.strictEqual(sync.mutePromoted, true, "settings untouched too");
   } finally { await close(); }
 });
 
@@ -146,7 +148,7 @@ test("Reset AI-slop learning wipes the model but leaves the user's setup standin
 
     const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
     assert.strictEqual(sync.mutePromoted, true, "mute choices are not the AI's to reset");
-    assert.strictEqual(sync.soloPromoted, true, "nor solo");
+    assert.strictEqual(sync.nameNames, true, "nor display settings");
     assert.strictEqual(sync.nameNames, true, "nor display settings");
     assert.strictEqual(sync.muteSloppy, false, "nor even whether the AI filter is switched on");
     // The AI's own tuning IS reset, back to the shipped default.
