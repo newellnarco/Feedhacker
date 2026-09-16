@@ -91,9 +91,10 @@ test("a clean install means AI slop on and nothing else", () => {
   const d = filters.buildDefaults();
   assert.strictEqual(d.muteSloppy, true, "the default AI algorithm stays on");
   for (const f of filters.FILTERS) {
-    assert.strictEqual(d["solo" + f.key], false, "no solo mode on a clean install");
     if (f.id !== "sloppy") assert.strictEqual(d["mute" + f.key], false, "no other filter on");
   }
+  // Solo was removed in 0.8.0 — a clean install must not carry any of its state.
+  assert.deepStrictEqual(Object.keys(d).filter((k) => /^solo[A-Z]/.test(k)), []);
   for (const k of filters.DISPLAY_KEYS) assert.strictEqual(d[k], false);
 });
 

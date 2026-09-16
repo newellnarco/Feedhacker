@@ -13,6 +13,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.8.0] — unreleased
 
+### Changed
+- **Solo mode is gone. Every filter is now a simple on/off.** Solo showed *only* the kinds you
+  soloed and hid everything else — so one click could empty your whole feed, and it looked exactly
+  like the filter had broken. **Every "FeedHacker is hiding everything" report we have ever had
+  traced to it**, and none to the AI. It also quietly switched the AI-slop filter *off* while it
+  was on, because it decided what to hide before the AI was ever consulted.
+
+  Each filter now has one **M** button: on hides that kind, off doesn't. Nothing overrides
+  anything else. **If you had a Solo set, it has been cleared and your Mute settings are exactly
+  as you left them** — your feed will simply stop hiding things you never asked it to hide.
+
+  The popup is regrouped to match: **AI slop** now sits at the top with its own on/off and the
+  sensitivity slider, because it is a learned model rather than a fixed rule, and the plain
+  post-kind filters sit below it under **Also hide**.
+
 ### Internal (no user-visible change)
 - **The release pipeline no longer reports a refused store request as "normal".** When FeedHacker
   is released, CI first asks the Chrome Web Store to withdraw any version still in review. That

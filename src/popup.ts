@@ -1,4 +1,4 @@
-// Popup UI — the Mute/Solo mixer. Filter list + defaults come from the shared
+// Popup UI — the mute mixer. Filter list + defaults come from the shared
 // filters.js (single source of truth). Also surfaces the error log and lets the
 // user clear errors or reset the learned AI-slop weights.
 (function () {
@@ -11,18 +11,21 @@ var DEFAULTS = Filters.DEFAULTS;
 var WEIGHTS_KEY = "feedhacker:slopWeights";
 
 var box = byId("filters");
+// "sloppy" is deliberately NOT in this list. The AI-slop filter is a learned model with a
+// sensitivity dial, not a binary rule about a kind of post, so it gets its own section in
+// popup.html with a static button carrying data-key="muteSloppy" — the same wiring below
+// paints and toggles it. Solo was removed in 0.8.0; every row is now a single on/off M.
 FILTERS.forEach(function (f) {
+  if (f.id === "sloppy") return;
   var row = document.createElement("div"); row.className = "frow";
   var name = document.createElement("span"); name.className = "fname"; name.textContent = f.label;
   var m = document.createElement("button"); m.className = "ms"; m.textContent = "M"; m.dataset.key = "mute" + f.key; m.dataset.kind = "m";
-  var s = document.createElement("button"); s.className = "ms"; s.textContent = "S"; s.dataset.key = "solo" + f.key; s.dataset.kind = "s";
-  row.appendChild(name); row.appendChild(m); row.appendChild(s);
+  row.appendChild(name); row.appendChild(m);
   box.appendChild(row);
 });
 
 function paint(b, on) {
-  var cls = b.dataset.kind === "m" ? "m-on" : "s-on";
-  b.classList.toggle(cls, !!on);
+  b.classList.toggle("m-on", !!on);
 }
 
 // Master enable/disable — pauses all filtering without uninstalling.
@@ -117,7 +120,7 @@ DISPLAY.forEach(function (id) {
 });
 
 // The error log is surfaced on the Options page (Advanced Settings), not here — the popup
-// is the quick Mute/Solo mixer and shouldn't double as an error console. See options.ts.
+// is the quick mute mixer and shouldn't double as an error console. See options.ts.
 
 // --- reset learning -------------------------------------------------------
 byId("reset-learning").addEventListener("click", function () {

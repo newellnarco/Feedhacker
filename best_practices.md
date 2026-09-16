@@ -494,6 +494,21 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     down only alongside the reach of the search that failed to find it.
 
 
+57. **When a feature's failure mode keeps producing bug reports, remove the feature — and count
+    the reports before defending it.** Mitigation gets one honest attempt; if the reports keep
+    coming, the design is the defect. Solo mode (FH-057) had **every** "it's hiding everything"
+    report this project ever received, and the AI had none — yet three rounds of work went into
+    the AI because the symptom pointed there. 0.5.0 then did the reasonable thing: named the mode
+    on the stub and added a one-click exit. Three more reports followed. That is the signal to
+    stop labelling and start deleting. Two things make this rule safe to apply: **count**, don't
+    recall — go through the bug ledger and attribute each report to a cause, because intuition
+    will blame the complicated subsystem over the simple toggle; and **the leftover state is the
+    real risk, not the deletion** — a removed feature's persisted settings must be actively
+    deleted and evicted from sync, never merely ignored, or they keep acting through whatever
+    still enumerates them. Removing a feature also removes its bug class outright: FH-056 existed
+    only because solo and author-mute could disagree, and cannot recur.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

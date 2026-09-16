@@ -87,4 +87,14 @@ async function launchOptions({ local, sync }) {
   return { ctx, page, sw, id, close };
 }
 
-module.exports = { resolveChrome, extensionBuilt, launchFeed, launchOptions, EXT, ROOT };
+// Same as launchOptions, but opens popup.html — the toolbar mixer. Worth its own launcher
+// because the popup writes settings directly, and some of its controls are static markup wired
+// by a querySelectorAll at load: if the wiring and the markup ever disagree, a button silently
+// does nothing and only a browser notices.
+async function launchPopup({ local, sync }) {
+  const o = await launchOptions({ local, sync });
+  await o.page.goto(`chrome-extension://${o.id}/popup.html`, { waitUntil: "domcontentloaded" });
+  return o;
+}
+
+module.exports = { resolveChrome, extensionBuilt, launchFeed, launchOptions, launchPopup, EXT, ROOT };

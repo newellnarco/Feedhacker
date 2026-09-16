@@ -21,7 +21,7 @@
   // you") carry the same hidden "Feed post" heading a real post does, so findPostContainers()
   // hands them to the scan and we judged, author-attributed and hid them as member posts — one
   // was attributed to "Jobs recommended for youVice President, Apps". FH-050 only stopped them
-  // being hidden as AI SLOP (it requires 20 words of prose); solo and mute have no such gate, so
+  // being hidden as AI SLOP (it requires 20 words of prose); mute has no such gate, so
   // on the 2026-09-15 capture both modules were hidden as ordinary posts.
   //
   // The cost here is asymmetric, so identification is deliberately conservative and fails
@@ -247,19 +247,9 @@
     for (var i = 0; i < FILTER_IDS.length; i++) if (s[kind + cap(FILTER_IDS[i])]) out.push(FILTER_IDS[i]);
     return out;
   }
-  // "AI slop and Promoted posts" — the soloed kinds, named in the solo stub's label.
-  function soloLabels(ids) {
-    var F = root.FeedHackerFilters, names: any[] = [];
-    for (var i = 0; i < ids.length; i++) {
-      var lbl = F && typeof F.labelFor === "function" ? F.labelFor(ids[i]) : "";
-      names.push(lbl || ids[i]);
-    }
-    if (names.length <= 1) return names.join("");
-    return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
-  }
   function anyActive(s) {
     if (!s) return false;
-    if (listActive(s, "mute").length > 0 || listActive(s, "solo").length > 0) return true;
+    if (listActive(s, "mute").length > 0) return true;
     if (s.customActive) return true;        // user has custom filters configured
     if (s.authorMutesActive) return true;   // user has muted at least one author
     return false;
@@ -546,9 +536,6 @@
     if (typeof settings.onInteract === "function") settings.onInteract();   // pause background re-tuning so it can't swallow the next click
     var flags = readReasons(el);
     switch (btn.getAttribute("data-fh-act")) {
-      case "unsolo":
-        if (typeof settings.onClearSolo === "function") settings.onClearSolo();
-        break;
       case "ungroup":
         ungroupRun(doc, el, settings);
         break;
@@ -768,18 +755,6 @@
     }
   }
 
-  // Solo mode hides every post that isn't a soloed kind, so it can empty a whole feed from
-  // one toggle in the popup. Whenever that is why a row is hidden, the stub carries the way
-  // back out — otherwise the only exit is knowing to open the popup and find the green S.
-  function appendSoloExit(doc, flags, actions, settings) {
-    if (!hasFlag(flags, "filtered")) return;
-    if (!settings || typeof settings.onClearSolo !== "function") return;
-    var out = twoRowButton(doc, "feedhacker-show", "Show", "everything");
-    out.title = "Turn off solo mode and show the whole feed";
-    out.setAttribute("data-fh-act", "unsolo");
-    actions.appendChild(out);
-  }
-
   // Small green check, shown on the AI-slop button once the user has confirmed the post.
   function checkIcon(doc) {
     return iconSvg(doc, { stroke: "currentColor", sw: "2.6" }, [
@@ -858,7 +833,6 @@
     actions.appendChild(hide);
 
     appendAuthorActions(doc, el, stub, actions, settings);
-    appendSoloExit(doc, flags, actions, settings);
 
     var btn = twoRowButton(doc, "feedhacker-show", "Show", "anyway");
     btn.setAttribute("data-fh-act", "show");
@@ -1014,7 +988,6 @@
       yes.setAttribute("data-fh-act", "confirm-group");
       actions.appendChild(yes);
     }
-    appendSoloExit(doc, readReasons(head), actions, settings);
     var btn = twoRowButton(doc, "feedhacker-show", "Show", "all");
     btn.setAttribute("data-fh-act", "ungroup");
     actions.appendChild(btn); stub.appendChild(actions);
@@ -1213,7 +1186,7 @@
     el.dataset.feedhackerScanned = "1";
 
     // LinkedIn's own furniture is not a post: never judged, never author-attributed, never
-    // hidden — by ANY path, solo and mute included (FH-053). Marked so a later pass skips it.
+    // hidden — by ANY path, mute included (FH-053). Marked so a later pass skips it.
     if (isFurniture(el, text)) { el.dataset.feedhackerFurniture = "1"; return null; }
 
     // Has this POST (not this node) already been judged? Re-apply the same verdict SILENTLY —
@@ -1235,10 +1208,6 @@
       ledger[pkey] = { hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null };
     }
 
-    // Solo is a POSITIVE selection — "show me only these kinds" — so it has to be known BEFORE
-    // the author block, which is where an author mute would otherwise end the story (FH-056).
-    var solos = listActive(settings, "solo");
-
     // Author memory: an allowlisted author is always shown; a muted author is always
     // hidden — both independent of the per-kind toggles.
     var A = root.FeedHackerAuthors, info: any = null;
@@ -1249,17 +1218,7 @@
       var key = A.keyFor(author());
       if (key) {
         if (A.isAllowed(settings.authors, key)) { remember(false, [], false, null); return null; }
-        // FH-056: an author mute must NOT outrank solo. In solo mode the soloed kinds ARE the
-        // whitelist, so a muted author's post that matches one is something the user has
-        // positively asked to see — and their posts that do NOT match are hidden by solo a few
-        // lines below anyway, so deferring here costs the mute nothing.
-        //
-        // The real feed that found this: solo was set to Hiring and every post was hidden. One
-        // post in 63 was a genuine hiring ad ("Disney is hiring! Hundreds and hundreds of posted
-        // roles") — and its author was muted, so it died here, before solo was ever consulted.
-        // The user saw an empty feed and a filter that looked broken, when the one post they had
-        // asked for had been found correctly and then discarded by the other setting.
-        if (A.isMuted(settings.authors, key) && !solos.length) {
+        if (A.isMuted(settings.authors, key)) {
           // Soft block: an already-muted author's posts just don't appear — hidden
           // outright, no stub. (Manage/unmute them from the options page.)
           recordOutcome(settings, author(), true);
@@ -1272,32 +1231,18 @@
     }
 
     var muted = listActive(settings, "mute");
-    // Custom user filters act as always-on hides (only in mute mode; solo is already
-    // restrictive). Computed here so they count toward "should we hide this".
+    // Custom user filters act as always-on hides. Computed here so they count toward
+    // "should we hide this".
     var custom: any[] = [];
-    if (!solos.length && root.FeedHackerCustom && settings.customCompiled) {
+    if (root.FeedHackerCustom && settings.customCompiled) {
       custom = root.FeedHackerCustom.match(text, author(), settings.customCompiled);
     }
-    if (!solos.length && !muted.length && !custom.length) { remember(false, [], false, null); return null; }
+    if (!muted.length && !custom.length) { remember(false, [], false, null); return null; }
     // Capture the author + opening line while the post is still visible (innerText goes
     // empty once we hide it). The slop stub reads both back; the name also feeds "Name
     // names". Cheap here — only posts past the early-returns above reach this.
     var actor = author().name;                       // stashes feedhackerActor/-ActorUrl if not already
     el.dataset.feedhackerPreview = firstBodyLine(text, actor);
-
-    if (solos.length) {   // Solo wins: show ONLY soloed kinds, hide the rest.
-      var flagsS = matchedFlags(el, matchers, solos, text, settings);
-      if (flagsS.length) { remember(false, [], false, null); return null; }
-      // Solo hides EVERYTHING that isn't a soloed kind, so on a normal feed it hides nearly
-      // every post. Say so on the stub — a bare "Filtered out" left users unable to tell a
-      // one-toggle mode from a runaway AI-slop model (FH-051), and appendSoloExit adds the way
-      // back out. The soloed kinds go in the LABEL rather than the detail because stub line 1
-      // renders labels only (labelsText drops detail — the slop splat carries its own).
-      var soloFlags = [{ id: "filtered", label: "Solo mode: showing only " + soloLabels(solos), detail: "" }];
-      collapse(doc, el, soloFlags, settings);
-      remember(true, soloFlags, false, ["filtered"]);
-      return ["filtered"];
-    }
 
     var flags = matchedFlags(el, matchers, muted, text, settings);
     if (custom.length) flags.push({ id: "custom", label: "Custom filter", detail: root.FeedHackerCustom.detail(custom) });

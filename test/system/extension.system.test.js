@@ -38,8 +38,9 @@ test("hides a Promoted post end-to-end when Promoted muting is on", { skip, time
 });
 
 // FH-053: LinkedIn's own feed modules wear the same hidden "Feed post" heading a real post
-// does. Solo hides everything that is not a soloed kind and has no prose gate, so before the
-// guard these were hidden as if a member had written them. Driven in a real browser because a
+// does. Mute has no prose gate, so before the guard these were hidden as if a member had
+// written them. (Solo, which hid everything off-category, was removed in 0.8.0 — this case used
+// to run under it and reads the same under mute.) Driven in a real browser because a
 // scan change is only done on the live feed (best_practices §28): the module carries no
 // per-post overflow control, the real post does, and that asymmetry is what tells them apart.
 const FURNITURE_FIXTURE = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
@@ -48,17 +49,17 @@ const FURNITURE_FIXTURE = `<!doctype html><html><head><title>Feed</title></head>
   ${post("p-human", `<button aria-label="Open control menu for post by Avery Lindqvist"></button><div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}
 </div></main></body></html>`;
 
-test("solo mode never hides LinkedIn's own feed modules end-to-end", { skip, timeout: 60000 }, async () => {
-  // Solo on Promoted: the ad survives, the human post is hidden, the module is left alone.
-  const { page, close } = await launchFeed({ fixtureHtml: FURNITURE_FIXTURE, sync: { soloPromoted: true } });
+test("a mute never hides LinkedIn's own feed modules end-to-end", { skip, timeout: 60000 }, async () => {
+  // Mute Promoted: the ad is hidden, the module is left alone, the human post is untouched.
+  const { page, close } = await launchFeed({ fixtureHtml: FURNITURE_FIXTURE, sync: { mutePromoted: true } });
   try {
-    await page.waitForSelector("#p-human.feedhacker-hidden", { timeout: 20000 });
+    await page.waitForSelector("#p-ad.feedhacker-hidden", { timeout: 20000 });
     const modHidden = await page.locator("#p-mod").evaluate((el) => el.classList.contains("feedhacker-hidden"));
-    assert.strictEqual(modHidden, false, "a LinkedIn module must survive solo mode");
+    assert.strictEqual(modHidden, false, "a LinkedIn module must never be hidden");
     const marked = await page.locator("#p-mod").evaluate((el) => el.dataset.feedhackerFurniture);
     assert.strictEqual(marked, "1", "and be recognised as furniture, not judged as a post");
-    const adHidden = await page.locator("#p-ad").evaluate((el) => el.classList.contains("feedhacker-hidden"));
-    assert.strictEqual(adHidden, false, "the soloed kind is what stays visible");
+    const humanHidden = await page.locator("#p-human").evaluate((el) => el.classList.contains("feedhacker-hidden"));
+    assert.strictEqual(humanHidden, false, "muting one kind must not touch anything else");
   } finally {
     await close();
   }

@@ -39,7 +39,7 @@ var LOCAL_KEYS = [
 var SLOP_LOCAL_KEYS = [WEIGHTS_KEY, TRAIN_KEY, OBS_KEY, CAL_KEY, SLOPLOG_KEY];
 // The sync-side AI tuning the model writes back — auto-calibration persists slopThreshold and
 // the popup's aggression slider persists both. Restored from buildDefaults(), never a literal.
-// Every mute*/solo*/display key in sync is deliberately left untouched.
+// Every mute*/display key in sync is deliberately left untouched.
 var SLOP_SYNC_KEYS = ["slopThreshold", "slopTargetFrac"];
 
 var LABELS = {};
@@ -90,8 +90,7 @@ function renderStatus(st) {
   paintGrouping(st.groupHiddenRuns !== false);   // default on
   var active: any[] = [];
   Filters.FILTERS.forEach(function (f) {
-    if (st["solo" + f.key]) active.push(f.label + " (solo)");
-    else if (st["mute" + f.key]) active.push(f.label);
+    if (st["mute" + f.key]) active.push(f.label);
   });
   var extras: any[] = [];
   if (st.groupHiddenRuns === false) extras.push("no grouping");
@@ -151,7 +150,7 @@ function renderActivity(stats) {
   var ids = Object.keys(stats.byId || {}).sort(function (a, b) { return stats.byId[b] - stats.byId[a]; });
   ids.forEach(function (id) {
     var tr = document.createElement("tr");
-    var name = LABELS[id] || (id === "filtered" ? "Filtered out (solo)" : id);
+    var name = LABELS[id] || (id === "filtered" ? "Filtered out" : id);
     tr.innerHTML = "<td></td><td class='num'>" + stats.byId[id] + "</td>";
     (tr.firstChild as any).textContent = name;
     tb.appendChild(tr);
@@ -242,7 +241,7 @@ byId("clear-errors").addEventListener("click", function () {
   });
 });
 // Reset the AI back to the algorithm a new install ships with — and nothing else. Your filter
-// choices are none of this: mute, solo, muted/always-shown authors, custom filters and display
+// choices are none of this: mute, muted/always-shown authors, custom filters and display
 // settings are all left exactly as they are, so you can reset the model without rebuilding your
 // setup. (Factory reset is the one that clears those too.)
 byId("reset-learning").addEventListener("click", function () {
@@ -253,7 +252,7 @@ byId("reset-learning").addEventListener("click", function () {
     "  • the posts it observed and its self-tuning\n" +
     "  • the AI decision log\n\n" +
     "The AI goes back to the algorithm a new install ships with. Your filter choices are " +
-    "untouched — mute, solo, muted authors, custom filters and display settings all stay " +
+    "untouched — mute, muted authors, custom filters and display settings all stay " +
     "exactly as they are. This cannot be undone."
   )) return;
   var b = byId("reset-learning");

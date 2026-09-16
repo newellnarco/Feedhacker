@@ -82,17 +82,21 @@ test("consider() leaves a normal human post visible", () => {
   assert.ok(!el.classList.contains("feedhacker-hidden"));
 });
 
-test("solo mode hides everything except the soloed kind", () => {
+test("each mute toggle stands alone — it hides its own kind and nothing else", () => {
+  // Solo was removed in 0.8.0; mute is now the only mode. Muting Promoted must hide the ad and
+  // leave an ordinary post alone — the inverse of what solo used to do, and the whole point of
+  // the change: one toggle can no longer empty a feed.
   const doc = makeDoc(feedHtml(
     post("<span>Promoted</span><div>an ad</div>") +
     post("<div>just a normal human update about my weekend</div>")
   ));
   const [ad, normal] = feed.findPostContainers(doc);
-  const settings = baseSettings({ muteSloppy: false, soloPromoted: true });
-  assert.strictEqual(feed.consider(doc, ad, [], settings), null, "promoted kept visible");
-  const r = feed.consider(doc, normal, [], settings);
-  assert.deepStrictEqual(r, ["filtered"]);
-  assert.ok(normal.classList.contains("feedhacker-hidden"));
+  const settings = baseSettings({ muteSloppy: false, mutePromoted: true });
+  const r = feed.consider(doc, ad, [], settings);
+  assert.ok(r && r.length, "the muted kind is hidden");
+  assert.ok(ad.classList.contains("feedhacker-hidden"));
+  assert.strictEqual(feed.consider(doc, normal, [], settings), null,
+    "everything else stays visible — muting one kind must never hide the rest");
 });
 
 test("hideCompletely removes the post with no stub", () => {
@@ -328,12 +332,15 @@ test("no unfollow automation is exposed by the API", () => {
   assert.strictEqual(feed.humanClick, undefined);
 });
 
-test("anyActive reflects mute/solo toggles, custom filters, and author mutes", () => {
+test("anyActive reflects mute toggles, custom filters, and author mutes", () => {
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false })), false);
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: true })), true);
-  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, soloHiring: true })), true);
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, muteHiring: true })), true);
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, customActive: true })), true);
   assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, authorMutesActive: true })), true);
+  // A stale solo key from a pre-0.8.0 install must NOT count as an active filter.
+  assert.strictEqual(feed.anyActive(baseSettings({ muteSloppy: false, soloHiring: true })), false,
+    "a legacy solo key is inert");
 });
 
 test("muted author is hidden regardless of content; allowed author always shows", () => {

@@ -27,7 +27,6 @@
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; cursor: pointer; }
     .ms:hover { background: #f3f4f6; }
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
-    .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
     label.row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; }
     label.row input { margin-top: 2px; flex: 0 0 auto; }
     label.row .t { flex: 1; min-width: 0; }   /* label text + hint flow as one line, not separate flex items */
@@ -65,16 +64,20 @@
   </div>
   <p id="paused-note">Paused — filtering is off. Nothing is hidden.</p>
 
-  <div class="section"><span>Posts</span><span class="key"><b>M</b> mute &nbsp;·&nbsp; <b>S</b> solo</span></div>
-  <div id="filters"></div>
-
-  <div class="section ai"><span>AI-slop</span></div>
+  <div class="section ai"><span>AI slop</span><span class="key">learns from your feed</span></div>
+  <div class="frow">
+    <span class="fname">Hide AI slop</span>
+    <button type="button" class="ms" id="muteSloppy" data-key="muteSloppy" data-kind="m">M</button>
+  </div>
   <div class="frow">
     <span class="slabel">Sensitivity</span>
     <input type="range" id="aggression" min="0.10" max="0.50" step="0.02" style="flex:1">
     <span id="aggressionVal" class="muted" style="white-space:nowrap; text-align:right"></span>
   </div>
   <label class="row"><input type="checkbox" id="hideSlopComments"><span class="t">Hide AI-slop comments</span></label>
+
+  <div class="section"><span>Also hide</span><span class="key"><b>M</b> mute</span></div>
+  <div id="filters"></div>
 
   <div class="section"><span>Feed display</span></div>
   <label class="row"><input type="checkbox" id="groupHiddenRuns"><span class="t">Group flagged posts <span class="muted">(collapse a run into one row)</span></span></label>
@@ -91,8 +94,8 @@
     <div class="help-card">
       <button type="button" id="help-close" class="help-close" aria-label="Close help">×</button>
       <h2 id="help-title">How FeedHacker works</h2>
-      <p><b>Mute (M)</b> hides that kind of post; <b>Solo (S)</b> shows <i>only</i> the soloed kinds.</p>
-      <p><b>AI‑slop</b> is scored and the model self‑tunes to your feed. <b>Sensitivity</b> sets how much of the feed to hide — the model aims for that share of the sloppiest posts (and it still applies when self‑tuning is off).</p>
+      <p><b>AI slop</b> is the main filter: posts are scored by how they are <i>written</i>, and the model tunes itself to your feed from what you show and hide. <b>Sensitivity</b> sets how much of the feed to aim at — the sloppiest share.</p>
+      <p><b>Also hide</b> is a plain on/off list of post <i>kinds</i>. <b>M</b> hides that kind. Nothing else is needed — each toggle stands alone.</p>
       <p>The <b>Feed display</b> toggles change how hidden posts look — including whether long runs of hidden posts collapse into one row.</p>
     </div>
   </div>

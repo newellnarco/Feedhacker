@@ -62,7 +62,6 @@
       width: 26px; height: 24px; border: 1px solid #c7ccd4; border-radius: 6px;
       background: #fff; color: #8a94a3; font-weight: 700; font-size: 12px; }
     .ms.m-on { background: #c2410c; border-color: #c2410c; color: #fff; }   /* mute = amber */
-    .ms.s-on { background: #047857; border-color: #047857; color: #fff; }   /* solo = green */
     .actions-key td { vertical-align: top; border-bottom: 1px solid #eef0f3; }
     .actions-key tr:last-child td { border-bottom: 0; }
     .actions-key td:first-child { width: 40px; text-align: center; padding-top: 9px; }
@@ -91,7 +90,7 @@
 </head>
 <body>
   <h1>FeedHacker</h1>
-  <p class="sub">Details, activity, and diagnostics. The Mute/Solo mixer lives in the toolbar popup.</p>
+  <p class="sub">Details, activity, and diagnostics. The mute mixer lives in the toolbar popup.</p>
 
   <details class="panel" open>
     <summary><h2>Status</h2></summary>
@@ -112,23 +111,24 @@
   <details class="panel" open>
     <summary><h2>Actions</h2></summary>
     <div class="panel-body">
-      <p class="muted" style="margin:0 0 12px;">The Mute / Solo buttons on each filter row in the
-        toolbar popup, and what they affect.</p>
+      <p class="muted" style="margin:0 0 12px;">The Mute button on each filter row in the
+        toolbar popup, and what it affects.</p>
       <table class="actions-key">
         <tbody>
           <tr>
             <td><span class="ms m-on">M</span></td>
             <td><span class="act-name">Mute</span> — hides posts of that type. The post collapses to a
-              small stub you can expand. Turn Mute on for any filters you want gone.</td>
-          </tr>
-          <tr>
-            <td><span class="ms s-on">S</span></td>
-            <td><span class="act-name">Solo</span> — the “show me just this” mode: shows only that type and hides
-              everything else, so you can audit what a filter is catching. While any Solo is on it overrides the
-              Mutes. <span class="muted">Example: Solo “Hiring posts” → your feed shows only hiring posts.</span></td>
+              small stub you can expand. Turn Mute on for any filters you want gone. Each toggle
+              stands alone: nothing overrides anything else.</td>
           </tr>
         </tbody>
       </table>
+      <p class="muted" style="margin:12px 0 0;"><b>Solo mode was removed in 0.8.0.</b> It showed
+        <i>only</i> the soloed kinds and hid everything else, which meant one click could empty a
+        whole feed — every “FeedHacker is hiding everything” report we ever received traced to it,
+        and none to the AI. It also short-circuited before the AI-slop model, silently switching
+        the model off and freezing its decision log for as long as it was on. If you had a Solo
+        set, it has been cleared and your Mute settings are untouched.</p>
     </div>
   </details>
 

@@ -34,6 +34,16 @@ function post(text, author) {
     `<button aria-label="Open control menu for post by ${author}"></button>` +
     `<div>${text} #${++n}</div></div>`;
 }
+// A real post that a mute WILL hide (Promoted), so "the guard did not switch filtering off"
+// can actually be asserted. Solo used to hide everything, which made this trivial; with mute
+// the post has to genuinely match a muted kind.
+function adPost(text, author) {
+  author = author || "Acme Corp";
+  return `<div class="post"><h2>Feed post</h2>` +
+    `<button aria-label="Open control menu for post by ${author}"></button>` +
+    `<a href="https://www.linkedin.com/company/acme">Acme</a><span>Promoted</span>` +
+    `<div>${text} #${++n}</div></div>`;
+}
 // A LinkedIn feed module: same marker heading, and NO overflow control.
 function module_(heading, body) {
   return `<div class="mod"><h2>Feed post</h2><div>${heading}</div><div>${body}</div></div>`;
@@ -50,14 +60,15 @@ const JOBS = module_("Jobs recommended for you", "Vice President, Apps (Verified
 // below therefore keeps at least two markers on the page, as a real feed always does.
 const FILLER = () => post(HUMAN);
 
-// Solo on "promoted" hides everything that is not a promoted post — the path that hid the
-// modules in the real capture, and the one FH-050's prose gate never sees.
+// Mute on "promoted" is the path that hid the modules in the real capture (solo, which did the
+// same thing more aggressively, was removed in 0.8.0) — and the one FH-050's prose gate never
+// sees. The module carries "Promoted"-free text, so only the guard keeps it visible.
 function soloSettings(over) {
-  return baseSettings(Object.assign({ soloPromoted: true, onClearSolo() {} }, over || {}));
+  return baseSettings(Object.assign({ muteCompany: true, muteHiring: true, mutePromoted: true }, over || {}));
 }
 
-test("solo mode hides real posts but leaves LinkedIn's own modules alone", () => {
-  const doc = makeDoc(feedHtml(VIEWED + post(HUMAN) + JOBS));
+test("a mute hides real posts but leaves LinkedIn's own modules alone", () => {
+  const doc = makeDoc(feedHtml(VIEWED + adPost("buy our thing") + JOBS));
   feed.scan(doc, [], soloSettings());
 
   const mods = doc.querySelectorAll(".mod");
@@ -101,11 +112,11 @@ test("a muted author cannot be matched out of a module's text", () => {
 test("FAILS CLOSED: a real post that merely opens with a module heading is still filtered", () => {
   // Someone writing "People you may know..." is still a post — it has an overflow control, and
   // one signal alone must never be enough to exempt it.
-  const doc = makeDoc(feedHtml(post("People you may know are hiring right now. " + HUMAN) + FILLER()));
+  const doc = makeDoc(feedHtml(adPost("People you may know are hiring right now. " + HUMAN) + FILLER()));
   feed.scan(doc, [], soloSettings());
   const el = doc.querySelector(".post");
   assert.notStrictEqual(el.dataset.feedhackerFurniture, "1", "it is a post, not furniture");
-  assert.strictEqual(el.dataset.feedhackerHidden, "1", "so solo mode still hides it");
+  assert.strictEqual(el.dataset.feedhackerHidden, "1", "so the Promoted mute still hides it");
 });
 
 test("FAILS CLOSED: an UNRECOGNISED module is scanned exactly as before", () => {
@@ -115,7 +126,8 @@ test("FAILS CLOSED: an UNRECOGNISED module is scanned exactly as before", () => 
   feed.scan(doc, [], soloSettings());
   const el = doc.querySelector(".mod");
   assert.notStrictEqual(el.dataset.feedhackerFurniture, "1", "not claimed as furniture");
-  assert.strictEqual(el.dataset.feedhackerHidden, "1", "and handled as it was before the guard");
+  assert.strictEqual(el.dataset.feedhackerScanned, "1",
+    "it goes through the ordinary post path, exactly as before the guard existed");
 });
 
 test("isFurniture needs BOTH signals — neither alone is enough", () => {
