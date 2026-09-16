@@ -539,6 +539,22 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     without its tag branch reads perfectly and stops shipping to users.
 
 
+60. **A broken destructive call is not a safe one — repairing its credentials arms it.** A
+    privileged call that has been failing (403, bad id, expired token) is doing nothing, and a
+    pipeline quietly comes to depend on that nothing: it gets called blind, unconditionally, on
+    every run, and nobody notices because the failure is inert. The day someone fixes the
+    credential, every one of those blind invocations becomes live **at once**, and the first one
+    runs against whatever state happens to exist right then. FH-055 is the case: `cancelSubmission`
+    was refused three releases running, so it was a guaranteed no-op; the moment the publisher id
+    was corrected it became capable of withdrawing a submission that was *mid-review* — turning a
+    safe `ITEM_NOT_UPDATABLE` refusal into a silent undo. So when you fix such a credential:
+    **state what the call will now do, and to what**, before the next run; check whether anything
+    is in a state the call would destroy; and prefer making the call **conditional on the state it
+    intends to change** (ask what is pending, act only if it is what you mean to replace) over
+    calling it blind and relying on the error. A no-op you never see is indistinguishable from a
+    guard you never wrote.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
