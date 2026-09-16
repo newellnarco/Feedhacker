@@ -58,7 +58,7 @@ FeedHacker so its icon stays visible.
 ## 6. Use it
 
 Open your **LinkedIn feed** (`https://www.linkedin.com/feed/`), click the
-FeedHacker icon, and set your Mute/Solo filters. The toolbar badge shows how many
+FeedHacker icon, and set your mute filters. The toolbar badge shows how many
 posts are hidden on the page. Open **Details & activity** in the popup for the
 options page (custom filters, muted authors, insights, error log).
 

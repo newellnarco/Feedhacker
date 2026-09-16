@@ -244,7 +244,7 @@ Then, in the Developer Dashboard, use the files here:
   privacy-policy.md            - privacy policy (host it and paste the URL)
   promo-small-440x280.jpg      - Small promo tile
   promo-marquee-1400x560.jpg   - Marquee promo tile
-  screenshot-1-mixer.png       - Screenshot: Mute/Solo mixer (1280x800)
+  screenshot-1-mixer.png       - Screenshot: the mute mixer (1280x800)
   screenshot-2-detection.png   - Screenshot: AI-slop detection panel (1280x800)
   screenshot-3-stub.png        - Screenshot: hidden-post stub (1280x800)
   store-icon-128.png           - 128x128 opaque store icon (Fh mark)

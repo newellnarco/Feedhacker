@@ -3,7 +3,7 @@
 **Mute the noise in your LinkedIn feed.** FeedHacker is a Chrome (Manifest V3)
 extension that hides AI‑generated "slop," promoted posts, engagement‑bait
 reshares, newsletter funnels, hiring posts, and other low‑signal content from
-your LinkedIn home feed — driven by a per‑filter **Mute / Solo** mixer.
+your LinkedIn home feed — driven by a per‑filter **mute** mixer.
 
 > Unofficial, unaffiliated with LinkedIn. Runs entirely in your browser; nothing
 > is sent to any server.
@@ -33,11 +33,21 @@ or removed entirely if you prefer.
 | **Work anniversaries** | "Celebrating N years at…" |
 | **Training & certification** | "I'm happy to share I earned…" |
 
-Each filter has two independent toggles:
+Each filter has one toggle:
 
-- **M (Mute)** — hide posts of this kind.
-- **S (Solo)** — show *only* posts of soloed kinds and hide everything else.
-  Solo wins over mute.
+- **M (Mute)** — hide posts of this kind. On hides it, off doesn't, and nothing
+  overrides anything else.
+
+**AI slop** sits apart from that list, with its own on/off and a sensitivity
+slider, because it is a learned model rather than a fixed rule about a kind of
+post.
+
+> **Solo mode was removed in 0.8.0.** It showed *only* the soloed kinds and hid
+> everything else, so one click could empty a whole feed — every "FeedHacker is
+> hiding everything" report we received traced to it. It also short‑circuited
+> before the AI‑slop model, switching the model off and freezing its decision log
+> for as long as it was on. A leftover Solo setting is cleared on upgrade; mutes
+> are untouched.
 
 ### AI‑slop scoring that learns
 
@@ -105,8 +115,8 @@ of the standard filters.
   signal with its plain‑English description and your current learned weight, plus
   the full curated phrase list (searchable) — so you can see exactly why a post is
   flagged.
-- **Actions legend** — an options‑page card explaining what the Mute / Solo
-  buttons each affect.
+- **Actions legend** — an options‑page card explaining what the Mute button
+  affects.
 
 ### Extra options
 
@@ -198,7 +208,7 @@ feed.js           pure DOM layer — find posts, classify, collapse/reveal
 logger.js         pure error-log ring buffer helpers
 content.js        glue — storage, banlist, learned weights, authors, errors, observer
 background.js     service worker — per-tab badge (hidden count / error state)
-popup.html/.js    Mute/Solo mixer + master switch + Aggression slider + links
+popup.html/.js    mute mixer + AI-slop toggle/sensitivity + master switch + links
 options.html/.js  details, activity, insights, custom filters, authors, model I/O
 styles.css        stub + load-more styling
 claudisms.json    the AI-slop phrase banlist (one signal feeding the scorer)
