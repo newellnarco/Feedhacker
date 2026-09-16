@@ -4,10 +4,28 @@
     "updated": "2026-07-10",
     "liveVersion": "0.4.4",
     "note": "Canonical roadmap for FeedHacker — committed work only (ideas not yet committed live in the Discussions doc). Status: pending = committed, in progress or upcoming · closed = shipped and live. IDs are permanent; only status/version change as work moves. Categories: filter, ai, ux, engine, infra, bug.",
-    "statuses": ["pending", "closed"],
-    "categories": ["filter", "ai", "ux", "engine", "infra", "bug"]
+    "statuses": [
+      "pending",
+      "closed"
+    ],
+    "categories": [
+      "filter",
+      "ai",
+      "ux",
+      "engine",
+      "infra",
+      "bug"
+    ]
   },
   "items": [
+    {
+      "id": "FH-057",
+      "name": "Remove solo mode — one on/off per filter",
+      "description": "Solo showed only the soloed kinds and hid everything else, so a single click could empty a feed. Every “hiding everything” report traced to it, and none to the AI; it also short-circuited before the scorer, disabling the AI-slop model and freezing its decision log while on. Removed: mute is the only per-kind toggle, AI slop gets its own section with a sensitivity slider, and a legacy solo* key is deleted from settings and evicted from sync.",
+      "status": "closed",
+      "category": "filter",
+      "version": "0.8.0"
+    },
     {
       "id": "FH-004",
       "name": "Autonomous AI-slop self-calibration",
@@ -43,7 +61,10 @@
       "category": "ux",
       "version": "0.4.4",
       "consideration": "Keep grouping optional — not the only way. Folding a run of hidden posts into one \"N hidden\" row is handy, but plenty of people would rather see each hidden post as its own small stub and choose what to open by what it is, instead of a whole screenful springing open at once. So keep the older one-at-a-time view as a choice, not a forced replacement. Needs design comps and light specs for both states — grouped and individual — on the Hidden Posts page, with requirements cross-linked. (Comps pending.)",
-      "doc": { "page": "hidden-posts.html", "label": "Hidden Posts design doc" }
+      "doc": {
+        "page": "hidden-posts.html",
+        "label": "Hidden Posts design doc"
+      }
     },
     {
       "id": "FH-008",
@@ -61,15 +82,20 @@
       "category": "ux",
       "version": "0.4.5",
       "consideration": "Jason's 0.4.5 (on GitHub, not yet on the store) drops the overflowing percentage — good — but keeps a single word and labels the low end 'strict,' which is backwards: strict reads as heavy filtering, the same end as Aggressive. The proposal still stands: Light / Balanced / Aggressive shown under the track, with 'Light' marking the hide-less end. See the popup proposal.",
-      "doc": { "page": "popup.html#proposed", "label": "the popup proposal" }
+      "doc": {
+        "page": "popup.html#proposed",
+        "label": "the popup proposal"
+      }
     },
     {
       "id": "FH-010",
-      "name": "Mute / Solo per-filter mixer",
-      "description": "Each filter has independent Mute (hide this kind) and Solo (show only this kind) toggles; Solo wins over Mute.",
+      "name": "Mute / Solo per-filter mixer (Solo removed in 0.8.0)",
+      "description": "Each filter had independent Mute (hide this kind) and Solo (show only this kind) toggles; Solo won over Mute. SUPERSEDED: Solo was removed in 0.8.0 (FH-057) — one click could empty a whole feed and it short-circuited before the AI-slop model. Mute is now the only per-kind toggle; AI slop has its own on/off plus a sensitivity slider.",
       "status": "closed",
       "category": "filter",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "supersededBy": "FH-057",
+      "supersededIn": "0.8.0"
     },
     {
       "id": "FH-011",
@@ -138,7 +164,7 @@
     {
       "id": "FH-019",
       "name": "Company / brand posts filter",
-      "description": "Mute (or Solo) posts authored by a LinkedIn Company or School page — corporate content that isn't a paid \"Promoted\" ad and isn't AI slop. Off by default.",
+      "description": "Mute posts authored by a LinkedIn Company or School page — corporate content that isn't a paid \"Promoted\" ad and isn't AI slop. Off by default.",
       "status": "closed",
       "category": "filter",
       "version": "0.3.0"
@@ -186,7 +212,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #2",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-025",
@@ -197,7 +226,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #1",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-026",
@@ -208,7 +240,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #6",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-034",
@@ -219,7 +254,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #3",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-035",
@@ -230,7 +268,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #4",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-036",
@@ -241,7 +282,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #5",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-037",
@@ -252,7 +296,10 @@
       "version": "0.4.0",
       "source": "Wes proposal",
       "annotation": "The popup · proposed #7",
-      "doc": { "page": "popup.html", "label": "The popup" }
+      "doc": {
+        "page": "popup.html",
+        "label": "The popup"
+      }
     },
     {
       "id": "FH-027",
@@ -317,7 +364,10 @@
       "status": "pending",
       "category": "ux",
       "source": "Wes proposal",
-      "doc": { "page": "welcome.html", "label": "The welcome screen" }
+      "doc": {
+        "page": "welcome.html",
+        "label": "The welcome screen"
+      }
     },
     {
       "id": "FH-039",
@@ -326,7 +376,10 @@
       "status": "pending",
       "category": "ux",
       "source": "Wes proposal",
-      "doc": { "page": "hidden-posts.html", "label": "Hidden Posts" }
+      "doc": {
+        "page": "hidden-posts.html",
+        "label": "Hidden Posts"
+      }
     },
     {
       "id": "FH-040",
@@ -336,7 +389,10 @@
       "category": "ux",
       "version": "0.4.6",
       "source": "Wes proposal",
-      "link": { "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.svg", "label": "Grab the logo — Fh element mark (scalable SVG)" }
+      "link": {
+        "url": "https://github.com/newellnarco/Feedhacker/blob/main/feedhacker-logo.svg",
+        "label": "Grab the logo — Fh element mark (scalable SVG)"
+      }
     },
     {
       "id": "FH-041",
@@ -347,7 +403,10 @@
       "version": "0.4.5",
       "source": "Wes proposal",
       "consideration": "Nearby help is fine; inline-by-default isn't — it spends space and visual priority on something most people need only briefly, if at all. A \"?\" by the Enable toggle keeps it one click away. See the popup proposal.",
-      "doc": { "page": "popup.html#proposed", "label": "the popup proposal" }
+      "doc": {
+        "page": "popup.html#proposed",
+        "label": "the popup proposal"
+      }
     }
   ]
 }

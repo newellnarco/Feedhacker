@@ -2,7 +2,8 @@
 
 FeedHacker is a Manifest V3 Chrome extension that filters low-signal posts out of
 the LinkedIn home feed (AI slop, promoted, hiring, corporate/brand, and more) with a
-Mute/Solo mixer. TypeScript, no bundler; sources in `src/`, built by `npm run build`.
+mute mixer (one on/off per kind, plus the AI-slop model with its own toggle and sensitivity
+slider). TypeScript, no bundler; sources in `src/`, built by `npm run build`.
 
 ## Session continuity (standing rule)
 

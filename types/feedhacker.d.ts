@@ -58,7 +58,7 @@ interface FhCustomFlag { type: string; value: string; }
 interface FhLogEntry { ts: number; iso: string; context: string; msg: string; source: string; }
 
 // Settings passed through the DOM layer. Known keys are typed; callbacks + the
-// long tail of per-filter mute*/solo* booleans use the index signature.
+// long tail of per-filter mute* booleans use the index signature. (solo* was removed in 0.8.0.)
 interface FhSettings {
   enabled?: boolean;
   nameNames?: boolean;

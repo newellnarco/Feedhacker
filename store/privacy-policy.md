@@ -15,7 +15,7 @@ happens locally in your browser.
 FeedHacker uses your browser's local extension storage (`chrome.storage`) to save, on
 your device only:
 
-- Your filter settings (which filters are muted/soloed, sensitivity, custom
+- Your filter settings (which filters are muted, sensitivity, custom
   word/regex/hashtag/company filters, muted authors).
 - A small AI-slop scoring model that adapts to your corrections.
 - Local activity counts (how many posts were hidden) shown on the options page.

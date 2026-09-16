@@ -10,7 +10,7 @@ at the zip root, as the store requires).
   the Developer Dashboard (Account → Publisher / group publisher). It is an account
   setting, not a manifest field; the manifest carries it as `author` for reference.
 - **Name:** FeedHacker
-- **Summary** (≤132 chars; matches the manifest description): Mute the noise in your LinkedIn feed: AI slop, promoted posts, engagement bait, hiring, and more — with a Mute/Solo mixer.
+- **Summary** (≤132 chars; matches the manifest description): Mute the noise in your LinkedIn feed: AI slop, promoted posts, engagement bait, hiring, and more — one toggle per kind.
 - **Category:** Productivity
 - **Language:** English
 
@@ -20,15 +20,16 @@ FeedHacker cleans up your LinkedIn **home feed**. For each post it decides wheth
 post matches one of your enabled filters and, if so, collapses it to a small stub (with
 a "Show anyway" button) or hides it entirely.
 
-Filters you can Mute or Solo:
+Filters you can mute:
 • AI slop — posts that read as AI-generated, scored by a structural algorithm that
   learns from your corrections (not just a word list)
 • Promoted posts • Newsletter signups • Hiring posts • Reaction reshares
 • New-job announcements • Work anniversaries • Training & certification
 
-Each filter has independent **Mute** (hide this kind) and **Solo** (show only this kind)
-toggles. Add your own word/regex/hashtag/company filters, mute specific authors, and see
-what's been hidden.
+**AI slop** has its own on/off plus a sensitivity slider, because it is a learned model
+rather than a fixed rule. Every other filter is a single **Mute** toggle: on hides that
+kind, off doesn't, and nothing overrides anything else. Add your own
+word/regex/hashtag/company filters, mute specific authors, and see what's been hidden.
 
 Everything runs locally in your browser. FeedHacker does not collect, transmit, or sell
 any data. It is unofficial and not affiliated with LinkedIn.
@@ -69,7 +70,7 @@ network requests — its curated AI-slop phrase list ships inside the package.
       `store/brand/logo-lockup-1024.png` (the Fh mark beside the *FeedHacker* wordmark and
       **"created by www.MaxResearchCollective.com"**). Use the lockup wherever the store shows a
       brand image, so the MAX Research Collective credit is visible.
-- [x] **Screenshots 1280×800** — `store/screenshot-1-mixer.png` (the Mute/Solo popup),
+- [x] **Screenshots 1280×800** — `store/screenshot-1-mixer.png` (the mute mixer popup),
       `store/screenshot-2-detection.png` (the AI-slop detection panel), and
       `store/screenshot-3-stub.png` (a hidden post collapsed to its stub).
 - [x] **Small promo tile 440×280** — `store/promo-small-440x280.jpg`.

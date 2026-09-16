@@ -99,7 +99,7 @@ All live in the code and on `main`; version = the release they shipped in.
 | FH-016 | First-run welcome page | 0.2.0 |
 | FH-017 | Collapsible options panels | 0.2.0 |
 | FH-018 | Remove remote banlist | 0.2.0 |
-| FH-010 | Mute / Solo per-filter mixer | 0.1.0 |
+| FH-010 | Mute / Solo per-filter mixer <br>*(Solo removed in 0.8.0 — see FH-057)* | 0.1.0 |
 | FH-011 | Learning AI-slop scorer | 0.1.0 |
 | FH-012 | Author memory (mute + allowlist) | 0.1.0 |
 | FH-013 | Custom filters | 0.1.0 |

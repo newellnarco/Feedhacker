@@ -509,6 +509,21 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     only because solo and author-mute could disagree, and cannot recur.
 
 
+58. **Removing a feature is not done when the code is gone — grep the whole repo, including
+    things no test or compiler reads.** A feature's description outlives its implementation in
+    places nothing validates: packaging metadata, store-listing copy, onboarding and welcome
+    pages, READMEs, install guides, privacy policies, type-definition comments, build-script help
+    text, roadmap/ledger records — and **images**. FH-057 removed solo mode with a full test triad
+    green, and eleven files still told users it existed, two of them user-facing: the
+    `manifest.json` description (which ships *and* is the store summary) and the store listing.
+    So: after the code lands, run one `grep -rni <feature>` over the entire repo minus
+    `node_modules`/`dist`/`build`, and triage every hit into **fix** (anything describing current
+    behaviour), **annotate** (history — a ledger entry that shipped is a fact; add a
+    `supersededBy` rather than deleting it, or the record starts lying about the past), or
+    **regenerate** (screenshots and other assets, which no grep will catch — list them explicitly
+    and treat stale ones as blocking the channel that shows them).
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
