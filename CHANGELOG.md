@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.8.0] — unreleased
+## [0.8.0] — 2026-09-16
 
 ### Changed
 - **Solo mode is gone. Every filter is now a simple on/off.** Solo showed *only* the kinds you
@@ -35,6 +35,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   nothing is in review"* — so a real misconfiguration read as routine, twice. Each outcome now
   says what actually happened, and a refusal is flagged as a warning naming the likely cause.
   Nothing about the extension itself changes.
+
+- **A release can now be cut to GitHub without also going to the Chrome Web Store.** The two
+  destinations shared one switch, so every release went to both — and a store upload publishes
+  to *every* existing store install once Google approves it. They are now separately selectable
+  on a manual release, which is how **0.8.0 ships: downloadable from GitHub, held back from the
+  store** while the filtering changes above are tried on a real feed. Store users stay on 0.7.0
+  until that upload is made deliberately.
 
 ## [0.7.0] — 2026-09-15
 

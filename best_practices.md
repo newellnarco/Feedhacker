@@ -524,6 +524,21 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     and treat stale ones as blocking the channel that shows them).
 
 
+59. **Give each publish destination its own switch, sized to its blast radius.** A pipeline that
+    ships to several places must not gate them on one flag just because they usually run
+    together — the moment they need to diverge, the only options are editing the pipeline
+    mid-release or publishing somewhere you did not intend. The destinations are not equivalent:
+    a GitHub Release is a download someone chooses, while a Chrome Web Store upload
+    auto-updates **every existing install** once Google approves it, so "release this but not to
+    everyone yet" is a routine need (stale screenshots, a listing edit, a version still in
+    review, a build that is deliberately a limited test). Two rules keep the split honest:
+    **default every switch to today's behaviour**, so nobody's existing habit silently starts
+    publishing less; and **test the gates by evaluating them, not by grepping them** — a gate is
+    a boolean expression under several event shapes, and the shape that bites is the one with no
+    inputs at all (a tag push, where `inputs.store` is `undefined`, not `true`). A gate written
+    without its tag branch reads perfectly and stops shipping to users.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed
