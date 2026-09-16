@@ -42,12 +42,15 @@ Each filter has one toggle:
 slider, because it is a learned model rather than a fixed rule about a kind of
 post.
 
-> **Solo mode was removed in 0.8.0.** It showed *only* the soloed kinds and hid
-> everything else, so one click could empty a whole feed — every "FeedHacker is
-> hiding everything" report we received traced to it. It also short‑circuited
-> before the AI‑slop model, switching the model off and freezing its decision log
-> for as long as it was on. A leftover Solo setting is cleared on upgrade; mutes
-> are untouched.
+> **Solo mode is set aside as of 0.8.0 — temporarily, and not because we stopped
+> wanting it.** LinkedIn rebuilt its feed and the markup FeedHacker depended on
+> disappeared, which broke how posts are recognised and told apart. Solo decided
+> what to hide *before* the AI‑slop model was consulted, so while it was on the
+> model never ran and its decision log stopped recording — on an already‑misreading
+> feed that both amplified the symptom and hid the cause. Removing it restored the
+> diagnostics. **We intend to bring one‑kind‑at‑a‑time viewing back** once the new
+> markup is pinned down, rebuilt so it cannot switch the model off. A leftover Solo
+> setting is cleared on upgrade; mutes are untouched.
 
 ### AI‑slop scoring that learns
 

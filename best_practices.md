@@ -494,8 +494,8 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     down only alongside the reach of the search that failed to find it.
 
 
-57. **When a feature's failure mode keeps producing bug reports, remove the feature — and count
-    the reports before defending it.** Mitigation gets one honest attempt; if the reports keep
+57. **When a feature's failure mode keeps producing bug reports, suspect the feature — but only
+    after you have checked what changed underneath it (see §63).** Mitigation gets one honest attempt; if the reports keep
     coming, the design is the defect. Solo mode (FH-057) had **every** "it's hiding everything"
     report this project ever received, and the AI had none — yet three rounds of work went into
     the AI because the symptom pointed there. 0.5.0 then did the reasonable thing: named the mode
@@ -507,6 +507,13 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     deleted and evicted from sync, never merely ignored, or they keep acting through whatever
     still enumerates them. Removing a feature also removes its bug class outright: FH-056 existed
     only because solo and author-mute could disagree, and cannot recur.
+
+    **Amended 2026-09-16.** As first written this rule said flatly that "the design is the
+    defect", and applied that to solo. That was too strong, and §63 is the correction: the reports
+    spiked because **LinkedIn rebuilt its feed**, not because solo's concept was wrong. What made
+    solo the right thing to pull was narrower and still worth acting on — it sat *before* the
+    scorer, so it suppressed the very diagnostics needed to find the real cause. Remove a feature
+    that **blinds you**; be much slower to remove one merely **correlated** with a spike.
 
 
 58. **Removing a feature is not done when the code is gone — grep the whole repo, including
@@ -578,6 +585,25 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     that trap). And **the signal must be independent of the assertion**: waiting for the very class
     you are asserting turns a failing test into a timeout and a real assertion into a tautology
     (§54). Independent synchroniser, then assert.
+
+63. **Before deleting a feature that "causes" a spike in reports, ask what changed underneath it —
+    and check the commit history rather than your memory.** A feature that has been fine for
+    months does not become defective on its own. When reports suddenly cluster on one, the honest
+    first question is what moved *below* it: a dependency, a platform, a page you scrape, an API
+    you call. The cheapest possible check is decisive and takes one command — `git log` over the
+    subsystem. FeedHacker's scan path went **51 days without a single commit** (2026-07-18 →
+    09-07) and the "it's hiding everything" reports began the day that silence ended; the actual
+    cause was LinkedIn rebuilding its feed in the gap, which removed the hooks post identity and
+    furniture detection relied on. Attributing that to solo was reasonable from the symptoms and
+    wrong about the cause.
+    Two consequences. **Say which it is when you record the removal** — "this design is wrong" and
+    "this feature is in the way while we repair something underneath" are different claims that
+    age very differently, and a ledger that conflates them will talk a future maintainer out of a
+    feature nobody actually rejected. And **removing a feature that sits upstream of your
+    diagnostics is worth doing on its own merits**, whatever the root cause: solo short-circuited
+    before the scorer, so it froze the decision log and made the real bug unmeasurable for 13
+    days. Restoring observability is a reason to remove something. Correlation with a report spike,
+    by itself, is not.
 
 
 ## More tests & docs
