@@ -20,11 +20,19 @@
   "items": [
     {
       "id": "FH-057",
-      "name": "Remove solo mode — one on/off per filter",
-      "description": "Solo showed only the soloed kinds and hid everything else, so a single click could empty a feed. Every “hiding everything” report traced to it, and none to the AI; it also short-circuited before the scorer, disabling the AI-slop model and freezing its decision log while on. Removed: mute is the only per-kind toggle, AI slop gets its own section with a sensitivity slider, and a legacy solo* key is deleted from settings and evicted from sync.",
+      "name": "Set solo aside — one on/off per filter while the feed contract is rebuilt",
+      "description": "Part of the rework forced by LinkedIn's feed redesign, NOT a decision that solo is unwanted. The redesign removed the markup post identity and furniture detection relied on (FH-049/052/053). Solo's problem was its POSITION: it short-circuited before the scorer, so while on, the AI-slop model never ran and its decision log froze — on an already-misreading feed that amplified the symptom and concealed the cause, making diagnosis impossible for 13 days. Removing it restored observability. Mute is the only per-kind toggle for now, AI slop gets its own section with a sensitivity slider, and a legacy solo* key is deleted from settings and evicted from sync. Intended to return — see FH-059.",
       "status": "closed",
       "category": "filter",
       "version": "0.8.0"
+    },
+    {
+      "id": "FH-059",
+      "name": "Bring back one-kind-at-a-time viewing, rebuilt",
+      "description": "Solo was set aside in 0.8.0 as part of the LinkedIn-redesign rework (FH-057), not rejected. Revisit once the new DOM contract is pinned down and post identity is trustworthy again (the activity URN is gone; identity currently rests on a text hash alone). Two requirements the old design failed: it must NOT short-circuit before the scorer — the model must still run and the decision log must keep recording whatever the view mode — and an empty result must be self-explaining and one click to exit.",
+      "status": "open",
+      "category": "filter",
+      "version": "future"
     },
     {
       "id": "FH-004",

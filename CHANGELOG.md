@@ -14,19 +14,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.8.0] — 2026-09-16
 
 ### Changed
-- **Solo mode is gone. Every filter is now a simple on/off.** Solo showed *only* the kinds you
-  soloed and hid everything else — so one click could empty your whole feed, and it looked exactly
-  like the filter had broken. **Every "FeedHacker is hiding everything" report we have ever had
-  traced to it**, and none to the AI. It also quietly switched the AI-slop filter *off* while it
-  was on, because it decided what to hide before the AI was ever consulted.
+- **Solo mode is set aside, and every filter is a simple on/off for now.** This is part of a
+  wider rework forced on us from outside: **LinkedIn rebuilt its feed**, and the markup FeedHacker
+  had relied on for over a year went away with it. That broke how posts are recognised and told
+  apart, which is what people were actually running into.
 
-  Each filter now has one **M** button: on hides that kind, off doesn't. Nothing overrides
-  anything else. **If you had a Solo set, it has been cleared and your Mute settings are exactly
-  as you left them** — your feed will simply stop hiding things you never asked it to hide.
+  Solo is not being dropped because we stopped believing in it. It was removed because of **where
+  it sat in the pipeline**: solo decided what to hide *before* the AI-slop model was ever
+  consulted, so while solo was on the model never ran at all and its decision log stopped
+  recording. On a feed that LinkedIn had already made hard to read correctly, that did two things
+  — it made the damage look worse than it was, and it hid the evidence we needed to find the real
+  cause. Taking solo out was how we got our instruments back.
 
-  The popup is regrouped to match: **AI slop** now sits at the top with its own on/off and the
-  sensitivity slider, because it is a learned model rather than a fixed rule, and the plain
-  post-kind filters sit below it under **Also hide**.
+  While it is out, each filter has one **M** button: on hides that kind, off doesn't, and nothing
+  overrides anything else. **A Solo set you had is cleared, and your Mute settings are exactly as
+  you left them.** The popup is regrouped to match — **AI slop** at the top with its own on/off
+  and sensitivity slider, since it is a learned model rather than a fixed rule, and the plain
+  post-kind filters below under **Also hide**.
+
+  **We intend to bring one-kind-at-a-time viewing back** once the new feed markup is properly
+  pinned down and post identity is trustworthy again — rebuilt so it can't switch the AI off or
+  blind the logs the way the old one did.
 
 ### Internal (no user-visible change)
 - **The release pipeline no longer reports a refused store request as "normal".** When FeedHacker
