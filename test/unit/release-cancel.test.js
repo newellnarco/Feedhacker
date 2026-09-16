@@ -50,9 +50,15 @@ test("a missing publisher id is ANNOUNCED, never silently skipped", () => {
   // produced a SKIPPED step and a fully green release that had quietly done nothing. The v0.4.8
   // release hit exactly that. The step now runs whenever store publishing is configured and
   // reports the misconfiguration itself.
-  assert.match(cancel, /if:\s*env\.CWS_CLIENT_ID != ''\s*$/m,
-    "gated only on store publishing being configured at all");
-  assert.ok(!/CWS_PUBLISHER_ID != ''/.test(cancel), "the publisher id is NOT an `if:` guard any more");
+  // The gate grew a second condition in 0.8.0 (cancel_pending, FH-055/§60), so this no longer
+  // pins the WHOLE expression — that would just be spelling. What FH-048 actually requires is
+  // narrower and is what is asserted: store-publishing-configured is still the gate, and the
+  // PUBLISHER id is still not part of it, so a misplaced id can never turn this step into a
+  // silent skip again.
+  assert.match(cancel, /if:.*env\.CWS_CLIENT_ID != ''/,
+    "still gated on store publishing being configured at all");
+  assert.ok(!/CWS_PUBLISHER_ID\s*!=\s*''/.test(cancel), "the publisher id is NOT an `if:` guard");
+  assert.ok(!/inputs\.CWS_PUBLISHER_ID/.test(cancel), "…nor smuggled in as an input");
   assert.match(runScript, /::warning title=Store cancel disabled::/, "it emits a visible warning annotation");
 });
 

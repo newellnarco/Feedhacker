@@ -77,6 +77,59 @@ over-shard a fast suite — one CI job per tier is enough. **Done means on the l
 scan/scoring/filter change is finished only when a system-tier test drives it in a real browser,
 not merely when a pure-module unit test is green.
 
+## What a session can and cannot reach (standing rule)
+
+**Settled by testing, not assumption — do not re-litigate this, and do not try to route around
+it.** These boundaries have cost more than one round-trip with the maintainer.
+
+### GitHub Actions variables and secrets
+
+| | |
+|---|---|
+| **The workflow** reading `${{ vars.X }}` / `${{ secrets.X }}` | ✅ works — that is ordinary Actions |
+| **A session** reading them via the REST API | ❌ **403**, always |
+| **A session** reading a *variable's value* out of a finished job log | ✅ **this is the way** |
+
+A session *does* hold a `GITHUB_TOKEN`, and `GET /repos/:o/:r/actions/variables[/NAME]` *is* a real
+endpoint — so "we have no token" and "no such API" are both wrong answers. What blocks it is this
+environment's **agent proxy**, which refuses GitHub Actions paths outright:
+
+```
+HTTP 403  {"message":"Access to this GitHub Actions path is not permitted through this proxy."}
+```
+
+That is a deliberate boundary — an agent must not be able to read or write CI credentials — so
+treat it as a wall, not an obstacle. There is no `gh` CLI, and the GitHub MCP server exposes no
+variables tool.
+
+**To read a variable's current value, read the job log.** A runner prints the `env:` block of each
+step, and **variables appear in plain text while secrets are masked to `***`**. From Release run
+#27, verbatim:
+
+```
+CWS_CLIENT_ID: ***                                   ← secret, masked
+CWS_PUBLISHER_ID: project-46303a79-fd20-4ed8-859     ← variable, readable
+CWS_AUTO_PUBLISH: true                               ← variable, readable
+```
+
+That is exactly how the wrong `CWS_PUBLISHER_ID` was identified (FH-055). So: **a changed variable
+is verified by the next run that uses it, never ahead of time.** Say that plainly rather than
+claiming you "can't use" the variable — the workflow uses it fine; only the *pre-run lookup* is
+unavailable.
+
+### Everything else
+
+- **No `gh` CLI.** Use the `mcp__github__*` tools for all GitHub work.
+- **Repo scope** is `newellnarco/feedhacker`. Other repos need `add_repo` first.
+- **The GitHub API's job/run status lags**, sometimes by many minutes, and has served a job as
+  `in_progress` long after it finished. When status and reality disagree, **read the job log** —
+  it is authoritative — or re-read the run rather than trusting a cached `status` field.
+- **`WebFetch` caches 15 minutes per URL.** To re-read a page that may have changed (the Chrome
+  Web Store listing above all), **vary the URL** (`?hl=en-GB`, `?hl=en-CA`, …) and say which you
+  used, or you will report a stale value as a fresh one.
+- **The container is ephemeral and starts with no `node_modules`** — run `npm ci` before the first
+  build or test.
+
 ## Release policy (standing rule)
 
 **Do not cut a release until the user explicitly says "ship."**

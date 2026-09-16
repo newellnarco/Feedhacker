@@ -554,6 +554,31 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     calling it blind and relying on the error. A no-op you never see is indistinguishable from a
     guard you never wrote.
 
+61. **Mutate the source the build builds from, or you have tested nothing.** A mutation test is
+    only evidence if the mutation actually reaches the code under test. In a project with a
+    compile or bundle step, editing the *built* artifact and then running the suite is worthless:
+    anything that triggers the build — `npm test`'s `pretest`, a `build` script, the test runner
+    itself — regenerates that artifact from source and silently erases the mutation. The suite
+    then passes for the most dangerous possible reason, and the passing result *looks exactly
+    like* proof the test is sound. This is a false green about a test's own validity, which is
+    worse than an ordinary one: it certifies a broken guard. FH-058's first mutation attempt did
+    exactly this — patched `build/popup.js`, ran the build, watched all five tests pass, and
+    proved nothing. So mutate `src/`, rebuild, and **confirm the mutation survived into the built
+    output** (`grep` for your marker in `build/` and `dist/`) before believing the run. A mutation
+    test that cannot be shown to have changed the running code is not a mutation test.
+
+62. **A test must wait for the state it asserts on, not for the markup that will eventually hold
+    it.** Static markup exists the moment the DOM parses; the values in it arrive later, from an
+    async load. So `waitForSelector` on an element whose *class or value* you are about to assert
+    is not a wait at all — it is a race you will win almost every time, which is exactly what makes
+    it dangerous: FH-058 passed 29/29 across four CI runs before failing on a loaded runner, on a
+    pull request that changed only markdown. Two rules follow. **Pick a readiness signal the async
+    step definitely sets** — and verify it really is set there, because a signal that merely looks
+    generated may be built synchronously and prove nothing (the `#filters .frow` rows were exactly
+    that trap). And **the signal must be independent of the assertion**: waiting for the very class
+    you are asserting turns a failing test into a timeout and a real assertion into a tautology
+    (§54). Independent synchroniser, then assert.
+
 
 ## More tests & docs
 
