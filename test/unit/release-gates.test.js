@@ -39,10 +39,14 @@ function jobGate(job) {
 // constructs these gates use. Anything outside that set is REJECTED rather than guessed at:
 // silently mis-evaluating a gate would make this suite green while the real workflow did the
 // opposite, which is the whole failure mode the file exists to prevent.
-const ALLOWED = /^[\s\w.'/&|()=,-]+$/; // no !, no unsupported function calls, no ternaries
+// Deliberately narrow. `!` is allowed ONLY as part of `!=` (checked below), never as negation,
+// because `!x` and `x != y` translate differently and guessing wrong would make this suite green
+// while the workflow did the opposite.
+const ALLOWED = /^[\s\w.'/&|()=,!-]+$/;
 function evaluateGate(expr, ctx) {
   const inner = expr.replace(/^\$\{\{/, "").replace(/\}\}$/, "").trim();
   assert.match(inner, ALLOWED, "gate uses only the expression subset this evaluator models");
+  assert.ok(!/![^=]/.test(inner), "bare `!` negation is not modelled — only `!=`");
   const calls = inner.match(/[A-Za-z_]\w*\(/g) || [];
   for (const c of calls) {
     assert.strictEqual(c, "startsWith(", `unmodelled function ${c}) — teach this test before using it`);
@@ -51,9 +55,12 @@ function evaluateGate(expr, ctx) {
     .replace(/startsWith\(\s*([\w.]+)\s*,\s*'([^']*)'\s*\)/g, "String($1 == null ? '' : $1).startsWith('$2')")
     .replace(/\bgithub\.(\w+)/g, "(ctx.github.$1)")
     .replace(/\binputs\.(\w+)/g, "(ctx.inputs.$1)")
-    .replace(/==/g, "===");
+    .replace(/\benv\.(\w+)/g, "(ctx.env.$1)")
+    .replace(/!=/g, "!==")
+    .replace(/([^!=])==([^=])/g, "$1===$2");
   // eslint-disable-next-line no-new-func
-  return !!new Function("ctx", `return (${js});`)({ github: ctx.github, inputs: ctx.inputs || {} });
+  return !!new Function("ctx", `return (${js});`)(
+    { github: ctx.github, inputs: ctx.inputs || {}, env: ctx.env || {} });
 }
 
 const release = jobGate("release");
@@ -106,4 +113,64 @@ test("`store` is a declared boolean input that defaults ON", () => {
 test("the store upload can never be reached without `publish`", () => {
   // `store` alone must not publish: it narrows the existing switch, it does not add a new one.
   assert.strictEqual(evaluateGate(webstore, dispatch({ publish: false, store: true })), false);
+});
+
+
+// --- the cancel step's own gate (FH-055 / §60) -------------------------------------------
+// Correcting CWS_PUBLISHER_ID turned cancelSubmission from a guaranteed no-op into a live,
+// destructive call. It is right for the normal case — shipping 0.9.0 over a pending 0.8.0 — and
+// wrong for exactly one: re-uploading the SAME version that is already in review, which the
+// release job's idempotent re-cut makes easy to do by accident. `cancel_pending` is the off
+// switch, and these cases pin its shape rather than its spelling.
+function stepGate(name) {
+  const at = WF.indexOf(`- name: ${name}`);
+  assert.ok(at !== -1, `step "${name}" exists`);
+  const m = WF.slice(at).match(/^\s{8}if:\s*(.+)$/m);
+  assert.ok(m, `step "${name}" has an \`if:\` gate`);
+  return m[1].trim();
+}
+const cancelGate = stepGate("Cancel a pending Chrome Web Store submission");
+const CONFIGURED = { CWS_CLIENT_ID: "abc.apps.googleusercontent.com" };
+const dispatchCancel = (o) => ({
+  github: { ref: "refs/heads/main", event_name: "workflow_dispatch" },
+  inputs: Object.assign({ publish: true, store: true, cancel_pending: true }, o),
+  env: CONFIGURED,
+});
+
+test("cancel_pending: false stops the store being asked to withdraw anything", () => {
+  assert.strictEqual(evaluateGate(cancelGate, dispatchCancel({ cancel_pending: false })), false,
+    "re-uploading a version that is ITSELF in review must not cancel it");
+});
+
+test("with cancel_pending on, the normal release still frees the slot", () => {
+  assert.strictEqual(evaluateGate(cancelGate, dispatchCancel({})), true);
+});
+
+test("`cancel_pending` is a declared boolean input that defaults ON", () => {
+  // Separate from the case above ON PURPOSE. That one passes the value in from a fixture, so it
+  // says nothing about what the workflow actually declares — a first draft of this file had only
+  // that case, and flipping the YAML default to false left the whole suite green. The DEFAULT is
+  // the thing operators inherit by doing nothing, so it needs its own assertion (§59).
+  const m = WF.match(/^ {6}cancel_pending:\n((?: {8}.+\n)+)/m);
+  assert.ok(m, "the workflow declares a `cancel_pending` input");
+  assert.match(m[1], /type:\s*boolean/, "boolean, so the UI renders a checkbox");
+  assert.match(m[1], /default:\s*true/, "defaulting to true — freeing the slot stays the norm");
+});
+
+test("a TAG PUSH still cancels — it carries no inputs at all", () => {
+  // The regression that matters. `inputs.cancel_pending` is undefined on a push, so a gate
+  // written as that alone would read perfectly and silently stop freeing the slot on every
+  // tagged release (§59, same trap as the `store` gate).
+  assert.strictEqual(
+    evaluateGate(cancelGate, { github: { ref: "refs/tags/v0.9.0", event_name: "push" }, inputs: {}, env: CONFIGURED }),
+    true, "a tag push must behave exactly as it always has");
+});
+
+test("with store publishing unconfigured, the cancel never runs", () => {
+  assert.strictEqual(evaluateGate(cancelGate, { ...dispatchCancel({}), env: { CWS_CLIENT_ID: "" } }), false);
+});
+
+test("the publisher id is still not a gate (FH-048 stays fixed)", () => {
+  assert.ok(!/CWS_PUBLISHER_ID/.test(cancelGate),
+    "a misplaced publisher id must never turn this step into a silent skip again");
 });

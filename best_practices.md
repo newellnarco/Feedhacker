@@ -539,6 +539,47 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     without its tag branch reads perfectly and stops shipping to users.
 
 
+60. **A broken destructive call is not a safe one — repairing its credentials arms it.** A
+    privileged call that has been failing (403, bad id, expired token) is doing nothing, and a
+    pipeline quietly comes to depend on that nothing: it gets called blind, unconditionally, on
+    every run, and nobody notices because the failure is inert. The day someone fixes the
+    credential, every one of those blind invocations becomes live **at once**, and the first one
+    runs against whatever state happens to exist right then. FH-055 is the case: `cancelSubmission`
+    was refused three releases running, so it was a guaranteed no-op; the moment the publisher id
+    was corrected it became capable of withdrawing a submission that was *mid-review* — turning a
+    safe `ITEM_NOT_UPDATABLE` refusal into a silent undo. So when you fix such a credential:
+    **state what the call will now do, and to what**, before the next run; check whether anything
+    is in a state the call would destroy; and prefer making the call **conditional on the state it
+    intends to change** (ask what is pending, act only if it is what you mean to replace) over
+    calling it blind and relying on the error. A no-op you never see is indistinguishable from a
+    guard you never wrote.
+
+61. **Mutate the source the build builds from, or you have tested nothing.** A mutation test is
+    only evidence if the mutation actually reaches the code under test. In a project with a
+    compile or bundle step, editing the *built* artifact and then running the suite is worthless:
+    anything that triggers the build — `npm test`'s `pretest`, a `build` script, the test runner
+    itself — regenerates that artifact from source and silently erases the mutation. The suite
+    then passes for the most dangerous possible reason, and the passing result *looks exactly
+    like* proof the test is sound. This is a false green about a test's own validity, which is
+    worse than an ordinary one: it certifies a broken guard. FH-058's first mutation attempt did
+    exactly this — patched `build/popup.js`, ran the build, watched all five tests pass, and
+    proved nothing. So mutate `src/`, rebuild, and **confirm the mutation survived into the built
+    output** (`grep` for your marker in `build/` and `dist/`) before believing the run. A mutation
+    test that cannot be shown to have changed the running code is not a mutation test.
+
+62. **A test must wait for the state it asserts on, not for the markup that will eventually hold
+    it.** Static markup exists the moment the DOM parses; the values in it arrive later, from an
+    async load. So `waitForSelector` on an element whose *class or value* you are about to assert
+    is not a wait at all — it is a race you will win almost every time, which is exactly what makes
+    it dangerous: FH-058 passed 29/29 across four CI runs before failing on a loaded runner, on a
+    pull request that changed only markdown. Two rules follow. **Pick a readiness signal the async
+    step definitely sets** — and verify it really is set there, because a signal that merely looks
+    generated may be built synchronously and prove nothing (the `#filters .frow` rows were exactly
+    that trap). And **the signal must be independent of the assertion**: waiting for the very class
+    you are asserting turns a failing test into a timeout and a real assertion into a tautology
+    (§54). Independent synchroniser, then assert.
+
+
 ## More tests & docs
 
 27. **Tests are order-independent.** A test that mutates shared/global state (a stubbed

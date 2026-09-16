@@ -26,6 +26,10 @@ on:
         description: "Also upload to the Chrome Web Store. Turn OFF to cut a GitHub-only release and hold the store upload. Ignored unless publish is on."
         type: boolean
         default: true
+      cancel_pending:
+        description: "Withdraw a store version already IN REVIEW before uploading. Turn OFF when re-uploading the SAME version that is currently in review — cancelling would send it back to draft and restart its review."
+        type: boolean
+        default: true
 
 # Least privilege by default; only the job that publishes the release gets write.
 permissions:
@@ -196,6 +200,8 @@ jobs:
           zip="$(ls dist/feedhacker-*-store.zip | head -1)"
           test -n "$zip"
           echo "path=$zip" >> "$GITHUB_OUTPUT"
+          # Surfaced so the cancel step below can say WHICH version it is about to displace.
+          echo "version=$(jq -r .version dist/feedhacker/manifest.json)" >> "$GITHUB_OUTPUT"
       # The store accepts ONE pending version at a time, so a release cut while the previous
       # one is still in review fails with ITEM_NOT_UPDATABLE and the fix never reaches users.
       # This is the API equivalent of the dashboard's "Cancel review" (Store listing -> ... ->
@@ -210,19 +216,35 @@ jobs:
       #   * without CWS_PUBLISHER_ID the step is skipped entirely and the release behaves
       #     exactly as it did before this existed.
       # Note the publisher cap: at most six cancels per publisher per day.
+      # FH-055 / best_practices §60: this call was REFUSED by Google on three consecutive releases
+      # (#24, #25, #27), which made it a guaranteed no-op — and the pipeline quietly came to depend
+      # on that nothing. Correcting CWS_PUBLISHER_ID ARMS it. That is right for the normal case
+      # (ship 0.9.0 over a pending 0.8.0: displacing it is the entire point) and WRONG for one:
+      # re-uploading the SAME version that is currently in review, which the release job's
+      # deliberately idempotent re-cut makes easy to do by accident. Cancelling there withdraws a
+      # submission to draft and restarts its review clock for nothing.
+      #
+      # Two conditions, and the second is shaped the way it is on purpose. A TAG PUSH carries NO
+      # inputs, so `inputs.cancel_pending` is undefined — not true — there. Writing the guard as
+      # `inputs.cancel_pending` alone would read perfectly and silently disable the cancel on every
+      # tagged release (§59, the same trap the `store` gate documents). Hence: honour the input only
+      # on a manual run, and leave a tag push exactly as it has always behaved.
       - name: Cancel a pending Chrome Web Store submission
-        if: env.CWS_CLIENT_ID != ''
+        if: ${{ env.CWS_CLIENT_ID != '' && (github.event_name != 'workflow_dispatch' || inputs.cancel_pending) }}
         continue-on-error: true
         env:
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
           EXTENSION_ID: kccajfoghkplakndamlohpepopdpelkb   # public id from the store URL
+          VERSION: ${{ steps.zip.outputs.version }}
         run: |
           # No `set -e`: every failure here is tolerable and must not abort the job.
           set -uo pipefail
           # Announce the misconfiguration instead of vanishing. This used to be an `if:` guard on
           # the step, so a publisher id in the wrong place produced a SKIPPED step and a green
           # release that had silently done nothing — the false-green class §4 exists to prevent.
+          echo "About to ask the store to withdraw ANY version currently in review, so that ${VERSION:-this release} can take the one pending slot."
+          echo "If ${VERSION:-this version} is itself the one in review, this is NOT what you want — re-run with cancel_pending: false."
           if [ -z "${CWS_PUBLISHER_ID:-}" ]; then
             echo "::warning title=Store cancel disabled::CWS_PUBLISHER_ID is empty, so a version already in review was NOT withdrawn. If the upload below fails with ITEM_NOT_UPDATABLE, that is why. Add CWS_PUBLISHER_ID (Dashboard -> Publisher > Settings) under Settings -> Secrets and variables -> Actions, in either the Variables or the Secrets tab."
             exit 0
