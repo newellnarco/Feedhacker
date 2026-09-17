@@ -11,7 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.9.0] — unreleased
+## [0.9.0] — 2026-09-17
 
 ### Added / Fixed
 - **FeedHacker was re-judging your whole feed every 1.5 seconds, and it was teaching itself the
