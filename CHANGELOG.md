@@ -13,7 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.9.0] — unreleased
 
-### Fixed
+### Added / Fixed
 - **FeedHacker was re-judging your whole feed every 1.5 seconds, and it was teaching itself the
   wrong thing.** Nothing about it needed you to scroll or click. Each time a post was hidden,
   FeedHacker updated that author's "hidden" count; saving that count looked to FeedHacker like
@@ -40,6 +40,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   are untouched, and it happens only this once: a model you train from here on is yours to keep.
   (The button is still there under **Options → Error log → Reset AI-slop learning** if you ever
   want it again.)
+
+- **You can now tell FeedHacker it MISSED one.** Until now, every control lived on a post
+  FeedHacker had already hidden — so you could say *"no, show this one"* and the AI learned from
+  it, but there was no way to say *"you should have caught that"*. The correction only ever went
+  one direction, and it was the direction that hides less.
+
+  Posts FeedHacker decides to show now carry a small green **slop** button, faint until you hover
+  the post. Clicking it hides the post and teaches the model at the same time, so the next post
+  like it is more likely to be caught. **Show anyway** on the resulting row is the undo, exactly
+  as on any other hidden post. It appears only when AI-slop filtering is on, only on posts long
+  enough to learn anything from, and never on LinkedIn's own feed modules.
 
 - **Hidden posts are no longer lumped together when they were hidden for different reasons.** A
   run of hidden posts folds into one summary row to save space, but it was folding purely on

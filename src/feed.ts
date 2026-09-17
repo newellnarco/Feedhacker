@@ -341,7 +341,7 @@
   function enoughToJudge(text) {
     return (String(text || "").match(/\b[\w'’]+\b/g) || []).length >= MIN_WORDS_TO_JUDGE;
   }
-  function scoreSloppy(text, matchers, settings) {
+  function scoreSloppy(text, matchers, settings, el?) {
     if (!root.FeedHackerScorer) return null;
     var res = root.FeedHackerScorer.classify(
       text,
@@ -355,6 +355,17 @@
     // so it learns which tells are ubiquitous (uninformative) in this feed and where the real
     // cutoff sits — independent of whether the user ever corrects anything.
     try { if (settings && typeof settings.onSlopObserve === "function") settings.onSlopObserve(res.features); } catch (e) {}
+    // Keep the vector for a post we are NOT going to hide. Without it the user can only ever
+    // tell the model it was wrong to HIDE something — there is nothing to learn from on a post
+    // that was shown, so "you missed this one" was unsayable and the correction signal only
+    // ever pushed one way (FH-062). Gated on enoughToJudge: a fragment is not something to
+    // train on in either direction (FH-050).
+    if (el && enoughToJudge(text)) {
+      try {
+        el.dataset.feedhackerFeatures = JSON.stringify(res.features);
+        el.dataset.feedhackerProb = String(Math.round(res.prob * 1000) / 1000);
+      } catch (e) {}
+    }
     if (!res.isSlop) return null;
     if (!enoughToJudge(text)) return null;   // observed above, but too short to HIDE on
     var d = slopDetail(res, settings);
@@ -369,7 +380,7 @@
     function on(id) { return activeIds.indexOf(id) !== -1; }
     var flags: any[] = [];
     if (on("sloppy")) {
-      var sf = scoreSloppy(text, matchers, settings);
+      var sf = scoreSloppy(text, matchers, settings, el);
       if (sf) flags.push(sf);
     }
     if (on("promoted") && isPromoted(el)) flags.push({ id: "promoted", label: "Promoted Post", detail: "" });
@@ -522,7 +533,7 @@
   function onStubClick(ev) {
     var t: any = ev.target;
     if (!t || !t.closest) return;
-    var stub: any = t.closest(".feedhacker-stub, .feedhacker-explainer");
+    var stub: any = t.closest(".feedhacker-stub, .feedhacker-explainer, .feedhacker-mark");
     if (!stub) return;                 // click landed outside our UI
     ev.stopPropagation();              // our stub owns the click — don't let LinkedIn's row/open handlers fire
     var btn: any = t.closest("[data-fh-act]");
@@ -554,6 +565,13 @@
         btn.classList.add("feedhacker-confirmed");
         clearEl(btn); btn.appendChild(checkIcon(doc));            // show a checkmark…
         dismissRow(el);                                          // …then hide the row
+        break;
+      case "mark-slop":
+        // A shown post the user says IS slop. Disable first: collapse() rebuilds this subtree,
+        // so the button may be gone by the time markSlop returns, and a second click in the
+        // gap would double-train.
+        btn.disabled = true;
+        markSlop(doc, el, settings);
         break;
       case "hide":
         dismissRow(el);
@@ -709,6 +727,81 @@
     b.title = title; b.setAttribute("aria-label", title);
     b.appendChild(iconNode);
     return b;
+  }
+
+  // --- "this is AI slop" on a post we did NOT hide (FH-062) --------------------------------
+  // Until now every FeedHacker control lived inside a stub, and a stub only exists once a post
+  // is hidden. So the model could be told *"wrong to hide this"* ("Show anyway" -> label 0) but
+  // never *"you missed this one"*, because there was nowhere to say it. That asymmetry matters
+  // on a model that also auto-tunes toward hiding ~slopTargetFrac of what it reviews: only one
+  // direction of correction was reachable, and it was the one that hides less.
+  //
+  // Deliberately low-weight: one small splat, right-aligned, faint until the post is hovered.
+  // It is re-created idempotently on every scan like the stubs are, because LinkedIn replaces
+  // feed nodes and anything we inject dies with them.
+  var MARK_CLASS = "feedhacker-mark";
+  function directChildMark(el) {
+    for (var i = 0; i < el.children.length; i++) {
+      var c = el.children[i];
+      if (c.classList && c.classList.contains(MARK_CLASS)) return c;
+    }
+    return null;
+  }
+  function removeMark(el) {
+    var m = directChildMark(el);
+    if (m && m.parentNode) m.parentNode.removeChild(m);
+  }
+  // Shown, judged, trainable, and not already spoken for.
+  function markable(el, settings) {
+    if (!settings || !settings.muteSloppy) return false;        // no AI filter running, nothing to teach
+    if (typeof settings.onSlopVerdict !== "function" && typeof settings.onFeedback !== "function") return false;
+    if (!el.dataset.feedhackerFeatures) return false;           // never judged, or too short to train on
+    if (el.dataset.feedhackerConfirmedSlop === "1") return false;
+    if (el.dataset.feedhackerHidden === "1") return false;
+    if (el.dataset.feedhackerDismissed === "1") return false;
+    if (el.dataset.feedhackerReveal === "1") return false;      // its stub already offers "Hide again"
+    if (el.dataset.feedhackerGroup || el.dataset.feedhackerGrouphead) return false;
+    if (el.dataset.feedhackerFurniture === "1") return false;   // LinkedIn's own modules are not posts
+    if (el.classList.contains("feedhacker-gone")) return false;
+    return true;
+  }
+  function ensureMark(doc, el, settings) {
+    if (!markable(el, settings)) { removeMark(el); return; }
+    if (directChildMark(el)) return;                            // already there — leave it alone
+    armStub(doc, settings);                                     // same delegated click listener
+    var bar = doc.createElement("div");
+    bar.className = MARK_CLASS;
+    var b = iconButton(doc, "feedhacker-confirm", splatIcon(doc), "AI slop — hide this and teach the filter");
+    b.setAttribute("data-fh-act", "mark-slop");
+    bar.appendChild(b);
+    el.insertBefore(bar, el.firstChild);
+  }
+  // The user's claim that a SHOWN post is slop: train on it (label 1), record the decision with
+  // the probability the model actually gave it — the interesting number, since it is how far
+  // off the model was — and then collapse it like any other slop post, so "Show anyway" is the
+  // undo and the row behaves exactly as if the model had caught it.
+  function markSlop(doc, el, settings) {
+    if (el.dataset.feedhackerConfirmedSlop === "1") return;
+    var feats: any = null;
+    try { if (el.dataset.feedhackerFeatures) feats = JSON.parse(el.dataset.feedhackerFeatures); } catch (e) {}
+    if (!feats) return;                                         // nothing to learn from: do nothing visible
+    el.dataset.feedhackerConfirmedSlop = "1";
+    removeMark(el);
+    var prob = Number(el.dataset.feedhackerProb);
+    var thr = (settings && typeof settings.slopThreshold === "number")
+      ? settings.slopThreshold
+      : (root.FeedHackerScorer ? root.FeedHackerScorer.THRESHOLD : 0.5);
+    var flags = [{ id: "sloppy", label: "AI Slop", detail: "you marked this", features: feats,
+                   prob: isFinite(prob) ? prob : thr, threshold: thr, top: [], phrases: [] }];
+    // Capture the author + opening line while the post is still visible — collapse() reads both
+    // back for the stub, and innerText is the stub's own text once we hide it.
+    var info = captureAuthor(el);
+    el.dataset.feedhackerPreview = firstBodyLine(getPostText(el), info && info.name);
+    recordOutcome(settings, info, true);
+    collapse(doc, el, flags, settings);                         // logs the decision (not silent)
+    emitFeedback(el, flags, settings, 1);                       // label 1: this IS slop
+    emitVerdict(el, settings, 1);                               // …and stamp the log entry
+    setVerdict(el, true, flags, false, ["sloppy"], true);       // the user's own choice: survives a re-apply
   }
 
   function hasFlag(flags, id) {
@@ -880,6 +973,7 @@
   function collapse(doc, el, flags, settings, forceGone?: boolean, silent?: boolean) {
     if (el.dataset.feedhackerReveal === "1") return;
     el.dataset.feedhackerHidden = "1";
+    removeMark(el);                  // it offered to hide this post; the post is hidden now
     try {
       // Persist a slim reason list; stash scorer features separately (they drive
       // the learning update when the user later corrects this post).
@@ -1091,8 +1185,8 @@
     if (stub && stub.parentNode) stub.parentNode.removeChild(stub);
     el.classList.remove("feedhacker-hidden", "feedhacker-gone", "feedhacker-dismissing");
     ["feedhackerHidden", "feedhackerScanned", "feedhackerReasons", "feedhackerFeatures",
-     "feedhackerActor", "feedhackerActorUrl", "feedhackerPreview", "feedhackerSlopId",
-     "feedhackerConfirmedSlop"].forEach(function (k) { delete el.dataset[k]; });
+     "feedhackerProb", "feedhackerActor", "feedhackerActorUrl", "feedhackerPreview",
+     "feedhackerSlopId", "feedhackerConfirmedSlop"].forEach(function (k) { delete el.dataset[k]; });
   }
   // Soft re-apply after the model changes (auto-calibration): reveal slop-hidden posts that no
   // longer qualify and let a tightened model hide newly-qualifying shown posts — WITHOUT tearing
@@ -1195,7 +1289,15 @@
       var k = el.dataset && el.dataset.feedhackerKey;
       var doc = el.ownerDocument;
       if (!k || !doc) return;
-      judgedLedger(doc)[k] = { hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null, user: !!user };
+      var prev = judgedLedger(doc)[k];
+      judgedLedger(doc)[k] = {
+        hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null, user: !!user,
+        // Carried so a re-rendered SHOWN post can offer "this is slop" again without being
+        // re-scored. The node dies on every LinkedIn re-render and takes the vector with it;
+        // re-judging to get it back is exactly the flood the ledger exists to prevent (FH-049).
+        feats: (el.dataset && el.dataset.feedhackerFeatures) || (prev && prev.feats) || "",
+        prob: (el.dataset && el.dataset.feedhackerProb) || (prev && prev.prob) || ""
+      };
     } catch (e) {}
   }
 
@@ -1226,13 +1328,28 @@
     var prior = pkey ? ledger[pkey] : null;
     if (prior) {
       el.dataset.feedhackerRepeat = "1";
-      if (!prior.hidden) return null;                        // judged and kept — leave it alone
+      if (!prior.hidden) {
+        // Judged and kept. Restore what the new node lost so the "this is slop" control comes
+        // back with it — silently, with no re-score, no fresh decision and no new observation.
+        if (prior.feats) {
+          try { el.dataset.feedhackerFeatures = prior.feats; if (prior.prob) el.dataset.feedhackerProb = prior.prob; } catch (e) {}
+        }
+        ensureMark(doc, el, settings);
+        return null;
+      }
       collapse(doc, el, prior.flags || [], settings, prior.gone, true);
       return prior.ids || ["repeat"];
     }
     function remember(hidden, flags, gone, ids) {
       if (!pkey) return;
-      ledger[pkey] = { hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null };
+      ledger[pkey] = {
+        hidden: !!hidden, flags: flags || [], gone: !!gone, ids: ids || null,
+        // Carried so a re-rendered SHOWN post can offer "this is slop" again without being
+        // re-scored: the node dies on every LinkedIn re-render and takes the vector with it,
+        // and re-judging to get it back is the flood this ledger exists to prevent (FH-049).
+        feats: (el.dataset && el.dataset.feedhackerFeatures) || "",
+        prob: (el.dataset && el.dataset.feedhackerProb) || ""
+      };
     }
 
     // Author memory: an allowlisted author is always shown; a muted author is always
@@ -1280,6 +1397,7 @@
       return flags;
     }
     remember(false, [], false, null);
+    ensureMark(doc, el, settings);
     return null;
   }
 
@@ -1453,6 +1571,10 @@
       if (preserveUserActions && stubs[i].closest('[data-feedhacker-reveal="1"],[data-feedhacker-dismissed="1"]')) continue;
       stubs[i].remove();
     }
+    // The "this is slop" bars go with them: they are ours, they carry no user state, and the
+    // rescan that follows any reset re-adds them wherever they still belong.
+    var bars = doc.querySelectorAll("." + MARK_CLASS);
+    for (var b0 = 0; b0 < bars.length; b0++) bars[b0].remove();
     var hid = doc.querySelectorAll(".feedhacker-hidden, .feedhacker-gone, .feedhacker-dismissing");
     for (var j = 0; j < hid.length; j++) {
       if (kept(hid[j])) continue;
@@ -1475,6 +1597,7 @@
       if (!preserveUserActions) delete el.dataset.feedhackerKey;
       delete el.dataset.feedhackerPreview;
       delete el.dataset.feedhackerFeatures;
+      delete el.dataset.feedhackerProb;
       delete el.dataset.feedhackerDismissing;
       delete el.dataset.feedhackerGroup;
       delete el.dataset.feedhackerGrouphead;
