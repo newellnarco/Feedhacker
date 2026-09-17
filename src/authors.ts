@@ -88,11 +88,35 @@
   function listMuted(store) { return Object.keys(ensure(store).muted); }
   function listAllowed(store) { return Object.keys(ensure(store).allowed); }
 
+  // The part of the store that actually CHANGES FILTERING: who is muted and who is
+  // allowed. Everything else here is per-author hide/show TALLIES, which affect only the
+  // Insights panel.
+  //
+  // FH-060: the content script re-applied the whole feed whenever this store was written,
+  // and the tallies are written on a 1.5s debounce every time a post is hidden — including
+  // by the re-apply's own rescan. That closed a self-sustaining loop: hide -> tally write ->
+  // storage.onChanged in our OWN tab -> reset(doc, true) (which drops every model-derived
+  // verdict) -> rescan -> hide -> ... A real decision log showed the same 5 posts judged 87
+  // times each in 140 seconds, 1548ms apart in lockstep, and the calibration population
+  // holding 189 observations that were 12 distinct posts. Comparing this signature instead
+  // of the raw store breaks the loop while a genuine mute from another surface (the options
+  // page) still re-applies immediately.
+  // JSON, not a delimiter-joined string: author keys are profile paths and a path may legally
+  // contain a comma, which would make ["a,b"] and ["a","b"] the same signature — and the failure
+  // mode of a collision here is a mute that silently does not take effect.
+  function rulesKey(store) {
+    var s = ensure(store);
+    return JSON.stringify([listMuted(s).sort(), listAllowed(s).sort()]);
+  }
+  // True when two stores would filter the feed identically (tally-only difference).
+  function sameRules(a, b) { return rulesKey(a) === rulesKey(b); }
+
   var api = {
     ensure: ensure, keyFor: keyFor, isMuted: isMuted, isAllowed: isAllowed,
     mute: mute, unmute: unmute, unmuteAll: unmuteAll, allow: allow, unallow: unallow,
     record: record, score: score, chronic: chronic, topSources: topSources,
-    listMuted: listMuted, listAllowed: listAllowed
+    listMuted: listMuted, listAllowed: listAllowed,
+    rulesKey: rulesKey, sameRules: sameRules
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerAuthors = api;

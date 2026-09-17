@@ -90,3 +90,48 @@ test("unmuteAll on an empty store is a no-op, not a crash", () => {
   assert.deepStrictEqual(authors.listMuted(authors.unmuteAll(authors.ensure(null))), []);
   assert.deepStrictEqual(authors.listMuted(authors.unmuteAll(null)), []);
 });
+
+// --- FH-060: rules vs tallies ---------------------------------------------------------
+// The content script re-applies the feed when this store changes. It writes the store
+// itself, on a 1.5s debounce, every time a post is hidden — so "the store changed" could
+// not mean "re-apply", or the re-apply's own rescan fed the next write. These two answer
+// the only question that matters: would the feed be filtered differently?
+test("a tally-only change is not a rule change", () => {
+  const base = authors.mute(authors.ensure(null), "a", "Ada");
+  const busy = authors.record(authors.record(base, "a", "Ada", true), "b", "Bo", false);
+  assert.strictEqual(authors.sameRules(base, busy), true, "hide/show counts do not affect filtering");
+  assert.strictEqual(authors.rulesKey(base), authors.rulesKey(busy));
+});
+
+test("muting, unmuting, allowing and unallowing ARE rule changes", () => {
+  const base = authors.ensure(null);
+  const muted = authors.mute(base, "a", "Ada");
+  assert.strictEqual(authors.sameRules(base, muted), false, "a new mute must re-apply");
+  assert.strictEqual(authors.sameRules(muted, authors.unmute(muted, "a")), false, "…and so must an unmute");
+  const allowed = authors.allow(base, "z", "Zoe");
+  assert.strictEqual(authors.sameRules(base, allowed), false, "a new allow must re-apply");
+  assert.strictEqual(authors.sameRules(allowed, authors.unallow(allowed, "z")), false, "…and an unallow");
+});
+
+test("rulesKey does not depend on insertion order, and mute/allow can't be confused", () => {
+  const ab = authors.mute(authors.mute(authors.ensure(null), "a", "Ada"), "b", "Bo");
+  const ba = authors.mute(authors.mute(authors.ensure(null), "b", "Bo"), "a", "Ada");
+  assert.strictEqual(authors.rulesKey(ab), authors.rulesKey(ba), "same rules, either order");
+  // "a" muted is not the same rule set as "a" allowed — the separator has to keep them apart.
+  assert.notStrictEqual(authors.rulesKey(authors.mute(authors.ensure(null), "a", "Ada")),
+    authors.rulesKey(authors.allow(authors.ensure(null), "a", "Ada")));
+});
+
+test("rulesKey tolerates a null or half-built store", () => {
+  assert.strictEqual(authors.rulesKey(null), authors.rulesKey(authors.ensure(null)));
+  assert.strictEqual(authors.sameRules(null, {}), true);
+});
+
+test("rulesKey cannot be fooled by a comma in an author key", () => {
+  // Profile paths may legally contain a comma. A delimiter-joined signature would make these
+  // two identical, and the cost of a collision is a mute that silently never takes effect.
+  const one = authors.mute(authors.ensure(null), "/in/a,b", "Comma Person");
+  const two = authors.mute(authors.mute(authors.ensure(null), "/in/a", "A"), "/in/b", "B");
+  assert.notStrictEqual(authors.rulesKey(one), authors.rulesKey(two));
+  assert.strictEqual(authors.sameRules(one, two), false);
+});

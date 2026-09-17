@@ -714,7 +714,17 @@
         settings.slopWeights = (nv && typeof nv === "object") ? nv : (Scorer ? Scorer.defaultWeights() : settings.slopWeights);
       }
       if (changes[CUSTOM_KEY]) { applyCustom(changes[CUSTOM_KEY].newValue); reapply(); }
-      if (changes[AUTHORS_KEY]) { authorStore = changes[AUTHORS_KEY].newValue || {}; refreshAuthorFlags(); reapply(); }
+      if (changes[AUTHORS_KEY]) {
+        // Re-apply ONLY when the mute/allow rules actually changed — never for a tally-only
+        // write. This tab writes those tallies itself, on a 1.5s debounce, every time a post
+        // is hidden, and the write comes straight back to us here; re-applying on it closed a
+        // self-sustaining loop that re-judged the whole feed every 1.5 seconds and flooded
+        // both the decision log and the calibration population (FH-060, best_practices §64).
+        var prevRules = Authors ? Authors.rulesKey(authorStore) : "";
+        authorStore = changes[AUTHORS_KEY].newValue || {};
+        refreshAuthorFlags();                                  // always: settings.authors must track the store
+        if (!Authors || Authors.rulesKey(authorStore) !== prevRules) reapply();
+      }
       return;
     }
     if (area !== "sync") return;

@@ -605,6 +605,51 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     days. Restoring observability is a reason to remove something. Correlation with a report spike,
     by itself, is not.
 
+64. **A `storage.onChanged` handler must react to what it depends on, never to "the key changed" —
+    because your own tab is one of the writers.** `chrome.storage.onChanged` fires in the tab that
+    made the write, so any handler that re-does work on a key its own page also writes is one step
+    from a self-sustaining loop. FeedHacker's was exactly one step: hiding a post bumped that
+    author's hide tally, the tally was written on a 1.5s debounce, the write came straight back to
+    the same tab, and the handler re-applied the whole feed — which hid posts, which bumped
+    tallies (FH-060). It ran forever at 1.5s, with no scrolling and no clicks, and it cost far more
+    than wasted CPU: the decision log filled with the same 5 posts 87 times each, and
+    auto-calibration, fed 189 sightings of 12 posts, damped the strongest slop tell 44% and raised
+    its own threshold — a model that had taught itself to catch less.
+    The rule is to **compare the projection of the value you actually consume**, not the value.
+    Here one storage key mixes **rules** (mute/allow — these change filtering) with **statistics**
+    (per-author counts — these change a chart), so `rulesKey(store)` reduces it to the rules and
+    the handler re-applies only when that changes. Splitting the key would work too; what does not
+    work is reacting to the notification. Two corollaries. **A guard placed on one path does not
+    cover another** — `recompute()` muted observations precisely to avoid polluting the population,
+    but this loop ran through `scanNow()` and sailed past it; when you suppress a side effect,
+    suppress it where the effect happens, not on the route you had in mind. And **a reactive guard
+    protects nothing on its first go**: the click guard called `onInteract()` from *inside* the
+    click handler, so it only ever held off re-renders after a click had already landed, which is
+    why every first click in a while was eaten.
+
+65. **In a system test, read extension storage from an extension PAGE, not from the MV3 service
+    worker.** A service worker is free to stop when idle, and `sw.evaluate(...)` against a stopped
+    worker **hangs** rather than failing — a 600s timeout with no output, which reads like a broken
+    test rather than a broken read. Grab what you need from the worker (the extension id) while it
+    is certainly alive at launch, then read storage by opening `chrome-extension://<id>/options.html`
+    and evaluating there: that is also what the user does when they export a log, so the test
+    exercises the real path. Relatedly, **resolve the extension's worker, don't take
+    `ctx.serviceWorkers()[0]`** — that can hand back a worker with `chrome` not yet bound, and the
+    resulting `Cannot read properties of undefined (reading 'sync')` looks like a product bug and
+    only appears under load.
+
+66. **When you fix one cause of a measured symptom, re-measure the SYMPTOM — not the cause you
+    fixed.** FH-049 was measured (300 decisions over 13 posts) and its re-render path was genuinely
+    fixed, with a passing test. The `scoreSloppy` comment then recorded the distortion as "what
+    post identity fixes" — and nobody re-ran the count. Nine days later the same measurement on
+    0.8.0 read 300 decisions over **5** posts: a second, unrelated cause had been there all along.
+    A fix earns "fixed" from the number that defined the bug, not from the mechanism you changed
+    or a test of it. Write the number in the ledger, and when a fix ships, take the number again.
+    A corollary that saved this diagnosis: **when duplicates carry byte-identical data, the input
+    did not change.** The flooded observations held 12 distinct feature vectors repeated 14–29
+    times each — so the scored text was identical every time, which ruled out post identity and
+    pointed at whatever was calling the scorer.
+
 
 ## More tests & docs
 
