@@ -5,7 +5,7 @@
 // MutationObserver, badge messaging). Skips cleanly where no browser is available.
 const test = require("node:test");
 const assert = require("node:assert");
-const { resolveChrome, extensionBuilt, launchFeed } = require("./helper");
+const { resolveChrome, extensionBuilt, extensionWorker, launchFeed } = require("./helper");
 
 const browser = resolveChrome();
 // In CI we must never silently skip — a missing browser or unbuilt extension should
@@ -147,7 +147,7 @@ test("Mute on a reshare stub mutes the author, not the reactor", { skip, timeout
 
     // …and it is persisted immediately, not left in a debounce window a reload would drop.
     // Read it back through the service worker — the page's main world has no chrome.storage.
-    const sw = ctx.serviceWorkers()[0];
+    const sw = await extensionWorker(ctx);
     const stored = await sw.evaluate(() => new Promise((r) =>
       chrome.storage.local.get("feedhacker:authors", (o) => r(o["feedhacker:authors"] || {}))));
     assert.deepStrictEqual(Object.keys(stored.muted || {}), ["/in/author-alice"],
@@ -214,6 +214,69 @@ test("a feed of ordinary human posts is left alone end-to-end", { skip, timeout:
     }
     assert.deepStrictEqual(hidden, [], `no human post may be hidden by default (hid ${hidden.join(", ")})`);
     assert.strictEqual(await page.locator(".feedhacker-stub").count(), 0, "and no stubs are inserted");
+  } finally {
+    await close();
+  }
+});
+
+// FH-060: how OFTEN a post is judged, driven in a real browser — the only tier that runs the
+// real debounced storage writes, the real storage.onChanged delivery back into the same tab,
+// and the real MutationObserver together. The maintainer's 0.8.0 export had 300 decisions
+// over 5 distinct posts, 1548ms apart in lockstep: hiding a post bumped its author's hide
+// tally, the tally write came back to our own tab, and the handler re-applied the whole feed
+// — dropping every model verdict and re-judging everything, forever. Unit and integration
+// tests cannot see it; each of those pieces is individually correct.
+//
+// The invariant is the one the export should have shown: decisions ~ distinct posts.
+const SLOP_A = "Let’s be honest: this isn’t just a job — it’s a calling. The result? Growth, clarity, and momentum. Here’s what nobody tells you: it’s not about titles. It’s about impact. 🚀 Dream big. 💡 Work hard. 🔥 Stay humble.";
+const SLOP_B = "Here’s the thing: this isn’t just a meeting — it’s a movement. The takeaway? Focus, courage, and clarity. Here’s why nobody tells you: it’s not about headcount. It’s about culture. 🚀 Think bigger. 💡 Move faster. 🔥 Stay curious.";
+const SLOP_C = "Let’s be honest: this isn’t just a product — it’s a promise. The best part? Trust, speed, and delight. Here’s what nobody tells you: it’s not about features. It’s about outcomes. 🚀 Ship often. 💡 Listen harder. 🔥 Stay humble.";
+// NOTE the explicit charset: the harness fulfils with contentType "text/html" and no charset,
+// so Chrome would decode this fixture's curly quotes and emoji as windows-1252 and the scorer
+// would see mojibake. Every other fixture here is pure ASCII and never noticed.
+const FLOOD_FIXTURE = `<!doctype html><html><head><meta charset="utf-8"><title>Feed</title></head><body><main><div id="feed">
+  ${post("p-s1", `<a href="/in/ann-one">Ann One</a><div>${SLOP_A}</div>`)}
+  ${post("p-s2", `<a href="/in/bob-two">Bob Two</a><div>${SLOP_B}</div>`)}
+  ${post("p-s3", `<a href="/in/cid-three">Cid Three</a><div>${SLOP_C}</div>`)}
+  ${post("p-ok", `<a href="/in/dee-four">Dee Four</a><div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}
+</div></main></body></html>`;
+
+test("a post is judged once, not on a loop — decisions stay ~ distinct posts", { skip, timeout: 90000 }, async () => {
+  // extId comes from the launcher, which resolved the extension's own worker while it was
+  // certainly alive — an MV3 worker may well be idle by the time the dwell below ends.
+  const { ctx, page, extId, close } = await launchFeed({ fixtureHtml: FLOOD_FIXTURE, sync: { muteSloppy: true } });
+  try {
+    await page.waitForSelector("#p-s1.feedhacker-hidden", { timeout: 20000 });
+    // Dwell without touching anything. The loop needed no input: its clock was the 1.5s
+    // author-tally debounce, so ~4 turns fit in here and each turn re-judged all three.
+    await page.waitForTimeout(7000);
+
+    // Read the log the way the maintainer does — from the options page, which has the
+    // chrome.* APIs in its own page context. NOT from the service worker: an MV3 worker is
+    // free to go idle during the dwell above, and evaluating in a stopped worker hangs
+    // rather than failing (best_practices §65).
+    const read = async (key) => {
+      const o = await ctx.newPage();
+      await o.goto(`chrome-extension://${extId}/options.html`, { waitUntil: "domcontentloaded" });
+      const v = await o.evaluate((k) => new Promise((r) =>
+        chrome.storage.local.get([k], (got) => r((got && got[k]) || []))), key);
+      await o.close();
+      return v;
+    };
+    const log = await read("feedhacker:sloplog");
+
+    const distinct = new Set(log.map((e) => e && e.preview)).size;
+    assert.ok(log.length >= 3,
+      `the three slop posts must actually reach the decision log (got ${log.length}) — a test that logs nothing proves nothing`);
+    assert.ok(log.length <= distinct * 2,
+      `decisions must stay ~ distinct posts: ${log.length} decisions over ${distinct} distinct posts ` +
+      `is the FH-060 flood (it was 300 over 5)`);
+
+    // …and the population auto-calibration learns from must be just as clean, because that is
+    // where the real damage landed: broetry damped 1.400 -> 0.792 on duplicates of a handful.
+    const obs = await read("feedhacker:slopobs");
+    assert.ok(obs.length <= 12,
+      `the calibration population must not fill with re-sightings of 4 posts (got ${obs.length})`);
   } finally {
     await close();
   }

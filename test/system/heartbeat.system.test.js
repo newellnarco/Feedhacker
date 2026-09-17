@@ -5,7 +5,7 @@
 // while a feed that rendered posts our marker no longer matches trips the alarm exactly once.
 const test = require("node:test");
 const assert = require("node:assert");
-const { resolveChrome, extensionBuilt, launchFeed } = require("./helper");
+const { resolveChrome, extensionBuilt, launchFeed, extensionWorker } = require("./helper");
 
 const browser = resolveChrome();
 const skip = process.env.CI
@@ -28,7 +28,7 @@ const BREAK_FIXTURE = feed(
 const EMPTY_FIXTURE = feed("");   // paging / between page loads: no markers AND no posts
 
 async function heartbeatCount(ctx) {
-  const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent("serviceworker"));
+  const sw = await extensionWorker(ctx);
   const log = await sw.evaluate(
     (k) => new Promise((r) => chrome.storage.local.get([k], (o) => r((o && o[k]) || []))),
     ERR_KEY

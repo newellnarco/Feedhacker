@@ -29,6 +29,28 @@ function resolveChrome() {
   return { ok: false };
 }
 
+// The EXTENSION's service worker, not merely the first one the context happens to hold.
+// `ctx.serviceWorkers()[0]` can hand back a worker whose script has not bound `chrome` yet,
+// and then `sw.evaluate(... chrome.storage ...)` fails with "Cannot read properties of
+// undefined (reading 'sync')" — a harness fault that reads exactly like a product bug, and
+// one that only shows up when the machine is loaded. Match on the chrome-extension:// origin
+// and wait for the worker to actually answer.
+async function extensionWorker(ctx, timeoutMs = 20000) {
+  const deadline = Date.now() + timeoutMs;
+  const isExt = (w) => w && String(w.url()).startsWith("chrome-extension://");
+  for (;;) {
+    for (const w of ctx.serviceWorkers().filter(isExt)) {
+      try {
+        if (await w.evaluate(() => !!(globalThis.chrome && chrome.storage))) return w;
+      } catch { /* worker restarting — try the next, or wait for a new one */ }
+    }
+    if (Date.now() >= deadline) throw new Error("no extension service worker with chrome.storage bound");
+    const left = deadline - Date.now();
+    try { await ctx.waitForEvent("serviceworker", { timeout: Math.min(1000, left) }); }
+    catch { /* none arrived in that window — re-check the ones we have */ }
+  }
+}
+
 function extensionBuilt() {
   return fs.existsSync(path.join(EXT, "manifest.json"));
 }
@@ -46,7 +68,7 @@ async function launchFeed({ fixtureHtml, sync }) {
   // leaves nothing behind — removed best-effort on close.
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "feedhacker-pw-"));
   const ctx = await chromium.launchPersistentContext(userDataDir, { headless: true, executablePath, args });
-  const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent("serviceworker"));
+  const sw = await extensionWorker(ctx);
   if (sync) {
     await sw.evaluate((s) => new Promise((r) => chrome.storage.sync.set(s, r)), sync);
   }
@@ -59,7 +81,7 @@ async function launchFeed({ fixtureHtml, sync }) {
     await ctx.close();
     try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch { /* best-effort */ }
   };
-  return { ctx, page, close };
+  return { ctx, page, sw, extId: new URL(sw.url()).host, close };
 }
 
 // Open the packaged extension's own options page (chrome-extension://<id>/options.html),
@@ -74,7 +96,7 @@ async function launchOptions({ local, sync }) {
   ];
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "feedhacker-pw-"));
   const ctx = await chromium.launchPersistentContext(userDataDir, { headless: true, executablePath, args });
-  const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent("serviceworker"));
+  const sw = await extensionWorker(ctx);
   if (local) await sw.evaluate((s) => new Promise((r) => chrome.storage.local.set(s, r)), local);
   if (sync) await sw.evaluate((s) => new Promise((r) => chrome.storage.sync.set(s, r)), sync);
   const id = new URL(sw.url()).host;   // chrome-extension://<id>/background.js
@@ -97,4 +119,4 @@ async function launchPopup({ local, sync }) {
   return o;
 }
 
-module.exports = { resolveChrome, extensionBuilt, launchFeed, launchOptions, launchPopup, EXT, ROOT };
+module.exports = { resolveChrome, extensionBuilt, extensionWorker, launchFeed, launchOptions, launchPopup, EXT, ROOT };

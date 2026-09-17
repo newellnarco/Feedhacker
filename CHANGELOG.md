@@ -11,6 +11,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.9.0] — unreleased
+
+### Fixed
+- **FeedHacker was re-judging your whole feed every 1.5 seconds, and it was teaching itself the
+  wrong thing.** Nothing about it needed you to scroll or click. Each time a post was hidden,
+  FeedHacker updated that author's "hidden" count; saving that count looked to FeedHacker like
+  someone had changed a setting, so it threw away every decision it had made and judged the
+  entire feed again — which hid posts, which updated the counts, which started the next round.
+
+  Two things went wrong because of it. The **decision log** filled up with the same few posts
+  over and over, so the record you can export held only the last couple of minutes instead of a
+  real browsing session. Worse, the **learning got poisoned**: FeedHacker tunes itself by looking
+  at the posts it reviews, and it was counting the same handful dozens of times. On the
+  maintainer's own machine that made it conclude the biggest AI-slop giveaway — one-thought-per-line
+  "broetry" layout — was ordinary and unremarkable, and it quietly cut that signal's influence by
+  **44%** while also raising its own bar for what counts as slop. In plain terms: **it was
+  training itself to catch less**, which is exactly what people were reporting.
+
+  A post is now judged once again, and FeedHacker only re-checks your feed when something that
+  actually changes filtering changes — a new mute, a new "always show", a settings change. Hide
+  and show counts are just statistics and no longer disturb anything.
+
+  **What to do after updating:** open **Options → Error log → Reset AI-slop learning** once. That
+  clears the mis-tuned model along with the numbers it was built from, and detection starts again
+  from the shipped algorithm. It is the only step needed, and it is worth doing — until you do,
+  the old mis-tuning is still what decides your feed.
+
 ## [0.8.0] — 2026-09-16
 
 ### Changed
