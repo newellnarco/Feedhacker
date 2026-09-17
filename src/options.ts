@@ -492,6 +492,41 @@ function renderInsights(history) {
     tb.appendChild(tr);
   });
   table.appendChild(tb); box.appendChild(table);
+
+  // …and the same 30 days broken down by WHICH filter did the hiding. The per-kind counts have
+  // always been stored (`history[day].byId`) and nothing ever displayed them, so the only
+  // question this panel could answer was "how many", never "which filter". That matters most
+  // for the deterministic filters: the AI-slop model has its own decision log listing every
+  // post it caught and why, and until now the other eight kinds had no equivalent at all.
+  var perFilter: any = {}, order: string[] = [];
+  days.forEach(function (d) {
+    var b = (history[d] && history[d].byId) || {};
+    for (var id in b) {
+      if (!Object.prototype.hasOwnProperty.call(b, id)) continue;
+      if (!(id in perFilter)) { perFilter[id] = 0; order.push(id); }
+      perFilter[id] += b[id] || 0;
+    }
+  });
+  if (!order.length) return;                       // older history has totals but no breakdown
+  order.sort(function (a, b) { return perFilter[b] - perFilter[a]; });
+  var sub = document.createElement("h3");
+  sub.className = "subhead"; sub.style.marginTop = "14px";
+  sub.textContent = "By filter";
+  box.appendChild(sub);
+  var t2 = document.createElement("table");
+  t2.innerHTML = "<thead><tr><th>Filter</th><th class='num'>Hidden</th></tr></thead>";
+  var tb2 = document.createElement("tbody");
+  order.forEach(function (id) {
+    var tr = document.createElement("tr");
+    var name = document.createElement("td");
+    // labelFor knows the nine shipped kinds; anything else (a custom filter, an author mute,
+    // or a filter id from a future version) is shown by its own id rather than dropped.
+    name.textContent = (Filters.labelFor && Filters.labelFor(id)) || id;
+    var num = document.createElement("td");
+    num.className = "num"; num.textContent = String(perFilter[id]);
+    tr.appendChild(name); tr.appendChild(num); tb2.appendChild(tr);
+  });
+  t2.appendChild(tb2); box.appendChild(t2);
 }
 // A source's key is the LinkedIn profile/company path (e.g. "/in/jane-doe"), so we
 // can link straight to the profile — from there LinkedIn's own menu lets you block,

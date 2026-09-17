@@ -33,24 +33,11 @@ or removed entirely if you prefer.
 | **Work anniversaries** | "Celebrating N years at…" |
 | **Training & certification** | "I'm happy to share I earned…" |
 
-Each filter has one toggle:
-
-- **M (Mute)** — hide posts of this kind. On hides it, off doesn't, and nothing
-  overrides anything else.
+Each filter has one toggle: on hides posts of that kind, off doesn't.
 
 **AI slop** sits apart from that list, with its own on/off and a sensitivity
 slider, because it is a learned model rather than a fixed rule about a kind of
 post.
-
-> **Solo mode is set aside as of 0.8.0 — temporarily, and not because we stopped
-> wanting it.** LinkedIn rebuilt its feed and the markup FeedHacker depended on
-> disappeared, which broke how posts are recognised and told apart. Solo decided
-> what to hide *before* the AI‑slop model was consulted, so while it was on the
-> model never ran and its decision log stopped recording — on an already‑misreading
-> feed that both amplified the symptom and hid the cause. Removing it restored the
-> diagnostics. **We intend to bring one‑kind‑at‑a‑time viewing back** once the new
-> markup is pinned down, rebuilt so it cannot switch the model off. A leftover Solo
-> setting is cleared on upgrade; mutes are untouched.
 
 ### AI‑slop scoring that learns
 

@@ -11,6 +11,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.9.1] — 2026-09-17
+
+### Added
+- **Insights now shows *which* filter did the hiding.** The panel used to report a daily total
+  and nothing else, so you could see that thirty posts were hidden last week without ever
+  learning what caught them. There is now a **By filter** table alongside the daily one, summing
+  the last 30 days per kind and ordered with the noisiest first. The AI-slop model already had
+  its own decision log listing every post it caught and why; this gives the other eight kinds
+  their equivalent. (The counts were already being recorded — nothing new is collected.)
+
+### Fixed
+- **Buttons on a hidden post no longer need a second click.** FeedHacker re-checks the feed in
+  the background when the AI model retunes itself, and a re-check can rebuild the little row of
+  controls on a hidden post. There was already a rule to hold that off while you are clicking —
+  but it only started *after* a click had registered, so the first click in a while, the one you
+  actually notice, was the unprotected one. The hold now starts the moment you press the button
+  or tab to it, and a post whose controls you are using is left alone entirely.
+
 ## [0.9.0] — 2026-09-17
 
 ### Added / Fixed
@@ -85,9 +103,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   and sensitivity slider, since it is a learned model rather than a fixed rule, and the plain
   post-kind filters below under **Also hide**.
 
-  **We intend to bring one-kind-at-a-time viewing back** once the new feed markup is properly
-  pinned down and post identity is trustworthy again — rebuilt so it can't switch the AI off or
+  **We intended to bring one-kind-at-a-time viewing back** once the new feed markup was pinned
+  down and post identity was trustworthy again — rebuilt so it couldn't switch the AI off or
   blind the logs the way the old one did.
+
+  > **Update, 2026-09-17: that is no longer the plan — Solo mode is retired for good.** This
+  > paragraph is left standing rather than quietly deleted, because the intention was real when
+  > 0.8.0 shipped and you may have read it. What changed our mind was looking at the whole
+  > history rather than the last bug: showing only one kind and hiding everything else produced
+  > a *correct* result that was routinely indistinguishable from a broken filter — on one real
+  > feed capture, Solo set to Hiring matched a single post out of 63 — and naming the mode with
+  > a one-click "Show everything" exit had already been tried, in 0.5.0, without fixing it.
+  > See the Solo note in [`README.md`](README.md) for the full reasoning.
 
 ### Internal (no user-visible change)
 - **The release pipeline no longer reports a refused store request as "normal".** When FeedHacker

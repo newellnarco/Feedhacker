@@ -595,12 +595,41 @@
   // Install the delegated listener once per document, and stash the live settings so the
   // handler can reach the glue callbacks (onFeedback/onMuteAuthor/…). Called whenever we
   // build a stub. Capture phase so we intercept before LinkedIn's own ancestor handlers.
+  // A press inside our UI, noted BEFORE the click completes. The interaction hold-off exists so
+  // a background re-tune cannot rebuild a stub out from under a click — but it used to be armed
+  // from inside the click handler itself, which protects every click except the first one in a
+  // while, i.e. exactly the one a user notices (FH-063). pointerdown lands before the click, and
+  // focusin covers the keyboard path, so by the time the click arrives the hold-off is already up.
+  function onStubPress(ev) {
+    var t: any = ev && ev.target;
+    if (!t || !t.closest) return;
+    if (!t.closest(".feedhacker-stub, .feedhacker-explainer, .feedhacker-mark")) return;
+    var doc: any = t.ownerDocument || document;
+    var settings: any = doc.__fhSettings || {};
+    if (typeof settings.onInteract === "function") settings.onInteract();
+  }
   function armStub(doc, settings) {
     if (!doc) return;
     (doc as any).__fhSettings = settings;
     if ((doc as any).__fhDelegated) return;
-    try { doc.addEventListener("click", onStubClick, true); (doc as any).__fhDelegated = true; }
-    catch (e) {}
+    try {
+      doc.addEventListener("click", onStubClick, true);
+      // Passive: these only note the time, they never preventDefault.
+      doc.addEventListener("pointerdown", onStubPress, { capture: true, passive: true } as any);
+      doc.addEventListener("focusin", onStubPress, true);
+      (doc as any).__fhDelegated = true;
+    } catch (e) {}
+  }
+
+  // True when the user is mid-interaction with this element's own controls: the focused element
+  // is inside it. Rebuilding that subtree drops the click or keypress in flight, so the soft
+  // re-apply leaves it alone and picks it up on a later pass.
+  function holdsFocus(el) {
+    try {
+      var doc: any = el && el.ownerDocument;
+      var a = doc && doc.activeElement;
+      return !!(a && a !== doc.body && el.contains(a));
+    } catch (e) { return false; }
   }
 
   function directChildStub(el) {
@@ -1223,6 +1252,7 @@
             if (root.FeedHackerScorer.score(feats, settings.slopWeights).prob < thr) uncollapse(el);   // no longer slop → reveal
           }
         } else {
+          if (holdsFocus(el)) continue;                  // mid-click on this post's own control
           delete el.dataset.feedhackerScanned;           // let a tightened model re-hide shown posts
         }
       }

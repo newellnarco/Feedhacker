@@ -1,7 +1,7 @@
 {
   "name": "feedhacker",
-  "version": "0.9.0",
-  "description": "Mute the noise in your LinkedIn feed — AI slop, promoted posts, and more.",
+  "version": "0.9.1",
+  "description": "Mute the noise in your LinkedIn feed \u2014 AI slop, promoted posts, and more.",
   "private": true,
   "scripts": {
     "compile": "tsc",
@@ -11,7 +11,9 @@
     "test:unit": "tsc && node --test \"test/unit/*.test.js\"",
     "test:integration": "tsc && node --test \"test/integration/*.test.js\"",
     "test:system": "npm run build && node --test \"test/system/*.test.js\"",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "store:notes": "node scripts/store-notes.mjs",
+    "store:shots": "node scripts/store-shots.mjs"
   },
   "engines": {
     "node": ">=18"
