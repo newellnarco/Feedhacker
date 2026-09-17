@@ -281,3 +281,40 @@ test("a post is judged once, not on a loop — decisions stay ~ distinct posts",
     await close();
   }
 });
+
+// FH-061: a group row stands for ONE reason. Driven in a real browser because grouping is a
+// scan-path change (§28) and because the row's controls are what the maintainer was actually
+// blocked by: *"one has the slop button and the other two don't, it won't let me click slop on
+// the group so i have to expand them."*
+const MIXED_FIXTURE = `<!doctype html><html><head><meta charset="utf-8"><title>Feed</title></head><body><main><div id="feed">
+  ${post("p-slop", `<a href="/in/ann-one">Ann One</a><div>${SLOP_A}</div>`)}
+  ${post("p-promo-1", `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy our thing one</div>`)}
+  ${post("p-promo-2", `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy our thing two</div>`)}
+  ${post("p-ok", `<div>Fixed a caching bug this morning, tests pass, shipping later.</div>`)}
+</div></main></body></html>`;
+
+test("AI slop and Promoted are never folded into one row end-to-end (FH-061)", { skip, timeout: 60000 }, async () => {
+  const { page, close } = await launchFeed({
+    fixtureHtml: MIXED_FIXTURE, sync: { muteSloppy: true, mutePromoted: true, groupHiddenRuns: true },
+  });
+  try {
+    // Wait for the LAST of the three to be hidden, so grouping has certainly had its chance.
+    await page.waitForSelector("#p-promo-2.feedhacker-hidden, #p-promo-2.feedhacker-gone", { timeout: 20000 });
+    assert.strictEqual(await page.locator(".feedhacker-stub.feedhacker-group").count(), 0,
+      "three adjacent hidden posts hidden for different reasons must not become one row");
+    // Each keeps its own stub — and so the slop post keeps its own splat, reachable without
+    // expanding anything.
+    for (const id of ["p-slop", "p-promo-1", "p-promo-2"]) {
+      assert.ok((await page.locator(`#${id} .feedhacker-stub`).count()) >= 1, `${id} keeps its own stub`);
+    }
+    assert.ok((await page.locator('#p-slop [data-fh-act="confirm"]').count()) >= 1,
+      "the slop post's own splat is right there");
+    assert.strictEqual(await page.locator('#p-promo-1 [data-fh-act="confirm"]').count(), 0,
+      "a promoted post offers no slop splat — there is no model behind that hide");
+    assert.strictEqual(
+      await page.locator("#p-ok").evaluate((el) => el.classList.contains("feedhacker-hidden")), false,
+      "the human post stays visible");
+  } finally {
+    await close();
+  }
+});

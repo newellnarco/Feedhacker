@@ -650,6 +650,27 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     times each — so the scored text was identical every time, which ruled out post identity and
     pointed at whatever was calling the scorer.
 
+67. **If a bug corrupted stored state, the fix is not done until it SHIPS THE REPAIR.** Code
+    ships; user state does not. FH-060's re-judge loop taught the AI-slop model to catch less,
+    and the mis-tuned weights and threshold live in `chrome.storage` — so the loop fix landed in
+    every install while the damage stayed in every install. The gap does not close itself, and it
+    closes least for the people who need it most: a release note reaches the users who read
+    release notes, and the ones still running a poisoned model are disproportionately the ones
+    who never will. The maintainer put it plainly — *"so users in the wild don't have to be told
+    to do it."* **Ship the repair as a one-time migration, not an instruction.**
+    Three things make such a migration safe, and all three are failure modes in their own right.
+    **Key it in a ledger** (`feedhacker:migrations`, name → when) rather than gating on a version
+    number, so it can never fire twice; **write the ledger only inside the callback where the
+    repair actually completed**, so a service worker torn down mid-migration re-runs it instead
+    of recording a repair that never happened; and **bank it as already-done on a FRESH install**,
+    or the user's first update destroys a model they trained legitimately — a destructive
+    migration that has never run is a loaded gun, not a no-op. One more, from the same family as
+    §64: the repair and the equivalent user-facing button must clear the same thing **from one
+    definition** (here `filters.ts` owns `SLOP_LOCAL_KEYS`), because two hand-kept copies of
+    "what resetting the AI means" is exactly how FH-054 shipped a reset that missed four keys.
+    Finally, a migration ledger is **not user state**: a factory reset must leave it, and where a
+    test asserts "nothing survives", the exemption is listed by name with its reason.
+
 
 ## More tests & docs
 

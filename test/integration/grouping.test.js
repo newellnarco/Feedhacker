@@ -276,3 +276,81 @@ test("Show all on one row expands only that row's posts", () => {
   const after = doc.querySelectorAll(".feedhacker-stub.feedhacker-group").length;
   assert.strictEqual(after, before - 1, "the other rows stay folded");
 });
+
+// --- FH-061: a group row stands for ONE reason -----------------------------------------
+// Folding by adjacency alone produced "3 posts hidden · AI Slop ×1, Promoted ×2". The
+// maintainer's objection, 2026-09-17: *"the other two of the three when ungrouped were not
+// slop. they were another filter. and they shouldn't all be grouped since they're different
+// filters, not ai."* It also broke the row's own control: the splat can only train slop
+// members, so a mixed row offered a splat covering a third of what it claimed to stand for —
+// and expanding it gave the other two no control at all, a deterministic hide carrying no
+// feature vector to learn from.
+const promoPost = (i) => post2(`<a href="/company/acme">Acme</a><span>Promoted</span><div>buy thing ${i}</div>`);
+
+test("a mixed run does NOT fold into one row (FH-061)", () => {
+  // Exactly the maintainer's case: one AI-slop post next to two Promoted ones.
+  const doc = makeDoc(feedHtml(slopPosts(1) + promoPost(0) + promoPost(1)));
+  const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  assert.strictEqual(doc.querySelector(".feedhacker-stub.feedhacker-group"), null,
+    "three adjacent hidden posts hidden for DIFFERENT reasons must not become one row");
+  const posts = feed.findPostContainers(doc);
+  assert.strictEqual(posts.length, 3, "all three posts are still there");
+  posts.forEach((p, i) => {
+    assert.ok(p.classList.contains("feedhacker-hidden"), `post ${i} is still hidden`);
+    assert.ok(p.querySelector(".feedhacker-stub"), `post ${i} keeps its own stub and its own controls`);
+  });
+});
+
+test("…and each reason folds on its own once it reaches the minimum", () => {
+  // 3 slop then 3 promoted: two homogeneous rows, not one mixed row and not nothing.
+  const doc = makeDoc(feedHtml(slopPosts(3) + promoPost(0) + promoPost(1) + promoPost(2)));
+  const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const rows = [...doc.querySelectorAll(".feedhacker-stub.feedhacker-group")];
+  assert.strictEqual(rows.length, 2, "one row per reason");
+  rows.forEach((r) => assert.match(r.textContent, /3 posts hidden/, "each row stands for its own three"));
+  const detail = rows.map((r) => r.textContent);
+  assert.ok(detail.some((t) => /AI Slop ×3/.test(t)), "an all-slop row");
+  assert.ok(detail.some((t) => /Promoted Post ×3/.test(t)), "an all-promoted row");
+  // The point of the split: the slop row's splat now covers everything the row claims.
+  const slopRow = rows[detail.findIndex((t) => /AI Slop/.test(t))];
+  assert.ok(slopRow.querySelector('[data-fh-act="confirm-group"]'),
+    "the slop row offers the splat");
+  assert.strictEqual(
+    rows[detail.findIndex((t) => /Promoted/.test(t))].querySelector('[data-fh-act="confirm-group"]'), null,
+    "…and the promoted row does not, because there is nothing to train");
+});
+
+test("confirming a homogeneous slop row trains EVERY post it stands for", () => {
+  // The mixed-row bug in its most concrete form: before the split, a splat on a row of
+  // "3 posts hidden" could train one of them. Now the row and its control agree.
+  const doc = makeDoc(feedHtml(slopPosts(3)));
+  const { s, labels } = trainingSettings({ muteSloppy: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+  const splat = doc.querySelector('[data-fh-act="confirm-group"]');
+  assert.ok(splat, "the row has a splat");
+  splat.dispatchEvent(new doc.defaultView.MouseEvent("click", { bubbles: true }));
+  assert.deepStrictEqual(labels, [1, 1, 1], "one positive signal per post in the row");
+});
+
+test("a post's secondary flags do not splinter it off its own run", () => {
+  // reasonKey is the PRIMARY reason, matching what the row is labelled with and what the
+  // daily history counts a hide under — so a multi-flag post still groups with its kind
+  // instead of standing alone.
+  const doc = makeDoc(feedHtml(
+    promoPost(0) + post2(`<a href="/company/acme">Acme</a><span>Promoted</span><div>We are hiring! Apply now for this open role on our team.</div>`) + promoPost(1)));
+  const { s } = trainingSettings({ muteSloppy: false, mutePromoted: true, muteHiring: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+  const posts = feed.findPostContainers(doc);
+  const keys = posts.map((p) => JSON.parse(p.dataset.feedhackerReasons || "[]").map((r) => r.id).join("+"));
+  assert.ok(keys.every((k) => k.split("+")[0] === "promoted"),
+    `all three lead with the promoted reason (got ${JSON.stringify(keys)})`);
+  assert.ok(doc.querySelector(".feedhacker-stub.feedhacker-group"), "so they fold as one row");
+});

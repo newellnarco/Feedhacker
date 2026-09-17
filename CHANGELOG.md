@@ -33,10 +33,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   actually changes filtering changes — a new mute, a new "always show", a settings change. Hide
   and show counts are just statistics and no longer disturb anything.
 
-  **What to do after updating:** open **Options → Error log → Reset AI-slop learning** once. That
-  clears the mis-tuned model along with the numbers it was built from, and detection starts again
-  from the shipped algorithm. It is the only step needed, and it is worth doing — until you do,
-  the old mis-tuning is still what decides your feed.
+  **You don't have to do anything.** Fixing the loop could not by itself undo the mis-tuning —
+  what the AI had learned is saved with your settings and survives an update — so **0.9.0
+  performs that reset for you, once, when it installs.** Detection goes back to the algorithm a
+  new install ships with. Your mute settings, muted authors, custom filters and display choices
+  are untouched, and it happens only this once: a model you train from here on is yours to keep.
+  (The button is still there under **Options → Error log → Reset AI-slop learning** if you ever
+  want it again.)
+
+- **Hidden posts are no longer lumped together when they were hidden for different reasons.** A
+  run of hidden posts folds into one summary row to save space, but it was folding purely on
+  posts being next to each other — so one AI-slop post sitting beside two promoted ones became a
+  single *"3 posts hidden · AI Slop ×1, Promoted Post ×2"* row. That was wrong in a way that got
+  in your way: the row's **AI slop** button can only teach the model about actual slop posts, so
+  on a mixed row it covered one of the three, and expanding the row didn't help either, because a
+  post hidden by a plain filter has nothing for the model to learn from.
+
+  Now a row only ever stands for one reason: slop groups with slop, promoted with promoted. So the
+  **AI slop** button on a group row always applies to everything the row represents, and a mixed
+  stretch of feed stays as individual posts, each with its own controls.
 
 ## [0.8.0] — 2026-09-16
 

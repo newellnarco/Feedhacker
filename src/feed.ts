@@ -933,6 +933,25 @@
     if (el.dataset.feedhackerHidden === "1") return "transparent";                             // hidden without a stub
     return "shown";                                                                            // visible post breaks the run
   }
+  // What KIND of hidden row this is, for grouping. A run only folds together if every member
+  // was hidden for the same reason.
+  //
+  // Folding by adjacency alone put "3 posts hidden · AI Slop ×1, Promoted ×2" on one row, and
+  // the maintainer's objection to it was exactly right: *"they shouldn't all be grouped since
+  // they're different filters, not ai."* A mixed row is wrong on three counts — it reads as
+  // though FeedHacker made one judgement when it made three unrelated ones; the AI-slop splat
+  // on it can only train the slop members, so a run with one slop post offered a splat that
+  // covered a third of the row (and expanding it gave the other two no control at all, since
+  // a deterministic hide carries no feature vector); and "Show all" is the only way to act on
+  // the members the row's own control cannot reach.
+  //
+  // The primary reason id is the key, matching what `reasonCounts` labels a row with and what
+  // the daily history counts a hide under — so a post hidden as [hiring, company] groups with
+  // other hiring posts rather than splintering on its secondary flags.
+  function reasonKey(el) {
+    var r = readReasons(el);
+    return (r[0] && r[0].id) || "other";
+  }
   function reasonCounts(members) {
     var counts: any = {}, order: any[] = [];
     for (var i = 0; i < members.length; i++) {
@@ -1034,10 +1053,18 @@
       }
       run = [];
     }
+    var runKey = null;
     for (var i = 0; i < posts.length; i++) {
       var st = postState(posts[i]);
-      if (st === "run") run.push(posts[i]);
-      else if (st === "shown") flush();
+      if (st === "run") {
+        var k = reasonKey(posts[i]);
+        // A different reason ends the run and starts a new one — the run itself is intact,
+        // so this splits one mixed row into one homogeneous row per kind, it does not
+        // discard anything. flush() empties `run`, hence the push after it.
+        if (runKey !== null && k !== runKey) flush();
+        runKey = k;
+        run.push(posts[i]);
+      } else if (st === "shown") { flush(); runKey = null; }
       // "transparent" posts neither extend nor break the run
     }
     flush();
