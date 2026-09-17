@@ -36,11 +36,11 @@ var LOCAL_KEYS = [
 // on "clear log" already promised this one would "wipe the model itself"; now it does.
 // Author lists, custom filters, stats and the error log are NOT here: they are not the AI, and
 // clearing them is factory reset's job.
-var SLOP_LOCAL_KEYS = [WEIGHTS_KEY, TRAIN_KEY, OBS_KEY, CAL_KEY, SLOPLOG_KEY];
-// The sync-side AI tuning the model writes back — auto-calibration persists slopThreshold and
-// the popup's aggression slider persists both. Restored from buildDefaults(), never a literal.
-// Every mute*/display key in sync is deliberately left untouched.
-var SLOP_SYNC_KEYS = ["slopThreshold", "slopTargetFrac"];
+var SLOP_LOCAL_KEYS = Filters.SLOP_LOCAL_KEYS;
+// …and the sync-side AI tuning it restores from buildDefaults(). Both lists live in
+// filters.ts so this button and the one-time 0.9.0 recovery migration in the service worker
+// clear the same thing — two copies of this list is how FH-054 happened.
+var SLOP_SYNC_KEYS = Filters.SLOP_SYNC_KEYS;
 
 var LABELS = {};
 Filters.FILTERS.forEach(function (f) { LABELS[f.id] = f.label; });

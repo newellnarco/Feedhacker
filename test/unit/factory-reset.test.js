@@ -22,6 +22,16 @@ const MESSAGE_TYPES = new Set([
   "feedhacker:kick", "feedhacker:selfUpdate", "feedhacker:storeUpdate",
 ]);
 
+// Storage keys that are NOT user state, and that a factory reset must therefore LEAVE.
+// Listed one by one with a reason, so a genuine user-state key can never slip in here.
+//
+//   feedhacker:migrations — the ledger of which one-time migrations have already run. It is
+//   bookkeeping about the INSTALL, not about the user. Clearing it is actively harmful: the
+//   FH-060 recovery migration would then fire again on the next update and wipe whatever the
+//   user's model had legitimately learned since. A factory reset already leaves the AI clean,
+//   so re-running it would buy nothing and could cost a week of training.
+const NOT_USER_STATE = new Set(["feedhacker:migrations"]);
+
 // Every "feedhacker:*" storage key literal that appears anywhere in the extension source.
 function persistedKeys() {
   const found = new Set();
@@ -47,22 +57,39 @@ function resetKeys() {
   }));
 }
 
-// The key names SLOP_LOCAL_KEYS resolves to — the subset "Reset AI-slop learning" must clear.
+// The AI-reset key list, and the proof that BOTH callers use that one list.
+//
+// It moved to filters.ts in 0.9.0 because there are now two callers: the options-page button
+// and the one-time FH-060 recovery migration in the service worker. Two hand-kept copies is
+// exactly how FH-054 happened (a reset that removed the weights alone), so the list has one
+// home and this test binds each caller to it.
 function slopResetKeys() {
-  const src = read("options.ts");
-  // Bind the list to its use: a perfect list the handler ignores is exactly the bug (it
-  // removed WEIGHTS_KEY alone), so every assertion below depends on the handler reading it.
-  assert.match(src, /storage\.local\.remove\(SLOP_LOCAL_KEYS/,
+  const opts = read("options.ts");
+  // Bind the list to its use: a perfect list the handler ignores is exactly the bug, so every
+  // assertion below depends on the handler reading it.
+  assert.match(opts, /storage\.local\.remove\(SLOP_LOCAL_KEYS/,
     "the reset-learning handler must clear SLOP_LOCAL_KEYS");
+  assert.match(opts, /var SLOP_LOCAL_KEYS = Filters\.SLOP_LOCAL_KEYS;/,
+    "options.ts must use the shared list, not a second copy of it");
+  const bg = read("background.ts");
+  assert.match(bg, /storage\.local\.remove\(F\.SLOP_LOCAL_KEYS/,
+    "the recovery migration must clear the SAME shared list");
+
+  const src = read("filters.ts");
   const block = src.match(/var SLOP_LOCAL_KEYS = \[([\s\S]*?)\];/);
-  assert.ok(block, "options.ts must declare SLOP_LOCAL_KEYS");
-  const names = block[1].split(",").map((s) => s.trim()).filter(Boolean);
-  return new Set(names.map((n) => {
-    const decl = src.match(new RegExp("var " + n + ' = (?:[A-Za-z]+ \\? [A-Za-z._]+ : )?"(feedhacker:[^"]+)"'));
-    assert.ok(decl, `could not resolve ${n} to a storage key`);
-    return decl[1];
-  }));
+  assert.ok(block, "filters.ts must declare SLOP_LOCAL_KEYS");
+  const keys = [...block[1].matchAll(/"(feedhacker:[^"]+)"/g)].map((m) => m[1]);
+  assert.ok(keys.length >= 5, `expected the full AI-state list, got ${JSON.stringify(keys)}`);
+  return new Set(keys);
 }
+
+test("the shared AI-reset list names the decision log by its real key", () => {
+  // filters.ts spells "feedhacker:sloplog" literally; sloplog.ts owns it. If that constant
+  // ever moves, the reset would silently stop clearing the log.
+  const { sloplog } = require("../helper");
+  assert.ok(slopResetKeys().has(sloplog.STORAGE_KEY),
+    "SLOP_LOCAL_KEYS must contain SlopLog.STORAGE_KEY");
+});
 
 test("LOCAL_KEYS names a real storage key for every entry", () => {
   assert.ok(resetKeys().size >= 10, "expected the full set of persisted keys");
@@ -70,7 +97,7 @@ test("LOCAL_KEYS names a real storage key for every entry", () => {
 
 test("factory reset covers EVERY feedhacker: key the source persists", () => {
   const covered = resetKeys();
-  const missing = [...persistedKeys()].filter((k) => !covered.has(k));
+  const missing = [...persistedKeys()].filter((k) => !covered.has(k) && !NOT_USER_STATE.has(k));
   assert.deepStrictEqual(missing, [],
     "these storage keys survive a factory reset — add them to LOCAL_KEYS in options.ts");
 });
@@ -138,9 +165,9 @@ test("the AI reset removes SLOP_LOCAL_KEYS, not a lone key, and restores tuning 
 
 test("the AI tuning keys the reset restores are real defaults, and filter choices are not among them", () => {
   const { filters } = require("../helper");
-  const src = read("options.ts");
+  const src = read("filters.ts");        // shared with the recovery migration since 0.9.0
   const block = src.match(/var SLOP_SYNC_KEYS = \[([\s\S]*?)\];/);
-  assert.ok(block, "options.ts must declare SLOP_SYNC_KEYS");
+  assert.ok(block, "filters.ts must declare SLOP_SYNC_KEYS");
   const keys = block[1].split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
   const d = filters.buildDefaults();
 
@@ -153,4 +180,13 @@ test("the AI tuning keys the reset restores are real defaults, and filter choice
   // The self-tuned cutoff is the one that actually re-poisons a "reset" model if it survives.
   assert.ok(keys.includes("slopThreshold"),
     "the self-tuned threshold must go back to default — FH-050 found it pulled to 0.428–0.471");
+});
+
+test("the factory-reset exemption list stays minimal and is genuinely not user state", () => {
+  // An exemption list is a hole in the guarantee above, so it gets its own assertion: only
+  // the migration ledger is exempt, and a factory reset really does leave it in place.
+  assert.deepStrictEqual([...NOT_USER_STATE], ["feedhacker:migrations"],
+    "adding an exemption means arguing, here, that the key is not the user's data");
+  assert.ok(!resetKeys().has("feedhacker:migrations"),
+    "…and the ledger must NOT be in LOCAL_KEYS — clearing it re-arms a destructive migration");
 });

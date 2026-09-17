@@ -2,6 +2,11 @@
 // posts currently hidden, or a red "!" when the content script has logged an
 // error (so a silent failure is visible). Open the popup to see the timestamped
 // cause. Error state persists per tab until cleared from the popup.
+// filters.js is pulled in for ONE reason: it owns the single definition of what "reset the
+// AI-slop learning" clears, and the recovery migration below must clear exactly what the
+// options-page button clears. Duplicating that list here is how FH-054 happened.
+try { (self as any).importScripts("filters.js"); } catch (e) { /* no filters module: the migration self-skips */ }
+
 (function () {
 "use strict";
 
@@ -151,11 +156,58 @@ chrome.tabs && chrome.tabs.onRemoved && chrome.tabs.onRemoved.addListener(functi
   delete errored[tabId];
 });
 
+// --- one-time migrations, keyed by name so each runs at most once ever -------------------
+var MIGRATIONS_KEY = "feedhacker:migrations";
+// FH-060 recovery. The 1.5s re-judge loop fed auto-calibration the same handful of posts over
+// and over, and it self-tuned on that: on the maintainer's own install it damped the strongest
+// slop tell 1.400 -> 0.792 and pushed the threshold 0.500 -> 0.570 — a model trained to catch
+// LESS. Fixing the loop cannot undo that, because the weights and the threshold are stored
+// user state and survive an update. Every affected install would otherwise need to be told to
+// press a button, and most users never read release notes, so the ones still running a
+// poisoned model would be exactly the ones who never hear about it.
+//
+// So 0.9.0 performs that reset itself, once, on update. It clears only the AI (weights,
+// training data, observations, self-tuning, decision log) and restores the two tuning values
+// from buildDefaults(); mute settings, muted authors, custom filters and display settings are
+// untouched. Detection resumes from the algorithm a fresh install ships with.
+var SLOP_RECOVERY = "slopResetFH060";
+function runMigrations() {
+  var F = self.FeedHackerFilters;
+  if (!F || !F.SLOP_LOCAL_KEYS) return;                      // module missing: do nothing, silently
+  chrome.storage.local.get([MIGRATIONS_KEY], function (o) {
+    try {
+      var done = (o && o[MIGRATIONS_KEY]) || {};
+      if (done[SLOP_RECOVERY]) return;                        // already run — never a second time
+      chrome.storage.local.remove(F.SLOP_LOCAL_KEYS, function () {
+        // Mark it done in the same callback the clear completes in, so a worker that is torn
+        // down mid-migration re-runs it rather than recording a reset that never happened.
+        var mark = {}; done[SLOP_RECOVERY] = Date.now(); mark[MIGRATIONS_KEY] = done;
+        chrome.storage.local.set(mark);
+        try {
+          var d = F.buildDefaults(), patch = {};
+          for (var i = 0; i < F.SLOP_SYNC_KEYS.length; i++) patch[F.SLOP_SYNC_KEYS[i]] = d[F.SLOP_SYNC_KEYS[i]];
+          chrome.storage.sync.set(patch);
+        } catch (e) {}
+      });
+    } catch (e) {}
+  });
+}
+
 // First-run welcome: Chrome doesn't let an extension pin itself to the toolbar, so on
 // a fresh install we open a one-time page that shows the user how to pin it. Fires only
 // on "install" (not on updates or browser restarts), and never forces anything.
 chrome.runtime.onInstalled && chrome.runtime.onInstalled.addListener(function (details) {
-  if (!details || details.reason !== "install") return;
-  try { chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") }); } catch (e) {}
+  if (!details) return;
+  if (details.reason === "install") {
+    // A fresh install has nothing learned to clear, so bank the migration as already done —
+    // otherwise the user's first UPDATE would wipe the model they have legitimately trained.
+    var done = {}; done[SLOP_RECOVERY] = Date.now();
+    var mark = {}; mark[MIGRATIONS_KEY] = done;
+    try { chrome.storage.local.set(mark); } catch (e) {}
+    try { chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") }); } catch (e) {}
+    return;
+  }
+  if (details.reason !== "update") return;                   // browser restart / chrome update: nothing to do
+  runMigrations();
 });
 })();

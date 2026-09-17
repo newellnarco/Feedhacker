@@ -94,6 +94,27 @@
 
   // Keys the content script tracks live (everything in DEFAULTS). slopWeights is
   // handled separately (it lives in storage.local and is large/learned).
+  // --- AI-slop learning state: ONE definition of what "reset the AI" means ------------
+  // Exactly the keys the options page's "Reset AI-slop learning" clears, and exactly what the
+  // one-time 0.9.0 recovery migration in the service worker clears. They live here rather than
+  // in either caller because FH-054 was precisely a reset that missed keys (it removed the
+  // weights alone, so auto-calibration rebuilt the same model from the surviving training data,
+  // observations and tuned threshold within a scan or two) — and two hand-kept copies of this
+  // list would be the same bug waiting to happen.
+  //
+  // NOT here: author lists, custom filters, stats, the error log. Those are the user's filter
+  // choices and history, not the AI, and clearing them is factory reset's job.
+  var SLOP_LOCAL_KEYS = [
+    "feedhacker:slopWeights",   // the learned model
+    "feedhacker:sloptrain",     // labelled corrections
+    "feedhacker:slopobs",       // the calibration population
+    "feedhacker:slopcal",       // the self-tuned calibration (threshold + damping)
+    "feedhacker:sloplog"        // the decision log (= SlopLog.STORAGE_KEY; a unit test pins that)
+  ];
+  // The sync-side AI tuning to restore from buildDefaults() — never from a literal, or the
+  // reset would put back a number that has since moved (§9's shape).
+  var SLOP_SYNC_KEYS = ["slopThreshold", "slopTargetFrac"];
+
   var api = {
     FILTERS: FILTERS,
     labelFor: labelFor,
@@ -102,6 +123,8 @@
     DEFAULTS: DEFAULTS,
     buildDefaults: buildDefaults,
     applyFixed: applyFixed,
+    SLOP_LOCAL_KEYS: SLOP_LOCAL_KEYS,
+    SLOP_SYNC_KEYS: SLOP_SYNC_KEYS,
     legacySoloKeys: legacySoloKeys,
     dropLegacySolo: dropLegacySolo,
     cap: cap

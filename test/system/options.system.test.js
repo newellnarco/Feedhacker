@@ -95,10 +95,20 @@ test("Factory reset returns a dirty profile to a clean install", { skip, timeout
     await page.click("#factory-reset");
     await page.waitForFunction(() => /Reset complete/.test(document.getElementById("factory-reset").textContent));
 
-    // Nothing learned or remembered is left behind.
+    // Nothing learned or remembered is left behind — with one deliberate exception, named
+    // explicitly so a real user-state key can never be waved through with it.
+    //
+    // feedhacker:migrations is the ledger of which one-time migrations have already run:
+    // bookkeeping about the INSTALL, not about the user. Clearing it would re-arm the FH-060
+    // recovery migration, which would then fire on the next update and wipe whatever the
+    // user's model had legitimately learned since. A factory reset already leaves the AI
+    // clean, so re-running it could only ever cost something.
+    const KEEPS = ["feedhacker:migrations"];
     const local = await sw.evaluate(() => new Promise((r) => chrome.storage.local.get(null, r)));
-    const leftover = Object.keys(local).filter((k) => k.startsWith("feedhacker:"));
+    const leftover = Object.keys(local).filter((k) => k.startsWith("feedhacker:") && !KEEPS.includes(k));
     assert.deepStrictEqual(leftover, [], "no stored FeedHacker state survives a factory reset");
+    assert.ok(typeof (local["feedhacker:migrations"] || {}).slopResetFH060 === "number",
+      "…and the migration ledger DOES survive, so the recovery cannot fire a second time");
 
     // …and settings are exactly a clean install: AI slop on, nothing else.
     const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
@@ -167,4 +177,43 @@ test("cancelling the AI-reset confirm changes nothing", { skip, timeout: 60000 }
     const sync = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get(null, r)));
     assert.strictEqual(sync.slopThreshold, 0.43, "nor restore its tuning");
   } finally { await close(); }
+});
+
+// FH-060 recovery, in the real worker. The migration that clears a flood-poisoned model lives
+// in the service worker and depends on `importScripts("filters.js")` — the shared definition of
+// what "reset the AI" means. That import is exactly the kind of thing that typechecks, unit-
+// tests green, and then silently does nothing in the packaged extension: the migration is
+// written to skip itself when the module is absent, so a failed import would leave every
+// poisoned install unrepaired and say nothing about it.
+//
+// Launching into a fresh profile IS a real chrome.runtime.onInstalled "install" event, so this
+// drives the genuine path end to end: the worker boots, imports, and banks the migration.
+test("the worker imports the shared AI-reset list in the packaged extension", { skip, timeout: 60000 }, async () => {
+  const { sw, close } = await launchOptions({});
+  try {
+    const shared = await sw.evaluate(() => {
+      const F = self.FeedHackerFilters;
+      return F ? { local: F.SLOP_LOCAL_KEYS, sync: F.SLOP_SYNC_KEYS } : null;
+    });
+    assert.ok(shared, "importScripts('filters.js') must work in the MV3 service worker");
+    assert.ok(shared.local.includes("feedhacker:slopWeights"), "the AI-state list reached the worker");
+    assert.ok(shared.local.includes("feedhacker:slopcal"), "…including the self-tuned calibration");
+    assert.deepStrictEqual(shared.sync, ["slopThreshold", "slopTargetFrac"]);
+  } finally {
+    await close();
+  }
+});
+
+test("a fresh install banks the AI-reset migration, so a later update can't wipe a trained model", { skip, timeout: 60000 }, async () => {
+  // A brand-new profile means onInstalled fired with reason "install" for real.
+  const { sw, close } = await launchOptions({});
+  try {
+    const ledger = await sw.evaluate(() => new Promise((r) =>
+      chrome.storage.local.get(["feedhacker:migrations"], (o) => r((o && o["feedhacker:migrations"]) || null))));
+    assert.ok(ledger, "the worker must write a migration ledger on a fresh install");
+    assert.strictEqual(typeof ledger.slopResetFH060, "number",
+      "the FH-060 recovery is banked as already done, and stamped with when");
+  } finally {
+    await close();
+  }
 });
