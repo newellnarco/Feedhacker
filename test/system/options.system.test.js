@@ -217,3 +217,61 @@ test("a fresh install banks the AI-reset migration, so a later update can't wipe
     await close();
   }
 });
+
+// FH-064: Insights shows WHICH filter did the hiding, not just how many posts.
+// The per-kind counts have been stored in `feedhacker:history[day].byId` all along and nothing
+// ever rendered them, so the panel could answer "how many" and never "which filter". That gap
+// mattered most for the eight deterministic filters: the AI-slop model has its own decision log
+// listing every post it caught and why, and the others had no equivalent at all. Driven in a
+// real browser because this is a render — a unit test of the data would prove nothing about
+// whether the table appears (TEST_MATRIX: options UI is system-tier).
+const HISTORY_KEY = "feedhacker:history";
+const HISTORY_FIXTURE = {
+  [HISTORY_KEY]: {
+    "2026-09-16": { total: 7, byId: { sloppy: 4, promoted: 2, hiring: 1 } },
+    "2026-09-17": { total: 5, byId: { sloppy: 3, promoted: 1, mystery_kind: 1 } },
+  },
+};
+
+test("Insights breaks the last 30 days down by filter, not just by day", { skip, timeout: 60000 }, async () => {
+  const { page, close } = await launchOptions({ local: HISTORY_FIXTURE });
+  try {
+    await openPanels(page);
+    const box = page.locator("#insights");
+    await box.locator("text=By filter").first().waitFor({ timeout: 10000 });
+    const text = await box.innerText();
+
+    // Summed across both days, and labelled the way the rest of the UI labels a filter.
+    assert.match(text, /AI slop\s+7/, "sloppy: 4 + 3 = 7, shown under its display label");
+    assert.match(text, /Promoted posts\s+3/, "promoted: 2 + 1 = 3");
+    assert.match(text, /Hiring posts\s+1/, "hiring: 1");
+    // The daily table is still there — this is an addition, not a replacement.
+    assert.match(text, /2026-09-17/, "the per-day table survives");
+
+    // An id with no display label (a future filter, or a custom one) is shown by its id rather
+    // than silently dropped — a count that vanishes is worse than an ugly row.
+    assert.match(text, /mystery_kind\s+1/, "an unknown filter id still appears");
+
+    // Ordering is by volume, so the noisiest kind is the first thing read.
+    const rows = await box.locator("table").last().locator("tbody tr").allInnerTexts();
+    const counts = rows.map((r) => Number(r.trim().split(/\s+/).pop()));
+    assert.deepStrictEqual(counts, [...counts].sort((a, b) => b - a), `sorted desc, got ${counts}`);
+  } finally {
+    await close();
+  }
+});
+
+test("Insights with history that predates the breakdown shows the daily table alone", { skip, timeout: 60000 }, async () => {
+  // Real installs have `total` rows written before byId existed. Those must render, not crash
+  // and not show an empty "By filter" heading.
+  const { page, close } = await launchOptions({ local: { [HISTORY_KEY]: { "2026-09-10": { total: 3 } } } });
+  try {
+    await openPanels(page);
+    const box = page.locator("#insights");
+    await box.locator("text=2026-09-10").first().waitFor({ timeout: 10000 });
+    const text = await box.innerText();
+    assert.doesNotMatch(text, /By filter/, "no breakdown heading when there is nothing to break down");
+  } finally {
+    await close();
+  }
+});

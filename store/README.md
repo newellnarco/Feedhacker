@@ -33,7 +33,17 @@ tiles, and store icon. All you supply is your Google account.
    To enable it once: repo **Settings → Pages → Deploy from a branch → `main` / `/docs`**
    (the page source lives in [`docs/`](../docs/); [`privacy-policy.md`](privacy-policy.md)
    is the plain-text original).
-5. Upload the graphics from this folder: screenshots `store/screenshot-1-mixer.png`,
+4a. **`npm run store:shots`** — regenerates every listing screenshot and the landing-page
+   carousel from the built **store package**, and assembles **`dist/store-upload/`**: the zip,
+   five 1280×800 screenshots numbered in upload order, both promo tiles, the icon, the pasteable
+   description, and an `UPLOAD.txt` saying which dashboard field each file goes in. Run it
+   whenever the popup, the options page or the feed UI changes — a hand-made screenshot that
+   stops being true fails no test (best_practices §70, FH-065).
+4b. **`npm run store:notes`** — writes `dist/store-description.txt`: the description plus a
+   **What's new** block for the last three versions, taken from [`release-notes.md`](release-notes.md).
+   The store has no per-version notes field, so this is the only way "what changed in this
+   version" reaches users. A unit test fails if the shipping version has no entry.
+5. Upload the graphics from this folder (or just use `dist/store-upload/`): screenshots `store/screenshot-1-mixer.png`,
    `store/screenshot-2-detection.png`, and `store/screenshot-3-stub.png` (1280×800), the promo tiles
    `store/promo-small-440x280.jpg` (440×280) and `store/promo-marquee-1400x560.jpg`
    (1400×560), and the store icon `store/brand/store-icon-128.png` (white background).

@@ -23,13 +23,14 @@ a "Show anyway" button) or hides it entirely.
 Filters you can mute:
 • AI slop — posts that read as AI-generated, scored by a structural algorithm that
   learns from your corrections (not just a word list)
-• Promoted posts • Newsletter signups • Hiring posts • Reaction reshares
-• New-job announcements • Work anniversaries • Training & certification
+• Promoted posts • Company / brand posts • Newsletter signups • Hiring posts
+• Reaction reshares • New-job announcements • Work anniversaries
+• Training & certification
 
 **AI slop** has its own on/off plus a sensitivity slider, because it is a learned model
-rather than a fixed rule. Every other filter is a single **Mute** toggle: on hides that
-kind, off doesn't, and nothing overrides anything else. Add your own
-word/regex/hashtag/company filters, mute specific authors, and see what's been hidden.
+rather than a fixed rule. Every other filter is a single toggle: on hides that kind, off
+doesn't. Add your own word/regex/hashtag/company filters, mute specific authors, and see
+exactly what has been hidden and which filter caught it.
 
 Everything runs locally in your browser. FeedHacker does not collect, transmit, or sell
 any data. It is unofficial and not affiliated with LinkedIn.
@@ -70,7 +71,7 @@ network requests — its curated AI-slop phrase list ships inside the package.
       `store/brand/logo-lockup-1024.png` (the Fh mark beside the *FeedHacker* wordmark and
       **"created by www.MaxResearchCollective.com"**). Use the lockup wherever the store shows a
       brand image, so the MAX Research Collective credit is visible.
-- [x] **Screenshots 1280×800** — `store/screenshot-1-mixer.png` (the mute mixer popup),
+- [x] **Screenshots 1280×800** — `store/screenshot-1-mixer.png` (the toolbar popup),
       `store/screenshot-2-detection.png` (the AI-slop detection panel), and
       `store/screenshot-3-stub.png` (a hidden post collapsed to its stub).
 - [x] **Small promo tile 440×280** — `store/promo-small-440x280.jpg`.

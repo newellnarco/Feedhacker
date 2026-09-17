@@ -707,6 +707,25 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     the design was wrong. Conflating those two is how a ledger either talks a future maintainer
     out of a feature nobody rejected, or back into one that was.
 
+70. **A listing asset that is made by hand is a claim nothing checks. Generate it from the built
+    artifact.** FeedHacker's store screenshots were captured and composed by hand once, and then
+    described the product *as of that afternoon* forever. Fourteen releases later four of the ten
+    images were false: three advertised a feature removed two versions earlier, one of those also
+    showed a stale version number and the extension id of a store item no longer in use, and a
+    fourth showed a group row shaped the way the code had **stopped** producing that week. Code
+    that lies fails a test; a PNG that lies fails nothing, so it rots in silence and the ledger
+    records it as "cosmetic, deferred".
+    Two rules. **Generate from the artifact you actually ship**, not from a convenient build —
+    the first pass here screenshotted `dist/feedhacker/`, which is the *sideload* build, and put
+    "Permissions: storage, nativeMessaging" in a listing image beside the words "only permission:
+    storage". Unzip the upload and photograph that, and fail loudly if it carries anything the
+    store package should not. **And let the product draw itself wherever you can**: the group row
+    in one of these images comes from a fixture feed served at the real origin so the content
+    script runs on it, which means that image cannot depict a shape the code does not produce.
+    What cannot be generated, assert. The text half of a listing is cheap to pin — the test that
+    every shipped filter is named in the store description is four lines, and it caught a filter
+    that had been missing from the listing for versions.
+
 
 ## More tests & docs
 

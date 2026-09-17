@@ -33,38 +33,11 @@ or removed entirely if you prefer.
 | **Work anniversaries** | "Celebrating N years at…" |
 | **Training & certification** | "I'm happy to share I earned…" |
 
-Each filter has one toggle:
-
-- **M (Mute)** — hide posts of this kind. On hides it, off doesn't, and nothing
-  overrides anything else.
+Each filter has one toggle: on hides posts of that kind, off doesn't.
 
 **AI slop** sits apart from that list, with its own on/off and a sensitivity
 slider, because it is a learned model rather than a fixed rule about a kind of
 post.
-
-> **Solo mode is retired.** It was *removed* in 0.8.0 for a practical reason and
-> *retired* afterwards for a different one, and both are worth stating plainly.
->
-> It was removed because LinkedIn rebuilt its feed and the markup FeedHacker relied
-> on disappeared, breaking how posts are recognised and told apart. Solo decided what
-> to hide *before* the AI‑slop model was consulted, so while it was on the model never
-> ran and its decision log stopped recording — on an already‑misreading feed that both
-> amplified the symptom and hid the cause. Removing it restored the diagnostics.
->
-> It is retired because, looking back over the whole bug ledger, showing only one kind
-> and hiding everything else was a mode whose correct output was routinely
-> indistinguishable from a broken filter. On a real 63‑post feed capture, Solo set to
-> Hiring matched exactly **one** post — that was Solo working perfectly, and it read as
-> the extension eating the feed. Naming the mode on every row and adding a one‑click
-> "Show everything" exit was tried in 0.5.0, and more reports followed. FeedHacker is a
-> subtractive filter; inverting it into a whitelist also meant one toggle changed what
-> every other setting meant.
->
-> **Nothing replaces it, because nothing needs to.** The question Solo was genuinely
-> useful for — *what is this filter actually catching, and why?* — is answered better by
-> the **AI‑slop decision log** under Options, which lists each post, the probability it
-> scored, the tells that fired, and exports as JSON. A leftover Solo setting is cleared
-> on upgrade; mutes are untouched.
 
 ### AI‑slop scoring that learns
 
