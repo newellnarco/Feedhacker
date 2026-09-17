@@ -42,15 +42,29 @@ Each filter has one toggle:
 slider, because it is a learned model rather than a fixed rule about a kind of
 post.
 
-> **Solo mode is set aside as of 0.8.0 — temporarily, and not because we stopped
-> wanting it.** LinkedIn rebuilt its feed and the markup FeedHacker depended on
-> disappeared, which broke how posts are recognised and told apart. Solo decided
-> what to hide *before* the AI‑slop model was consulted, so while it was on the
-> model never ran and its decision log stopped recording — on an already‑misreading
-> feed that both amplified the symptom and hid the cause. Removing it restored the
-> diagnostics. **We intend to bring one‑kind‑at‑a‑time viewing back** once the new
-> markup is pinned down, rebuilt so it cannot switch the model off. A leftover Solo
-> setting is cleared on upgrade; mutes are untouched.
+> **Solo mode is retired.** It was *removed* in 0.8.0 for a practical reason and
+> *retired* afterwards for a different one, and both are worth stating plainly.
+>
+> It was removed because LinkedIn rebuilt its feed and the markup FeedHacker relied
+> on disappeared, breaking how posts are recognised and told apart. Solo decided what
+> to hide *before* the AI‑slop model was consulted, so while it was on the model never
+> ran and its decision log stopped recording — on an already‑misreading feed that both
+> amplified the symptom and hid the cause. Removing it restored the diagnostics.
+>
+> It is retired because, looking back over the whole bug ledger, showing only one kind
+> and hiding everything else was a mode whose correct output was routinely
+> indistinguishable from a broken filter. On a real 63‑post feed capture, Solo set to
+> Hiring matched exactly **one** post — that was Solo working perfectly, and it read as
+> the extension eating the feed. Naming the mode on every row and adding a one‑click
+> "Show everything" exit was tried in 0.5.0, and more reports followed. FeedHacker is a
+> subtractive filter; inverting it into a whitelist also meant one toggle changed what
+> every other setting meant.
+>
+> **Nothing replaces it, because nothing needs to.** The question Solo was genuinely
+> useful for — *what is this filter actually catching, and why?* — is answered better by
+> the **AI‑slop decision log** under Options, which lists each post, the probability it
+> scored, the tells that fired, and exports as JSON. A leftover Solo setting is cleared
+> on upgrade; mutes are untouched.
 
 ### AI‑slop scoring that learns
 

@@ -690,6 +690,23 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     dies with the node, so it belongs in something that outlives a re-render (the verdict ledger)
     rather than being recomputed — recomputing it is the flood of §46/FH-049 wearing a new hat.
 
+69. **When you defer a feature behind conditions, check whether history has already run the
+    experiment.** A deferral is only honest if its conditions are still open questions. Solo was
+    set aside with two named conditions for its return, and one of them — *an empty result must
+    explain itself with a one-click exit* — had **already shipped in 0.5.0** (the mode named on
+    every stub, a "Show everything" exit on every row and every group summary) and had **already
+    failed**, with three further reports following. It was written into the roadmap as future work
+    anyway, and it sat there as though it were untested, quietly making the case for a return that
+    the project's own history had refuted. Nobody was careless; the condition simply read as a
+    plan rather than as a repeat.
+    So before recording a return-condition, grep the changelog and the ledger for it. If it has
+    been attempted, say what happened — *"tried in 0.5.0, three more reports"* — and let it count
+    against the feature instead of for it. And when a deferral is finally decided either way,
+    **keep the forced step and the chosen step distinct in the record**: solo was *removed* because
+    LinkedIn's redesign made it harmful (§63), and *retired* a day later because the evidence said
+    the design was wrong. Conflating those two is how a ledger either talks a future maintainer
+    out of a feature nobody rejected, or back into one that was.
+
 
 ## More tests & docs
 
