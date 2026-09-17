@@ -671,6 +671,25 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     Finally, a migration ledger is **not user state**: a factory reset must leave it, and where a
     test asserts "nothing survives", the exemption is listed by name with its reason.
 
+68. **If a system learns from corrections, every direction of correction must be REACHABLE — an
+    unreachable one is not a missing feature, it is a bias.** FeedHacker's AI-slop model took
+    label 0 ("wrong to hide this") from a control that lived inside the stub of a hidden post,
+    and label 1 ("you missed this") from nowhere, because a shown post had no control and no
+    stashed feature vector to learn from. Both labels existed in the plumbing —
+    `onSlopVerdict(id, label, feats)` had always taken 0 or 1 — so the gap read as a UI nicety
+    and sat there for versions. It was not a nicety. The model **also** auto-tunes toward hiding
+    ~`slopTargetFrac` of what it reviews, so the only signal a user could actually send pushed
+    the threshold the same way the autonomous loop already leaned: a conscientious user
+    correcting false positives was walking their own model toward catching less, and the
+    FH-060 flood was damping the strongest tells at the same time (FH-062).
+    So when you build a feedback loop, **enumerate the labels and ask where each one is clicked
+    from.** A label with no surface is not neutral — it is a thumb on the scale, and it pushes
+    hardest for the users who engage most. Two mechanical consequences worth planning for:
+    the evidence a correction needs (here the feature vector) must be captured for **every** item
+    the model judges, not just the ones it acted on; and on a page you do not own, that evidence
+    dies with the node, so it belongs in something that outlives a re-render (the verdict ledger)
+    rather than being recomputed — recomputing it is the flood of §46/FH-049 wearing a new hat.
+
 
 ## More tests & docs
 

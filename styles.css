@@ -69,3 +69,17 @@
   padding: 9px 22px; border-radius: 20px; border: 1px solid #0a66c2;
   background: #0a66c2; color: #fff; font: 600 14px -apple-system, system-ui; cursor: pointer;
 }
+
+/* FH-062: "this is AI slop" on a post we did NOT hide — the only way to tell the model it
+   missed one. Low visual weight on purpose: FeedHacker is adding a control to a post the user
+   chose to keep, so it sits faint and out of the way until the post is hovered or the button
+   itself is focused (keyboard users get the same affordance without a pointer). */
+.feedhacker-mark {
+  display: flex; justify-content: flex-end;
+  margin: 2px 0 -8px; padding: 0 6px;
+  opacity: .28; transition: opacity .12s ease-in-out;
+}
+.feedhacker-mark .feedhacker-iconbtn { min-width: 26px; }
+*:hover > .feedhacker-mark,
+.feedhacker-mark:hover,
+.feedhacker-mark:focus-within { opacity: 1; }

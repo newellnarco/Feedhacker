@@ -318,3 +318,59 @@ test("AI slop and Promoted are never folded into one row end-to-end (FH-061)", {
     await close();
   }
 });
+
+// FH-062: "this is AI slop" on a post FeedHacker chose to SHOW. Driven in a real browser for
+// two reasons a simulation cannot cover. The control is injected into a post we do not own, so
+// only a real page proves it is reachable and clickable at all (§28) — and the label has to
+// travel the whole way, through the delegated click, the verdict queue and a debounced
+// storage write, into feedhacker:sloptrain. A jsdom test can prove the callback fired; only
+// this can prove the training example was persisted.
+const MARK_HUMAN = "Fixed a caching bug this morning: the key included a timestamp, so every lookup missed and we were hammering the database on every page load. Tests pass and I am shipping the patch after lunch, then writing up what we learned about cache keys for the team wiki.";
+const MARK_FIXTURE = `<!doctype html><html><head><meta charset="utf-8"><title>Feed</title></head><body><main><div id="feed">
+  ${post("p-human", `<a href="/in/dee-four">Dee Four</a><div>${MARK_HUMAN}</div>`)}
+  ${post("p-s1", `<a href="/in/ann-one">Ann One</a><div>${SLOP_A}</div>`)}
+</div></main></body></html>`;
+
+test("marking a SHOWN post as slop hides it and persists a positive label", { skip, timeout: 90000 }, async () => {
+  const { ctx, page, extId, close } = await launchFeed({ fixtureHtml: MARK_FIXTURE, sync: { muteSloppy: true } });
+  try {
+    // The model hides the slop post and shows the human one — the control belongs on the
+    // second, and asserting that ordering first means a mis-scored fixture can't pass.
+    await page.waitForSelector("#p-s1.feedhacker-hidden", { timeout: 20000 });
+    assert.strictEqual(
+      await page.locator("#p-human").evaluate((el) => el.classList.contains("feedhacker-hidden")), false,
+      "the human post is shown — that is the case this control exists for");
+    assert.strictEqual(await page.locator("#p-s1 .feedhacker-mark").count(), 0,
+      "a hidden post has its stub instead");
+
+    const btn = page.locator('#p-human [data-fh-act="mark-slop"]');
+    await btn.waitFor({ state: "attached", timeout: 10000 });
+    await btn.click({ force: true });          // force: the bar is deliberately faint until hover
+
+    await page.waitForSelector("#p-human.feedhacker-hidden", { timeout: 10000 });
+    assert.ok((await page.locator("#p-human .feedhacker-stub").count()) >= 1,
+      "…and it collapses to a normal stub, so Show anyway is the undo");
+
+    // The whole point: a POSITIVE example now exists in the training buffer.
+    const read = async (key) => {
+      const o = await ctx.newPage();
+      await o.goto(`chrome-extension://${extId}/options.html`, { waitUntil: "domcontentloaded" });
+      const v = await o.evaluate((k) => new Promise((r) =>
+        chrome.storage.local.get([k], (got) => r((got && got[k]) || []))), key);
+      await o.close();
+      return v;
+    };
+    let train = [];
+    for (let i = 0; i < 10 && train.length === 0; i++) {   // the verdict queue writes async
+      train = await read("feedhacker:sloptrain");
+      if (train.length === 0) await page.waitForTimeout(500);
+    }
+    assert.strictEqual(train.length, 1, "exactly one training example was persisted");
+    assert.strictEqual(train[0].label, 1,
+      "…and it is POSITIVE — before this, only label 0 could ever be recorded from the feed");
+    assert.ok(typeof train[0].features.broetry === "number",
+      "trained on the real feature vector of the post that was shown");
+  } finally {
+    await close();
+  }
+});
