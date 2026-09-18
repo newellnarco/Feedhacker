@@ -35,6 +35,24 @@ function chromePath() {
   throw new Error("no Chromium found — run `npx playwright install chromium`");
 }
 
+// --- MAX Research Collective brand --------------------------------------------------------
+// Sampled from store/brand/MRC.jpg (the publisher mark) rather than eyeballed, and matched
+// against maxresearchcollective.com: a dark navy field with a faint circuit/node motif, an
+// angular M in slate with cyan and coral facets, and an all-caps tracked wordmark where MAX is
+// white and RESEARCH COLLECTIVE is cyan.
+const MRC = {
+  navyFrom: "#222d3f", navyTo: "#1a2031",   // the mark's own diagonal, top-left -> bottom-right
+  cyan: "#6be1ef",
+  coral: "#fb635e",
+  slate: "#303e59",
+  muted: "#8fa3bd",
+};
+// FeedHacker's own identity, unchanged from store/brand/logo-lockup.svg. The one adaptation is
+// the wordmark: #0A66C2 on a dark navy field is unreadable, so it reverses out to white and the
+// tagline's emphasis uses a lighter tint of the SAME blue. The element tile is untouched.
+const FH_BLUE = "#0A66C2";
+const FH_BLUE_ON_DARK = "#4a9eea";
+
 // --- brand -------------------------------------------------------------------------------
 // Taken from styles.css and the existing set rather than re-invented: LinkedIn blue for the
 // emphasis span, near-black navy for headlines, the slop green and the reversible orange.
@@ -253,6 +271,8 @@ async function main() {
     shot: feedShot, box: { w: 560, h: 700 },
   });
 
+  if (!only.length || only.some((o) => "promo".includes(o) || o === "promo")) await promoTiles(ctx);
+
   let made = 0;
   for (const s of specs) {
     if (only.length && !only.some((o) => s.name.includes(o))) continue;
@@ -395,6 +415,121 @@ Sizes are what the store requires: screenshots 1280x800, small tile 440x280,
 marquee 1400x560, icon 128x128.
 `);
   console.log(`bundle: dist/store-upload/ (${copied.length} files + UPLOAD.txt)`);
+}
+
+// The faint circuit/node traces behind the MRC mark. Drawn, not traced from the JPEG, so the
+// tiles stay crisp at any size — same vocabulary (thin diagonals, small nodes, a few right
+// angles), same two accent colours, same very low opacity.
+function circuitry(w, h) {
+  const line = (x1, y1, x2, y2, c, o, sw = 1) =>
+    `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${c}" stroke-opacity="${o}" stroke-width="${sw}" fill="none"/>`;
+  const node = (x, y, r, c, o) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" fill-opacity="${o}"/>`;
+  const elbow = (x, y, dx, dy, c, o) =>
+    `<path d="M${x} ${y} h${dx} v${dy}" stroke="${c}" stroke-opacity="${o}" stroke-width="1" fill="none"/>`;
+  const p = [];
+  for (let i = 0; i < 7; i++) {                       // long diagonals, the mark's dominant motion
+    const off = i * (w / 6);
+    p.push(line(off - h, h, off, 0, i % 3 ? MRC.cyan : MRC.coral, i % 3 ? 0.07 : 0.05));
+  }
+  p.push(elbow(w * 0.68, h * 0.18, w * 0.13, h * 0.2, MRC.cyan, 0.12));
+  p.push(elbow(w * 0.06, h * 0.72, w * 0.1, -h * 0.18, MRC.cyan, 0.1));
+  p.push(elbow(w * 0.8, h * 0.66, -w * 0.09, h * 0.16, MRC.coral, 0.08));
+  const seed = [[0.72, 0.2], [0.81, 0.38], [0.1, 0.72], [0.16, 0.55], [0.9, 0.3], [0.62, 0.84], [0.35, 0.12]];
+  seed.forEach(([fx, fy], i) =>
+    p.push(node(w * fx, h * fy, i % 2 ? 3 : 4.5, i % 3 === 2 ? MRC.coral : MRC.cyan, i % 2 ? 0.5 : 0.32)));
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="position:absolute;inset:0">${p.join("")}</svg>`;
+}
+
+// FeedHacker's element tile, exactly as store/brand/logo-lockup.svg draws it — same blue, same
+// 38% inner stroke, same 42 / Fh / caption. Nothing about the mark changes on the dark field.
+function fhTile(size) {
+  const s = size / 128;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 128 128" style="display:block;flex:none">
+    <rect width="128" height="128" rx="16" fill="${FH_BLUE}"/>
+    <rect x="5.5" y="5.5" width="117" height="117" rx="11.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="2.5"/>
+    <text x="15" y="33" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#fff">42</text>
+    <g fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M39 40 V86"/><path d="M39 45 H60"/><path d="M39 61 H55"/>
+      <path d="M70 34 V86"/><path d="M70 62 C70 51 90 51 90 66 V86"/>
+    </g>
+    <text x="64" y="110" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13"
+          font-weight="600" letter-spacing=".3" fill="#fff">FeedHacker</text>
+  </svg>`.replace("<svg", `<svg data-scale="${s}"`);
+}
+
+// The publisher lockup, in MRC's own typography: all caps, wide tracking, MAX white and
+// RESEARCH COLLECTIVE cyan, over a short coral rule.
+function mrcLockup({ wordSize, domainSize, ruleWidth, align = "flex-start" }) {
+  return `<div style="display:flex;flex-direction:column;align-items:${align};gap:${Math.round(wordSize * 0.55)}px">
+    <div style="width:${ruleWidth}px;height:3px;background:${MRC.coral};border-radius:2px"></div>
+    <div style="font-size:${wordSize}px;font-weight:800;letter-spacing:.2em;line-height:1;white-space:nowrap">
+      <span style="color:#fff">MAX</span> <span style="color:${MRC.cyan}">RESEARCH COLLECTIVE</span>
+    </div>
+    <div style="font-size:${domainSize}px;color:${MRC.muted};letter-spacing:.06em">maxresearchcollective.com</div>
+  </div>`;
+}
+
+function tileHtml({ w, h, variant }) {
+  const bg = `background:linear-gradient(135deg,${MRC.navyFrom} 0%,${MRC.navyTo} 100%)`;
+  // Single quotes: this string goes into a DOUBLE-quoted style attribute, and "Segoe UI" in
+  // double quotes silently terminated the attribute — every tile rendered in the default serif.
+  const font = `font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif`;
+  const tagline = (size, nowrap) => `<div style="font-size:${size}px;font-weight:600;color:#e8eef7;letter-spacing:-.2px;${nowrap ? "white-space:nowrap" : ""}">
+      Mute the noise in <span style="color:${FH_BLUE_ON_DARK}">your LinkedIn feed</span></div>`;
+
+  if (variant === "marquee") {
+    return `<!doctype html><html><head><meta charset="utf-8"></head>
+    <body style="margin:0;width:${w}px;height:${h}px;overflow:hidden;position:relative;${bg};${font}">
+      ${circuitry(w, h)}
+      <div style="position:relative;height:100%;display:flex;align-items:center;padding:0 66px">
+        <div style="display:flex;align-items:center;gap:44px">
+          ${fhTile(178)}
+          <div style="display:flex;flex-direction:column;gap:17px;min-width:0">
+            <div style="font-size:80px;font-weight:800;letter-spacing:-2.2px;color:#fff;line-height:1;white-space:nowrap">FeedHacker</div>
+            ${tagline(27, true)}
+          </div>
+        </div>
+        <div style="margin-left:auto;padding-left:36px;display:flex;flex-direction:column;align-items:flex-end;
+                    text-align:right">
+          ${mrcLockup({ wordSize: 17, domainSize: 14, ruleWidth: 48, align: "flex-end" })}
+        </div>
+      </div>
+    </body></html>`;
+  }
+  // small tile: stacked and centred, the wordmark carrying it at 440x280
+  return `<!doctype html><html><head><meta charset="utf-8"></head>
+  <body style="margin:0;width:${w}px;height:${h}px;overflow:hidden;position:relative;${bg};${font}">
+    ${circuitry(w, h)}
+    <div style="position:relative;height:100%;display:flex;flex-direction:column;align-items:center;
+                justify-content:center;gap:13px;text-align:center;padding:0 22px">
+      ${fhTile(74)}
+      <div style="font-size:41px;font-weight:800;letter-spacing:-1.1px;color:#fff;line-height:1">FeedHacker</div>
+      ${tagline(15, true)}
+      <div style="margin-top:9px;display:flex;justify-content:center">
+        ${mrcLockup({ wordSize: 11, domainSize: 10, ruleWidth: 32 })}
+      </div>
+    </div>
+  </body></html>`;
+}
+
+// The two Chrome Web Store promo tiles. Sizes are fixed by the store: 1400x560 marquee,
+// 440x280 small. Written as PNG and JPEG because store/README points uploads at the .jpg.
+async function promoTiles(ctx) {
+  const specs = [
+    { variant: "marquee", w: 1400, h: 560, base: "promo-marquee-1400x560" },
+    { variant: "small", w: 440, h: 280, base: "promo-small-440x280" },
+  ];
+  for (const t of specs) {
+    const p = await ctx.newPage();
+    await p.setViewportSize({ width: t.w, height: t.h });
+    await p.setContent(tileHtml(t), { waitUntil: "load" });
+    await p.waitForTimeout(250);
+    const clip = { x: 0, y: 0, width: t.w, height: t.h };
+    await p.screenshot({ path: path.join(OUT_STORE, `${t.base}.png`), clip, scale: "css" });
+    await p.screenshot({ path: path.join(OUT_STORE, `${t.base}.jpg`), clip, scale: "css", type: "jpeg", quality: 92 });
+    await p.close();
+    console.log(`  store/${t.base}.png + .jpg  ${t.w}x${t.h}`);
+  }
 }
 
 main().catch((e) => { console.error(String(e && e.message || e)); process.exit(1); });
