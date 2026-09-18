@@ -726,6 +726,19 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     every shipped filter is named in the store description is four lines, and it caught a filter
     that had been missing from the listing for versions.
 
+71. **A user-facing control ships with its help entry in the same PR — and a test that ties the two
+    together.** 0.9.0 added the only control that can tell the model it *missed* a post, and the
+    options page went on saying *"the icon buttons on each hidden-post stub"*: true the release
+    before, false after, and it reads perfectly well either way — which is exactly why nobody
+    noticed. The same audit found two more controls (**Show anyway**, **Hide again**) that had
+    never been documented at all, and a weights panel that named only the correction which hides
+    *less*. A control the user is never told about is worth nothing, doubly so for one drawn faint
+    until hover. So **enumerate the controls from the code** (here: every `data-fh-act` in
+    `feed.ts`) and fail the unit tier when one has no help entry. The general form: when a record
+    must track something the code already knows, derive the check from the code — a docs rule
+    nobody can forget is a test, and a promise to "keep the help current" is not one. Found by the
+    maintainer asking whether the help had been updated; the honest answer was no (FH-066).
+
 
 ## More tests & docs
 

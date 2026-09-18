@@ -19,6 +19,12 @@ Three rules keep it useful:
 
 ---
 
+## 0.10.0
+
+The options page now explains the small splat on posts FeedHacker **shows** you: clicking it
+hides the post and tells the filter it missed one. **Show anyway** and **Hide again** are
+described there too, so every button in the feed is spelled out in one place.
+
 ## 0.9.1
 
 Insights now shows **which filter** hid your posts, not just how many — a per-kind table for

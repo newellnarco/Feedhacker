@@ -11,6 +11,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.10.0] — unreleased
+
+### Changed
+- **The in-product help now documents the AI-slop splat that appears on posts FeedHacker
+  *shows*.** 0.9.0 added the only control that can tell the model it **missed** a post, and
+  nothing in the product mentioned it: the options page's **Post controls** key still opened
+  *"The icon buttons on each hidden-post stub"* — true the release before, false after, and it
+  reads perfectly well either way. The control is deliberately faint until you hover the post,
+  so a user who is not told does not find it. It now has its own row in the key, explaining
+  where it sits, what the click does (hide **and** train), that **Show anyway** undoes it, and
+  when it is not offered.
+- **Two controls that were never documented at all are now in the same key: Show anyway and
+  Hide again.** Both have fed corrections into the model since long before this release —
+  *Show anyway* teaches a false positive, *Hide again* confirms the model was right — and
+  neither appeared in the controls key.
+- **The panel that shows the learned weights no longer describes half the loop.** It said the
+  weights *"nudge each time you hit Show anyway or re-hide a post"*, naming only the direction
+  that hides **less** — misleading on a model that also tunes itself toward hiding a target
+  share of the feed. It now names both directions.
+- **README:** the corrections paragraph covers marking a shown post, and the slider is called
+  **Sensitivity**, which is what the popup has actually said since 0.8.0 (the README still said
+  *Aggression*; the stored key keeps its old name).
+- **Store description:** says that corrections go both ways. Takes effect at the next upload —
+  a listing is a separate publish channel from the package (FH-033).
+
+### Added
+- **A test that ties each control to its help entry** (`test/unit/help-coverage.test.js`). The
+  controls are enumerated **from the code** — every `data-fh-act` in `src/feed.ts` — so adding a
+  control now fails the unit tier until `options.html` explains it. A prose promise to keep the
+  help current is not enforcement; this is. (`best_practices.md` §71.)
+
 ## [0.9.1] — 2026-09-17
 
 ### Added

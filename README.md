@@ -60,16 +60,20 @@ you can judge a borderline AI‑slop call in place without clicking **Show anywa
 It **tunes itself**: FeedHacker reviews the posts you see and, on its own,
 down‑weights tells that fire on most of your feed (so one common signal can't
 flag everything) and sets the threshold from the score distribution so only the
-sloppiest slice is hidden — no clicking required. The **Aggression** slider picks
+sloppiest slice is hidden — no clicking required. The **Sensitivity** slider picks
 how big that slice is. The model is **living**: each cycle it evolves from its
 latest weights rather than resetting to the shipped defaults, so it keeps adapting
 to your feed across sessions (and reaps old observations after each round so the
 buffer stays small).
 
 Your own corrections still count, a little less than the autonomous signal:
-clicking **Show anyway** teaches a false positive, the **👍 slop** button or
+clicking **Show anyway** teaches a false positive, the green **AI slop** splat or
 **Hide again** confirms a true positive, and a post you simply **scroll past**
-(still hidden) counts as a weak confirmation. Everything is stored locally;
+(still hidden) counts as a weak confirmation. Since 0.9.0 that splat also appears on
+posts FeedHacker **showed** you — faint at the top of the post, full strength on hover —
+so *“you missed one”* is sayable too: clicking it hides the post and trains on it in the
+same click. Before that, every control lived on a stub, so only the *don't hide* half of
+the loop was reachable. Everything is stored locally;
 export/import or reset the model any time. Self‑tuning can be turned off under
 **Advanced**, and then your corrections alone drive the weights.
 
@@ -216,7 +220,7 @@ scripts/build.mjs packages the runtime files into dist/ + a zip (cross-platform 
    (the visible CSS is hashed), extracts the post body **excluding comments**, and
    classifies it — the AI‑slop verdict comes from `scorer.js`.
 4. Matches collapse to a stub; **Show anyway / Hide again** feed corrections back
-   into the learner.
+   into the learner, as does the splat on a post that was **shown** (label 1).
 5. `background.js` paints the badge (hidden count, or a red `!` on error).
 6. Errors are captured with timestamps into `chrome.storage.local` and surfaced
    in the popup and options page.

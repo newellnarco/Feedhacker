@@ -28,7 +28,9 @@ Filters you can mute:
 • Training & certification
 
 **AI slop** has its own on/off plus a sensitivity slider, because it is a learned model
-rather than a fixed rule. Every other filter is a single toggle: on hides that kind, off
+rather than a fixed rule. Corrections go both ways: "Show anyway" on a hidden post tells it
+the call was wrong, and a small splat on a post it let through tells it the opposite — one
+click hides that post and teaches the filter it missed one. Every other filter is a single toggle: on hides that kind, off
 doesn't. Add your own word/regex/hashtag/company filters, mute specific authors, and see
 exactly what has been hidden and which filter caught it.
 
