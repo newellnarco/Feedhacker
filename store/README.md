@@ -34,7 +34,10 @@ tiles, and store icon. All you supply is your Google account.
    (the page source lives in [`docs/`](../docs/); [`privacy-policy.md`](privacy-policy.md)
    is the plain-text original).
 4a. **`npm run store:shots`** — regenerates every listing screenshot and the landing-page
-   carousel from the built **store package**, and assembles **`dist/store-upload/`**: the zip,
+   carousel from the built **store package**, redraws the two **promo tiles** in the publisher's
+   brand (dark navy field with the circuit motif, MAX white / RESEARCH COLLECTIVE cyan, coral
+   accent — sampled from `brand/MRC.jpg`, with FeedHacker's own element tile left exactly as
+   `brand/logo-lockup.svg` draws it), and assembles **`dist/store-upload/`**: the zip,
    five 1280×800 screenshots numbered in upload order, both promo tiles, the icon, the pasteable
    description, and an `UPLOAD.txt` saying which dashboard field each file goes in. Run it
    whenever the popup, the options page or the feed UI changes — a hand-made screenshot that

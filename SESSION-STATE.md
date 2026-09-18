@@ -88,6 +88,42 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 
 Newest first. One entry per session; keep entries short and factual.
 
+### 2026-09-18 — the promo tiles now carry the publisher's brand
+
+- **The maintainer asked for the two tiles that carry `maxresearchcollective.com` to match their
+  own colours and style, with FeedHacker's own design left alone.** They sent a screenshot of the
+  site, and the repo already held `store/brand/MRC.jpg` — so the palette was **sampled from the
+  mark**, not eyeballed: navy `#222d3f → #1a2031` (its own diagonal), cyan `#6be1ef`, coral
+  `#fb635e`, slate `#303e59`.
+- **What changed and what did not.** The field is MRC's: dark navy, the faint circuit/node motif
+  redrawn (not traced, so it stays crisp at any size), and the wordmark in MRC's typography —
+  all caps, wide tracking, **MAX** white and **RESEARCH COLLECTIVE** cyan, over a short coral
+  rule. FeedHacker's element tile is pixel-identical to `brand/logo-lockup.svg`: same `#0A66C2`,
+  same 38% inner stroke, same 42 / Fh / caption.
+- **The adaptation was flagged, and the maintainer overruled it — correctly.** The first pass
+  reversed FeedHacker's `#0A66C2` wordmark to white so it would read on the dark field. Their
+  instruction: *“keep the blue as designed.”* So the whole FeedHacker lockup now sits on a
+  **white card** over the MRC field — blue on white, nothing of FeedHacker's recoloured — which
+  also matches how the 1280×800 screenshots already present the product (a white card with a soft
+  shadow on a coloured ground). **Flagging the judgement call is what made the correction cheap**;
+  had it been smuggled in as "polish" it would have shipped.
+- **Both tiles are generated, not hand-made** (`npm run store:shots`, §70), in PNG and JPEG at
+  the store's fixed 1400×560 and 440×280. **No version bump**: listing assets are an independent
+  publish channel from the package (FH-033), so these can be uploaded on their own.
+- **A complete submission bundle now falls out of the same command.** `dist/store-upload/` gained
+  `SUBMISSION.md` — every Developer Dashboard field filled in, in the order the UI asks for them,
+  **read out of `store/listing.md` and `manifest.json` rather than retyped**, so it cannot drift
+  from what ships (the declared permission, the summary, the single purpose, the justifications,
+  the disclosures). Plus the privacy policy text, and the whole folder zipped as
+  `dist/feedhacker-<v>-submission.zip` so "export and load into the dashboard" is one download.
+  Fixed at the source while writing it: `listing.md`'s privacy-policy bullet still said "or the
+  raw file URL", which contradicts the hosted-Pages requirement it learned the hard way.
+- **Two bugs worth remembering, both invisible until rendered.** The whole first pass came out in
+  Times, because `font-family:…"Segoe UI"…` was interpolated into a **double-quoted** style
+  attribute and the inner quotes terminated it. And the two blocks together overflowed 1400px, so
+  the tagline silently wrapped mid-phrase. Neither would fail a test; both were obvious the moment
+  the PNG was looked at. **Render it and look at it.**
+
 ### 2026-09-17 (0.9.1) — a real screenshot generator, and two fixes the maintainer asked for
 
 - **0.9.0 is LIVE on the store**, confirmed from the listing (“Version 0.9.0, Updated 17
