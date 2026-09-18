@@ -81,7 +81,12 @@ jobs:
         working-directory: installer/windows # so `payload\**` and feedhacker.wxs resolve locally
         run: |
           $v = (Get-Content ../../dist/feedhacker/manifest.json -Raw | ConvertFrom-Json).version
-          wix build feedhacker.wxs -d Version=$v -arch x64 -o "../../dist/FeedHacker-$v.msi"
+          # -acceptEula is the switch FireGiant documents FOR CI (docs.firegiant.com/wix/osmf):
+          # WiX v7 refuses to build until the Open Source Maintenance Fee EULA is accepted, and
+          # errors WIX7015 otherwise. "wix7" is the EULA ID for v7 per their table (v6 has none).
+          # Accepting is not paying: the fee is only REQUIRED of organizations over $10,000 annual
+          # revenue by the OSMF terms, which the maintainer has confirmed does not apply here.
+          wix build -acceptEula wix7 feedhacker.wxs -d Version=$v -arch x64 -o "../../dist/FeedHacker-$v.msi"
       - uses: actions/upload-artifact@v4
         with:
           name: msi
