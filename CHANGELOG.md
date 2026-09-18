@@ -14,6 +14,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.10.0] — unreleased
 
 ### Changed
+- **Grouping now tidies a run by *kind*, not by neighbour.** With **Group flagged posts** on, a
+  run of three or more filtered posts used to fold only where three *adjacent* posts shared one
+  filter. On a real feed the kinds alternate — slop, reshare, slop, promoted, reshare, slop — so
+  three neighbours rarely share a reason and grouping did **nothing at all**: the maintainer sent
+  a screenshot of seven consecutive stubs with the setting switched on. A run is now bucketed by
+  filter and each bucket folds on its own, so that screenshot becomes three rows. The members of
+  a row need not be adjacent, each row sits where the first post of its kind was (nothing moves
+  up or down the feed), a kind with only one post in the run keeps its own stub, and the cap of
+  eight posts per row still applies. **No row mixes filters** — the invariant from 0.9.0 that
+  makes the row's splat cover everything the row claims (FH-061) — which is exactly what the
+  adjacency rule was buying, at the price of the feature not firing.
+
+### Changed
 - **The in-product help now documents the AI-slop splat that appears on posts FeedHacker
   *shows*.** 0.9.0 added the only control that can tell the model it **missed** a post, and
   nothing in the product mentioned it: the options page's **Post controls** key still opened

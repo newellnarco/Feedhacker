@@ -34,7 +34,7 @@ const DOCUMENTED = {
   "allow":         ['act-name">Always show</span>'],
   "show":          ['act-name">Show anyway</span>'],
   "rehide":        ["<b>Hide again</b>"],
-  "confirm-group": ["carries the green <b>AI slop</b> splat"],
+  "confirm-group": ["green <b>AI slop</b> splat"],
   "ungroup":       ["<b>Show all</b>"],
 };
 

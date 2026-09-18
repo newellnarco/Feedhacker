@@ -120,6 +120,11 @@ of the standard filters.
 - **Show sample** — previews a line of the hidden post's text in the stub (with the
   author line too when *Show author* is on). Works on its own.
 - **Hide hidden content** — remove matched posts entirely (no placeholders).
+- **Group flagged posts** — when three or more posts in a row are filtered out, that stretch
+  is tidied into summary rows: **one row per filter**, carrying that kind's count, each row
+  where the first post of its kind was. The posts need not be adjacent, and **no row ever
+  mixes filters** — which is what lets a slop row's splat train every post it stands for.
+  **Show all** expands a row back to individual stubs.
 - **Hide AI‑slop comments** — also collapse AI‑slop comments under posts.
 - **Toolbar badge** — shows how many posts are hidden on the page, or a red `!`
   if something errored.

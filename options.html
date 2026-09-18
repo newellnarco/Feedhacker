@@ -193,11 +193,14 @@
         <input type="checkbox" id="groupHiddenRuns">
         <label for="groupHiddenRuns">Group flagged posts — <span class="state" id="group-state"></span></label>
       </div>
-      <p class="muted" style="margin:10px 0 0;">When a run of <b>three or more posts in a row</b> is
-        filtered out, they collapse into a single summary row (“5 posts hidden · AI Slop ×5”) instead
-        of leaving five separate stubs. Useful when a lot of your feed is being filtered. The row
-        carries the green <b>AI slop</b> splat — confirming it trains the filter on every slop post in
-        the run — and <b>Show all</b> expands the run back into individual stubs with their own
+      <p class="muted" style="margin:10px 0 0;">When <b>three or more posts in a row</b> are filtered out,
+        that stretch of feed is tidied into summary rows — <b>one row per filter</b>, with the count for
+        that kind (“3 posts hidden · AI Slop ×3”). The posts do not have to be next to each other: a
+        stretch of AI slop, promoted posts and reshares mixed together becomes one row for each, each
+        sitting where the first of its kind was, so nothing moves up or down your feed. A kind with only
+        one post in the stretch keeps its own stub. <b>No row ever mixes filters</b>, which is what lets
+        the row carry the green <b>AI slop</b> splat — confirming it trains the filter on every post the
+        row stands for — and <b>Show all</b> expands that row back into individual stubs with their own
         per‑post controls.</p>
       <p class="muted" style="margin:8px 0 0;">This is the same toggle as <b>Group flagged posts</b> in
         the toolbar popup; changing it in either place applies everywhere.</p>
