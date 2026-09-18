@@ -80,7 +80,7 @@
   <div id="filters"></div>
 
   <div class="section"><span>Feed display</span></div>
-  <label class="row"><input type="checkbox" id="groupHiddenRuns"><span class="t">Group flagged posts <span class="muted">(collapse a run into one row)</span></span></label>
+  <label class="row"><input type="checkbox" id="groupHiddenRuns"><span class="t">Group flagged posts <span class="muted">(tidy a run into one row per filter)</span></span></label>
   <label class="row"><input type="checkbox" id="hideCompletely"><span class="t">Hide hidden content <span class="muted">(no placeholders)</span></span></label>
   <label class="row"><input type="checkbox" id="nameNames"><span class="t">Show author</span></label>
   <label class="row"><input type="checkbox" id="nameSample"><span class="t">Show sample</span></label>
@@ -94,9 +94,9 @@
     <div class="help-card">
       <button type="button" id="help-close" class="help-close" aria-label="Close help">×</button>
       <h2 id="help-title">How FeedHacker works</h2>
-      <p><b>AI slop</b> is the main filter: posts are scored by how they are <i>written</i>, and the model tunes itself to your feed from what you show and hide. <b>Sensitivity</b> sets how much of the feed to aim at — the sloppiest share.</p>
+      <p><b>AI slop</b> is the main filter: posts are scored by how they are <i>written</i>, and the model tunes itself to your feed from what you show and hide. <b>Sensitivity</b> sets how much of the feed to aim at — the sloppiest share. Corrections go both ways: <b>Show anyway</b> on a hidden post says it was wrong to hide, and the faint splat at the top of a post it showed you says it missed one — clicking that hides the post and trains on it at once.</p>
       <p><b>Also hide</b> is a plain on/off list of post <i>kinds</i>. <b>M</b> hides that kind. Nothing else is needed — each toggle stands alone.</p>
-      <p>The <b>Feed display</b> toggles change how hidden posts look — including whether long runs of hidden posts collapse into one row.</p>
+      <p>The <b>Feed display</b> toggles change how hidden posts look — including whether a run of hidden posts is tidied into summary rows, one per filter.</p>
     </div>
   </div>
 

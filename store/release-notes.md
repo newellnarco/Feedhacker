@@ -19,6 +19,17 @@ Three rules keep it useful:
 
 ---
 
+## 0.10.0
+
+**Grouping now works on a mixed feed.** *Group flagged posts* only ever folded posts that were
+next to each other *and* hidden by the same filter, so on a feed where the kinds alternate it did
+nothing and you saw a stub for every post. A run of filtered posts is now tidied into one row per
+filter — still never mixing kinds, and still in place, so nothing moves in your feed.
+
+The options page now explains the small splat on posts FeedHacker **shows** you: clicking it
+hides the post and tells the filter it missed one. **Show anyway** and **Hide again** are
+described there too, so every button in the feed is spelled out in one place.
+
 ## 0.9.1
 
 Insights now shows **which filter** hid your posts, not just how many — a per-kind table for

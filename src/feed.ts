@@ -1035,6 +1035,13 @@
   // which reads as "FeedHacker ate my feed" even when the hidden share is modest (FH-047).
   // Long runs now break into several rows, each with its own splat and Show-all.
   var GROUP_MAX = 8;
+  // A run is bucketed by reason (see `groupRuns`), and this is how many of ONE kind inside a
+  // run is worth a row. It is lower than GROUP_MIN on purpose: GROUP_MIN asks "is this stretch
+  // of feed noisy enough to tidy?", and once the answer is yes, two of a kind inside it are
+  // better as one row than two stubs. The maintainer's feed is why — with kinds alternating
+  // (slop, reshare, slop, promoted, reshare, slop…) no three NEIGHBOURS ever share a reason, so
+  // a rule that needed three in a row folded nothing at all and left seven stubs on screen.
+  var GROUP_BUCKET_MIN = 2;
   function ensureStub(doc, el) {
     var s = directChildStub(el);
     if (!s) { s = doc.createElement("div"); el.insertBefore(s, el.firstChild); }
@@ -1056,8 +1063,8 @@
     if (el.dataset.feedhackerHidden === "1") return "transparent";                             // hidden without a stub
     return "shown";                                                                            // visible post breaks the run
   }
-  // What KIND of hidden row this is, for grouping. A run only folds together if every member
-  // was hidden for the same reason.
+  // What KIND of hidden row this is, for grouping. A run is split into one bucket per reason,
+  // and a row never stands for more than one.
   //
   // Folding by adjacency alone put "3 posts hidden · AI Slop ×1, Promoted ×2" on one row, and
   // the maintainer's objection to it was exactly right: *"they shouldn't all be grouped since
@@ -1167,27 +1174,45 @@
       renderGroupStub(doc, head, headId, chunk, settings);
     }
     function flush() {
-      // Break a long run into GROUP_MAX-sized rows. A remainder shorter than GROUP_MIN is
-      // left as individual stubs rather than folded into a row that claims too little.
-      for (var i0 = 0; run.length - i0 >= GROUP_MIN; i0 += GROUP_MAX) {
-        var chunk = run.slice(i0, i0 + GROUP_MAX);
-        if (chunk.length < GROUP_MIN) break;
-        fold(chunk);
+      // GROUP_MIN gates the RUN: fewer than three hidden posts in a stretch is not the
+      // "FeedHacker ate my feed" problem grouping exists to solve, and folding two of them
+      // buys a row where two stubs read fine.
+      if (run.length >= GROUP_MIN) {
+        // Then bucket the run BY REASON and fold each bucket on its own. Members of a bucket
+        // need not be adjacent: FH-061 made a reason change END the run, which kept every row
+        // honest but meant a feed whose kinds alternate grouped nothing whatsoever — three
+        // slop posts interleaved with reshares and promoted ones are three separate stubs
+        // under a rule that wants three NEIGHBOURS. Bucketing keeps the FH-061 invariant (a
+        // row stands for exactly one reason, so its splat covers everything it claims) and
+        // drops the adjacency requirement that made the invariant expensive.
+        //
+        // Insertion order of `keys` is feed order of each bucket's FIRST member, and `fold`
+        // heads each row on its first member, so the rows appear where those posts were: the
+        // feed is not reordered, the later members of a bucket simply fold away in place.
+        var keys: any[] = [], buckets: any = {};
+        for (var i1 = 0; i1 < run.length; i1++) {
+          var k = reasonKey(run[i1]);
+          if (!(k in buckets)) { buckets[k] = []; keys.push(k); }
+          buckets[k].push(run[i1]);
+        }
+        for (var b = 0; b < keys.length; b++) {
+          var bucket = buckets[keys[b]];
+          // Break a long bucket into GROUP_MAX-sized rows (FH-047). A remainder shorter than
+          // GROUP_BUCKET_MIN — including a lone post of its kind — keeps its own stub rather
+          // than becoming a row that claims too little.
+          for (var i0 = 0; bucket.length - i0 >= GROUP_BUCKET_MIN; i0 += GROUP_MAX) {
+            var chunk = bucket.slice(i0, i0 + GROUP_MAX);
+            if (chunk.length < GROUP_BUCKET_MIN) break;
+            fold(chunk);
+          }
+        }
       }
       run = [];
     }
-    var runKey = null;
     for (var i = 0; i < posts.length; i++) {
       var st = postState(posts[i]);
-      if (st === "run") {
-        var k = reasonKey(posts[i]);
-        // A different reason ends the run and starts a new one — the run itself is intact,
-        // so this splits one mixed row into one homogeneous row per kind, it does not
-        // discard anything. flush() empties `run`, hence the push after it.
-        if (runKey !== null && k !== runKey) flush();
-        runKey = k;
-        run.push(posts[i]);
-      } else if (st === "shown") { flush(); runKey = null; }
+      if (st === "run") run.push(posts[i]);
+      else if (st === "shown") flush();
       // "transparent" posts neither extend nor break the run
     }
     flush();

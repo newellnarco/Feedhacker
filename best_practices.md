@@ -573,6 +573,11 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     proved nothing. So mutate `src/`, rebuild, and **confirm the mutation survived into the built
     output** (`grep` for your marker in `build/` and `dist/`) before believing the run. A mutation
     test that cannot be shown to have changed the running code is not a mutation test.
+    **The trap is symmetric, and the other half bit on 2026-09-18:** mutating `src/feed.ts` and
+    running `node --test` *without* rebuilding also proves nothing, because the suites load
+    `build/`. Two mutations "passed" and looked like sound tests; after `npm run build` between
+    each, the same mutations failed 3 and 5 tests. Whichever direction you are working in, the
+    question is the same — **did the bytes the test executes actually change?**
 
 62. **A test must wait for the state it asserts on, not for the markup that will eventually hold
     it.** Static markup exists the moment the DOM parses; the values in it arrive later, from an
@@ -585,6 +590,12 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     that trap). And **the signal must be independent of the assertion**: waiting for the very class
     you are asserting turns a failing test into a timeout and a real assertion into a tautology
     (§54). Independent synchroniser, then assert.
+    **A state that is invisible by design needs `state: "attached"`.** On 2026-09-18 two system
+    tests waited for `#post.feedhacker-gone` with Playwright's default *visible* wait — and
+    `feedhacker-gone` is `display: none`. The wait could never be satisfied by the very state the
+    test existed to observe, so both timed out at 20s and read as product failures. When the
+    thing you are waiting for is a post folded away, a collapsed row or anything else the code
+    deliberately hides, say so in the wait.
 
 63. **Before deleting a feature that "causes" a spike in reports, ask what changed underneath it —
     and check the commit history rather than your memory.** A feature that has been fine for
@@ -725,6 +736,32 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     What cannot be generated, assert. The text half of a listing is cheap to pin — the test that
     every shipped filter is named in the store description is four lines, and it caught a filter
     that had been missing from the listing for versions.
+
+71. **A user-facing control ships with its help entry in the same PR — and a test that ties the two
+    together.** 0.9.0 added the only control that can tell the model it *missed* a post, and the
+    options page went on saying *"the icon buttons on each hidden-post stub"*: true the release
+    before, false after, and it reads perfectly well either way — which is exactly why nobody
+    noticed. The same audit found two more controls (**Show anyway**, **Hide again**) that had
+    never been documented at all, and a weights panel that named only the correction which hides
+    *less*. A control the user is never told about is worth nothing, doubly so for one drawn faint
+    until hover. So **enumerate the controls from the code** (here: every `data-fh-act` in
+    `feed.ts`) and fail the unit tier when one has no help entry. The general form: when a record
+    must track something the code already knows, derive the check from the code — a docs rule
+    nobody can forget is a test, and a promise to "keep the help current" is not one. Found by the
+    maintainer asking whether the help had been updated; the honest answer was no (FH-066).
+
+72. **When you narrow a rule to stop a wrong output, check the rule still FIRES on a realistic
+    input — a fix can leave a feature correct and inert.** FH-061 stopped a group row claiming
+    two filters at once by ending the run whenever the reason changed. Every assertion about
+    that row became true, and the feature stopped working: real feeds interleave kinds, so three
+    *adjacent* posts almost never shared a reason and grouping folded nothing at all. It took a
+    maintainer screenshot of seven consecutive stubs, with the setting switched on, to see it.
+    The tests could not: every grouping fixture was a run of one kind, which is the shape the
+    narrowing was designed for and the one shape that still worked. So when a fix adds a
+    condition, ask what fraction of real inputs now fail it, and **add a fixture that looks like
+    the messy real thing** rather than the clean case that motivated the change. The good
+    outcome keeps the invariant and drops the cost: bucket the run by reason instead of
+    requiring adjacency — no row mixes filters, and the rows appear (FH-067).
 
 
 ## More tests & docs

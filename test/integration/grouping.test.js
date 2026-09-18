@@ -285,23 +285,106 @@ test("Show all on one row expands only that row's posts", () => {
 // members, so a mixed row offered a splat covering a third of what it claimed to stand for —
 // and expanding it gave the other two no control at all, a deterministic hide carrying no
 // feature vector to learn from.
+const hiringPost = (i) => post2(`<div>We are hiring! Apply now — this open role ${i} is on my team, send me your CV and apply via the link.</div>`);
 const promoPost = (i) => post2(`<a href="/company/acme">Acme</a><span>Promoted</span><div>buy thing ${i}</div>`);
 
-test("a mixed run does NOT fold into one row (FH-061)", () => {
-  // Exactly the maintainer's case: one AI-slop post next to two Promoted ones.
+test("a mixed run never becomes ONE row — each kind folds on its own (FH-061)", () => {
+  // Exactly the maintainer's case: one AI-slop post next to two Promoted ones. The row that
+  // must never exist is "3 posts hidden · AI Slop ×1, Promoted ×2". What should exist is a
+  // Promoted row for the two that share a reason, with the slop post keeping its own stub —
+  // grouping buckets a run by reason rather than requiring three NEIGHBOURS of one kind.
   const doc = makeDoc(feedHtml(slopPosts(1) + promoPost(0) + promoPost(1)));
   const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true });
   feed.scan(doc, [], s);
   feed.groupRuns(doc, s);
 
-  assert.strictEqual(doc.querySelector(".feedhacker-stub.feedhacker-group"), null,
-    "three adjacent hidden posts hidden for DIFFERENT reasons must not become one row");
+  const rows = [...doc.querySelectorAll(".feedhacker-stub.feedhacker-group")];
+  assert.strictEqual(rows.length, 1, "one row, for the one kind that has two members");
+  assert.match(rows[0].textContent, /2 posts hidden · Promoted Post ×2/, "and it stands for those two only");
+
   const posts = feed.findPostContainers(doc);
   assert.strictEqual(posts.length, 3, "all three posts are still there");
-  posts.forEach((p, i) => {
-    assert.ok(p.classList.contains("feedhacker-hidden"), `post ${i} is still hidden`);
-    assert.ok(p.querySelector(".feedhacker-stub"), `post ${i} keeps its own stub and its own controls`);
-  });
+  assert.ok(posts[0].querySelector(".feedhacker-stub") && !posts[0].querySelector(".feedhacker-group"),
+    "the lone slop post keeps its own stub and its own controls");
+  assert.strictEqual(posts[1].dataset.feedhackerGrouphead, posts[2].dataset.feedhackerGroup,
+    "the two promoted posts are one row, headed by the first of them");
+});
+
+test("no group row ever stands for more than one reason", () => {
+  // The FH-061 invariant, asserted directly rather than via one shape: whatever the mix, a
+  // row's detail names exactly one kind. The row's splat can only train slop members, so a
+  // row claiming two kinds is a control that covers part of what it stands for.
+  const doc = makeDoc(feedHtml(
+    slopPosts(1) + promoPost(0) + hiringPost(0) + slopPosts(1) + hiringPost(1) + promoPost(1) + slopPosts(1)));
+  const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true, muteHiring: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const rows = [...doc.querySelectorAll(".feedhacker-stub.feedhacker-group")];
+  assert.ok(rows.length >= 2, `expected several rows, got ${rows.length}`);
+  for (const r of rows) {
+    const detail = (r.textContent.match(/· (.*)$/) || ["", ""])[1];
+    assert.strictEqual(detail.split(",").length, 1, `row mixes reasons: ${JSON.stringify(detail)}`);
+  }
+});
+
+test("a feed whose kinds ALTERNATE still groups — the case that folded nothing before", () => {
+  // The maintainer's screenshot, 2026-09-18: seven consecutive stubs with Group flagged posts
+  // ON, because the kinds alternated and no three neighbours ever shared a reason. Under
+  // FH-061's adjacency rule this produced zero rows; it must now produce one per kind.
+  const doc = makeDoc(feedHtml(
+    slopPosts(1) + promoPost(0) + hiringPost(0) + slopPosts(1) + hiringPost(1) + promoPost(1) + slopPosts(1)));
+  const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true, muteHiring: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const rows = [...doc.querySelectorAll(".feedhacker-stub.feedhacker-group")];
+  const text = rows.map((r) => r.textContent);
+  assert.strictEqual(rows.length, 3, `one row per kind (got ${rows.length}: ${JSON.stringify(text)})`);
+  assert.ok(text.some((t) => /3 posts hidden · AI Slop ×3/.test(t)), `an AI Slop ×3 row: ${JSON.stringify(text)}`);
+  assert.ok(text.some((t) => /2 posts hidden · Promoted Post ×2/.test(t)), `a Promoted ×2 row: ${JSON.stringify(text)}`);
+  assert.ok(text.some((t) => /2 posts hidden/.test(t) && /Hiring/.test(t)), `a Hiring ×2 row: ${JSON.stringify(text)}`);
+
+  // Every hidden post is accounted for exactly once, and the rows sit where their first
+  // member sat — the feed is not reordered to make the grouping work.
+  const posts = feed.findPostContainers(doc);
+  const claimed = text.reduce((a, t) => a + Number((t.match(/(\d+) posts hidden/) || [])[1]), 0);
+  assert.strictEqual(claimed, 7, "the rows account for all seven, once");
+  assert.ok(posts[0].dataset.feedhackerGrouphead, "the first slop post heads the slop row, in place");
+  assert.ok(posts[1].dataset.feedhackerGrouphead, "the first promoted post heads the promoted row, in place");
+  assert.ok(posts[2].dataset.feedhackerGrouphead, "the first hiring post heads the hiring row, in place");
+  assert.ok(posts[3].dataset.feedhackerGroup === posts[0].dataset.feedhackerGrouphead,
+    "the later slop posts fold into the slop row rather than moving");
+});
+
+test("a run of three different kinds folds nothing — one of a kind keeps its own stub", () => {
+  const doc = makeDoc(feedHtml(slopPosts(1) + promoPost(0) + hiringPost(0)));
+  const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true, muteHiring: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+  assert.strictEqual(doc.querySelector(".feedhacker-stub.feedhacker-group"), null,
+    "nothing to fold: no kind has two members");
+  feed.findPostContainers(doc).forEach((p, i) =>
+    assert.ok(p.querySelector(".feedhacker-stub"), `post ${i} keeps its stub`));
+});
+
+test("the per-row cap still applies inside a bucket", () => {
+  // FH-047's ceiling must survive bucketing: 12 slop posts interleaved with promoted ones are
+  // one bucket of 12, and no row may claim more than 8.
+  let html = "";
+  for (let i = 0; i < 12; i++) html += slopPosts(1) + promoPost(i);
+  const doc = makeDoc(feedHtml(html));
+  const { s } = trainingSettings({ muteSloppy: true, mutePromoted: true });
+  feed.scan(doc, [], s);
+  feed.groupRuns(doc, s);
+
+  const rows = [...doc.querySelectorAll(".feedhacker-stub.feedhacker-group")];
+  const slopRows = rows.filter((r) => /AI Slop/.test(r.textContent));
+  assert.ok(slopRows.length >= 2, `12 slop posts must not be one row (got ${slopRows.length})`);
+  for (const r of rows) {
+    const n = Number((r.textContent.match(/(\d+) posts hidden/) || [])[1]);
+    assert.ok(n <= 8, `no row may stand for more than 8 posts (got ${n})`);
+  }
 });
 
 test("…and each reason folds on its own once it reaches the minimum", () => {

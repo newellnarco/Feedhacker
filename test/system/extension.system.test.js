@@ -299,21 +299,77 @@ test("AI slop and Promoted are never folded into one row end-to-end (FH-061)", {
   });
   try {
     // Wait for the LAST of the three to be hidden, so grouping has certainly had its chance.
-    await page.waitForSelector("#p-promo-2.feedhacker-hidden, #p-promo-2.feedhacker-gone", { timeout: 20000 });
-    assert.strictEqual(await page.locator(".feedhacker-stub.feedhacker-group").count(), 0,
-      "three adjacent hidden posts hidden for different reasons must not become one row");
-    // Each keeps its own stub — and so the slop post keeps its own splat, reachable without
-    // expanding anything.
-    for (const id of ["p-slop", "p-promo-1", "p-promo-2"]) {
-      assert.ok((await page.locator(`#${id} .feedhacker-stub`).count()) >= 1, `${id} keeps its own stub`);
+    // `state: "attached"` matters: a post folded into a group row is `feedhacker-gone`, i.e.
+    // display:none, so the default "visible" wait can never be satisfied by the very state
+    // this test is waiting for.
+    await page.waitForSelector("#p-promo-2.feedhacker-hidden, #p-promo-2.feedhacker-gone",
+      { state: "attached", timeout: 20000 });
+
+    // The run is bucketed by reason, so the two Promoted posts DO get a row — and it stands
+    // for those two alone. What must never appear is a row claiming both kinds.
+    const rows = await page.locator(".feedhacker-stub.feedhacker-group").allInnerTexts();
+    for (const t of rows) {
+      assert.strictEqual(t.split("·").length <= 2, true, `a row claims more than one kind: ${JSON.stringify(t)}`);
+      assert.ok(!(/AI Slop/.test(t) && /Promoted/.test(t)), `a row mixes slop and promoted: ${JSON.stringify(t)}`);
     }
+    assert.ok(rows.some((t) => /2 posts hidden/.test(t) && /Promoted/.test(t)),
+      `the promoted pair folds into its own row (rows: ${JSON.stringify(rows)})`);
+
+    // The slop post keeps its own stub — and so its own splat, reachable without expanding
+    // anything, which is what the maintainer was blocked by.
+    assert.ok((await page.locator("#p-slop .feedhacker-stub").count()) >= 1, "the slop post keeps its own stub");
     assert.ok((await page.locator('#p-slop [data-fh-act="confirm"]').count()) >= 1,
       "the slop post's own splat is right there");
-    assert.strictEqual(await page.locator('#p-promo-1 [data-fh-act="confirm"]').count(), 0,
-      "a promoted post offers no slop splat — there is no model behind that hide");
     assert.strictEqual(
       await page.locator("#p-ok").evaluate((el) => el.classList.contains("feedhacker-hidden")), false,
       "the human post stays visible");
+  } finally {
+    await close();
+  }
+});
+
+// The maintainer's 2026-09-18 screenshot: seven consecutive stubs with grouping ON, because
+// the kinds alternated and FH-061's rule wanted three NEIGHBOURS of one kind. Driven in a real
+// browser because grouping runs on the scan path (§28) and because "it doesn't combine the like
+// types" is a claim about what is on screen.
+const ALT_FIXTURE = `<!doctype html><html><head><meta charset="utf-8"><title>Feed</title></head><body><main><div id="feed">
+  ${post("a-slop-1", `<a href="/in/ann-one">Ann One</a><div>${SLOP_A}</div>`)}
+  ${post("a-promo-1", `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy our thing one</div>`)}
+  ${post("a-slop-2", `<a href="/in/bob-two">Bob Two</a><div>${SLOP_B}</div>`)}
+  ${post("a-promo-2", `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy our thing two</div>`)}
+  ${post("a-slop-3", `<a href="/in/cat-three">Cat Three</a><div>${SLOP_A}</div>`)}
+  ${post("a-promo-3", `<a href="/company/acme">Acme</a><span>Promoted</span><div>buy our thing three</div>`)}
+</div></main></body></html>`;
+
+test("alternating kinds still group, one row per kind, end-to-end", { skip, timeout: 60000 }, async () => {
+  const { page, close } = await launchFeed({
+    fixtureHtml: ALT_FIXTURE, sync: { muteSloppy: true, mutePromoted: true, groupHiddenRuns: true },
+  });
+  try {
+    await page.waitForSelector("#a-promo-3.feedhacker-hidden, #a-promo-3.feedhacker-gone",
+      { state: "attached", timeout: 20000 });   // folded members are display:none — see above
+    await page.waitForSelector(".feedhacker-stub.feedhacker-group", { timeout: 20000 });
+
+    const rows = await page.locator(".feedhacker-stub.feedhacker-group").allInnerTexts();
+    assert.strictEqual(rows.length, 2, `one row per kind, not per neighbour-run (rows: ${JSON.stringify(rows)})`);
+    assert.ok(rows.some((t) => /AI Slop/.test(t)), `an AI Slop row: ${JSON.stringify(rows)}`);
+    assert.ok(rows.some((t) => /Promoted/.test(t)), `a Promoted row: ${JSON.stringify(rows)}`);
+    for (const t of rows) assert.match(t, /3 posts hidden/, `each row stands for its own three: ${JSON.stringify(t)}`);
+
+    // The rows sit where their first member sat: the feed is not reordered to group it.
+    assert.ok(await page.locator("#a-slop-1 .feedhacker-stub.feedhacker-group").count() >= 1,
+      "the first slop post heads the slop row, in place");
+    assert.ok(await page.locator("#a-promo-1 .feedhacker-stub.feedhacker-group").count() >= 1,
+      "the first promoted post heads the promoted row, in place");
+
+    // And the slop row's splat covers the whole row, which is only true because the row is
+    // homogeneous — the FH-061 invariant surviving the change that relaxed adjacency.
+    const slopRow = page.locator(".feedhacker-stub.feedhacker-group", { hasText: "AI Slop" });
+    assert.ok(await slopRow.locator('[data-fh-act="confirm-group"]').count() >= 1,
+      "the slop row offers the group splat");
+    const promoRow = page.locator(".feedhacker-stub.feedhacker-group", { hasText: "Promoted" });
+    assert.strictEqual(await promoRow.locator('[data-fh-act="confirm-group"]').count(), 0,
+      "the promoted row does not — there is no model behind that hide");
   } finally {
     await close();
   }
