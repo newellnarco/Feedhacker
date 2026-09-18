@@ -58,6 +58,20 @@
   }
 
   function isPromoted(el) { return leafWithText(el, /^promoted\b(?!\s+(?:to|as)\b)/i); } // "Promoted", "Promoted by X", "Promoted \u2022 X" (not "Promoted to/as ...")
+  // A Subscribe control — the newsletter card's own CTA. Note this filter reads no text at
+  // all: a post that plugs a newsletter in prose ("subscribe to my newsletter 👇" and a link)
+  // has no such control and is not matched. Structural by design; `test/integration/
+  // newsletter.test.js` pins it so nobody widens it by accident.
+  //
+  // "Subscribed" matches neither rule — the first is an exact-text test, and `\b` after
+  // "subscribe" fails against the "d". Deliberate: a card you already subscribed to is not
+  // asking you to sign up.
+  //
+  // The subtree sweep looks unbounded but is not, for the case that matters: a nested post
+  // carrying its own hidden marker is a SEPARATE container (see `postContainerFor`), so a
+  // reshare's quoted post is not inside `el` at all. A quoted block with no marker of its own
+  // IS inside it, and there is no marker-based way to tell that apart — see the
+  // characterization tests, which record both shapes rather than guessing.
   function isNewsletterSignup(el) {
     if (leafWithText(el, /^\+?\s*subscribe$/i)) return true;                       // Subscribe CTA
     var labeled = el.querySelectorAll("[aria-label]");
