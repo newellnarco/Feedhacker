@@ -57,8 +57,9 @@ network requests — its curated AI-slop phrase list ships inside the package.
 - Remote code? **No** — all code is in the package; no eval of remote scripts.
 - Data sold to third parties? **No.**
 - Data used only for the single purpose above? **Yes** (and it never leaves the device).
-- **Privacy policy URL:** host `store/privacy-policy.md` (e.g. via GitHub Pages or the
-  raw file URL) and paste that link.
+- **Privacy policy URL:** `https://newellnarco.github.io/Feedhacker/privacy-policy.html`
+  — the hosted GitHub Pages copy. Do **not** paste a `raw.githubusercontent.com` link: raw
+  files are served as `text/plain` and Google's checker often flags them "not reachable".
 
 ## Graphics — all provided in this repo
 

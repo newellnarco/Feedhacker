@@ -100,14 +100,24 @@ Newest first. One entry per session; keep entries short and factual.
   all caps, wide tracking, **MAX** white and **RESEARCH COLLECTIVE** cyan, over a short coral
   rule. FeedHacker's element tile is pixel-identical to `brand/logo-lockup.svg`: same `#0A66C2`,
   same 38% inner stroke, same 42 / Fh / caption.
-- **One adaptation, flagged rather than smuggled in.** FeedHacker's wordmark is `#0A66C2`, which
-  is unreadable on a dark navy field, so it reverses out to white and the tagline's emphasis uses
-  a lighter tint of the *same* blue (`#4a9eea`). That is the standard reversed treatment of the
-  existing design rather than a new one — but it is a judgement call, and the maintainer should
-  overrule it if they wanted the blue kept literally.
+- **The adaptation was flagged, and the maintainer overruled it — correctly.** The first pass
+  reversed FeedHacker's `#0A66C2` wordmark to white so it would read on the dark field. Their
+  instruction: *“keep the blue as designed.”* So the whole FeedHacker lockup now sits on a
+  **white card** over the MRC field — blue on white, nothing of FeedHacker's recoloured — which
+  also matches how the 1280×800 screenshots already present the product (a white card with a soft
+  shadow on a coloured ground). **Flagging the judgement call is what made the correction cheap**;
+  had it been smuggled in as "polish" it would have shipped.
 - **Both tiles are generated, not hand-made** (`npm run store:shots`, §70), in PNG and JPEG at
   the store's fixed 1400×560 and 440×280. **No version bump**: listing assets are an independent
   publish channel from the package (FH-033), so these can be uploaded on their own.
+- **A complete submission bundle now falls out of the same command.** `dist/store-upload/` gained
+  `SUBMISSION.md` — every Developer Dashboard field filled in, in the order the UI asks for them,
+  **read out of `store/listing.md` and `manifest.json` rather than retyped**, so it cannot drift
+  from what ships (the declared permission, the summary, the single purpose, the justifications,
+  the disclosures). Plus the privacy policy text, and the whole folder zipped as
+  `dist/feedhacker-<v>-submission.zip` so "export and load into the dashboard" is one download.
+  Fixed at the source while writing it: `listing.md`'s privacy-policy bullet still said "or the
+  raw file URL", which contradicts the hosted-Pages requirement it learned the hard way.
 - **Two bugs worth remembering, both invisible until rendered.** The whole first pass came out in
   Times, because `font-family:…"Segoe UI"…` was interpolated into a **double-quoted** style
   attribute and the inner quotes terminated it. And the two blocks together overflowed 1400px, so
