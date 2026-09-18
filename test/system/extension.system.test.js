@@ -6,6 +6,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { resolveChrome, extensionBuilt, extensionWorker, launchFeed } = require("./helper");
+const { scorer } = require("../helper");   // the built scorer, for checking a stored record's arithmetic
 
 const browser = resolveChrome();
 // In CI we must never silently skip — a missing browser or unbuilt extension should
@@ -426,6 +427,119 @@ test("marking a SHOWN post as slop hides it and persists a positive label", { sk
       "…and it is POSITIVE — before this, only label 0 could ever be recorded from the feed");
     assert.ok(typeof train[0].features.broetry === "number",
       "trained on the real feature vector of the post that was shown");
+  } finally {
+    await close();
+  }
+});
+
+// --- FH-070, live path: calibration actually runs, and its record does not lie ------------
+// SCOPE, stated plainly because it is easy to overclaim: this test does NOT catch FH-070. The
+// bug is that the threshold was a quantile of one model's scores applied to another, and showing
+// that needs a population with a realistic score SPREAD — 40-odd genuinely different posts. Two
+// attempts at a browser fixture proved it: with repeated fixture text the extractor returns two
+// distinct vectors, every quantile collapses onto the floor, and the buggy and fixed thresholds
+// coincide. Mutation-testing confirmed the vacuity rather than my guessing at it — the first
+// version of this test passed with the fix reverted. A fixture faithful enough to bite would
+// also be brittle: any future tuning of the tells shifts the distribution and flips it.
+//
+// So the provenance property is proven at the UNIT tier, where the population is controllable
+// (`test/unit/livecalibrate.test.js`, three mutations each failing it). What this test adds is
+// the integration nothing drove before, which is where the bug actually lived: content.ts
+// holding a learned model in chrome.storage.local, feeding observations from real scans, and
+// writing a calibration record. It asserts that happens, that the record is CONSISTENT with the
+// model it claims to describe, and that the live feed is not wall-to-wall stubs.
+const CAL_SLOP = [SLOP_A, SLOP_B];
+const CAL_HUMAN = [
+  "Fixed a caching bug this morning: the key included a timestamp so every lookup missed. Tests pass, shipping after lunch.",
+  "Spent the afternoon reading about index selectivity in Postgres and came away with fewer certainties than I started with.",
+  "We moved the standup to 10am because half the team is in another timezone now. Small change, noticeably better.",
+];
+function calFixture(n) {
+  let body = "";
+  for (let i = 0; i < n; i++) {
+    const slop = i % 3 === 0;
+    const text = slop ? CAL_SLOP[i % CAL_SLOP.length] : CAL_HUMAN[i % CAL_HUMAN.length];
+    body += post(`c-${i}`, `<a href="/in/person-${i}">Person ${i}</a><div>${text} (${i})</div>`);
+  }
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Feed</title></head><body><main><div id="feed">${body}</div></main></body></html>`;
+}
+
+test("calibration runs on a live feed and its record matches the model it describes", { skip, timeout: 90000 }, async () => {
+  const drifted = {
+    bias: -0.571,
+    banlist: 3.24, emdash: 1.31, antithesis: 1.65, ruleofthree: 1.18, rhetorical: 1.4,
+    emoji: 1.19, bullets: 0.81, connectives: 1.02, openers: 1.54, broetry: 1.38, spaced: 1.3, uniformity: 0.8,
+  };
+  // Three or more training examples are what make the live model diverge from the autonomous
+  // one — below that liveCalibrate ignores them and the two thresholds coincide, which is
+  // exactly how the unit tier missed this.
+  const feats = (over) => Object.assign(
+    { antithesis: 0, banlist: 0, broetry: 0, bullets: 0, connectives: 0, emdash: 0,
+      emoji: 0, openers: 0, rhetorical: 0, ruleofthree: 0, spaced: 0, uniformity: 0 }, over);
+  const training = [];
+  for (let i = 0; i < 8; i++) training.push({ id: `t${i}`, label: 1, ts: Date.now() - i * 1000,
+    features: feats({ broetry: 0.4 + (i % 3) / 10, bullets: 0.3, emoji: 0.2 }) });
+
+  const { page, sw, close } = await launchFeed({
+    fixtureHtml: calFixture(42),
+    sync: { muteSloppy: true, groupHiddenRuns: false, slopTargetFrac: 0.28, autoCalibrate: true },
+    local: { "feedhacker:slopWeights": drifted, "feedhacker:sloptrain": training },
+  });
+  try {
+    // Wait for the extension to write a calibration record — that needs 30+ observations, which
+    // the 42-post fixture supplies on its own scans.
+    const cal = await sw.evaluate(() => new Promise((resolve) => {
+      const KEY = "feedhacker:slopcal";
+      const deadline = Date.now() + 45000;
+      (function poll() {
+        chrome.storage.local.get([KEY], (o) => {
+          if (o && o[KEY] && typeof o[KEY].flaggedFrac === "number") return resolve(o[KEY]);
+          if (Date.now() > deadline) return resolve(null);
+          setTimeout(poll, 500);
+        });
+      })();
+    }));
+    assert.ok(cal, "the extension must have calibrated from the fixture's own observations");
+    assert.ok(cal.n >= 30, `calibrated on a real population (n=${cal.n})`);
+    assert.ok(cal.flaggedFrac <= 0.28 + 0.12,
+      `the stored threshold should keep the hidden share near the 28% target; got ` +
+      `${(cal.flaggedFrac * 100).toFixed(1)}%`);
+
+    // The record must describe the model that is actually judging: recompute the flagged share
+    // from the STORED weights, threshold and observations, and require the stored number to
+    // match. A record that disagrees with its own model is how FH-070 hid in plain sight — the
+    // calibrator computed flaggedFrac 0.849, wrote it down, and nothing ever compared it to the
+    // target it was supposed to hit.
+    // The MV3 worker only imports filters.js, so the scorer is not available in its scope —
+    // read the three values out of real extension storage and do the arithmetic here, where the
+    // built scorer is loadable. The data is the extension's own; only the comparison is ours.
+    const state = await sw.evaluate(() => new Promise((resolve) => {
+      chrome.storage.local.get(
+        ["feedhacker:slopcal", "feedhacker:slopWeights", "feedhacker:slopobs"],
+        (o) => resolve({
+          cal: o["feedhacker:slopcal"] || null,
+          weights: o["feedhacker:slopWeights"] || null,
+          obs: o["feedhacker:slopobs"] || [],
+        }));
+    }));
+    assert.ok(state.cal && state.weights && state.obs.length,
+      "the record, the learned model and the observation buffer must all be in storage");
+    const hit = state.obs.filter(
+      (x) => scorer.score(x.features || {}, state.weights).prob >= state.cal.threshold).length;
+    const frac = hit / state.obs.length;
+    assert.ok(Math.abs(frac - state.cal.flaggedFrac) < 0.2,
+      `the stored flaggedFrac (${state.cal.flaggedFrac.toFixed(3)}) must describe the stored ` +
+      `model, which flags ${frac.toFixed(3)} of its own ${state.obs.length} observations`);
+
+    // And the page agrees with the record: whatever fraction the calibrator claims, the feed
+    // must not be wall-to-wall stubs.
+    const counts = await page.evaluate(() => ({
+      posts: document.querySelectorAll("div.post").length,
+      hidden: document.querySelectorAll("div.post.feedhacker-hidden, div.post.feedhacker-gone").length,
+    }));
+    assert.ok(counts.posts >= 40, `fixture rendered (${counts.posts} posts)`);
+    assert.ok(counts.hidden / counts.posts < 0.75,
+      `the live feed must not be almost entirely hidden: ${counts.hidden}/${counts.posts}`);
   } finally {
     await close();
   }

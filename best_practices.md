@@ -777,6 +777,26 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     experiment that makes it visible. If the experiment refuses to produce it, the finding was a
     hypothesis — record what the probe actually showed (FH-069) and move on.
 
+74. **A calibrated cutoff is meaningless apart from the model it was computed from — derive it
+    from the weights it will be applied to, in the same step.** FeedHacker's auto-calibrator put
+    the threshold at a quantile of the feed's own scores, which is the right idea, and computed
+    that quantile from the SHIPPED weights while the extension judged posts with the LEARNED
+    ones. The two agree on a fresh install, so it tested clean and shipped; the gap opens only
+    as the model learns, which is the one state no fixture had. On the maintainer's own
+    observations the same 0.57 meant 24% hidden under one model and **85%** under the other, and
+    the feed became a wall of stubs. The general shape: **whenever a parameter is fitted to a
+    distribution, the distribution must be produced by the artefact that parameter will govern**
+    — thresholds, quantiles, normalisation constants, sampling temperatures. If the code can
+    compute the two from different sources, one day it will. Factor the derivation into one
+    function that takes the model as an argument (`thresholdFor(weights, obs, target)`) so the
+    mismatch becomes unsayable rather than merely unlikely.
+
+    A corollary with teeth, learned the same afternoon: **the calibrator already computed the
+    number that proved it wrong.** It recorded `flaggedFrac: 0.849` next to a 0.28 target, run
+    after run, and nothing ever compared them. A diagnostic that nothing asserts on is a
+    comment. Where a component records what it just did, assert that the record matches its own
+    intent.
+
 
 ## More tests & docs
 

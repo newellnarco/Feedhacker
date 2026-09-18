@@ -249,6 +249,15 @@
   // Online logistic-regression update from one labeled example.
   // label: 1 = confirmed slop, 0 = false positive. Returns a NEW weights object.
   // Weights are clamped to keep a runaway feedback loop from producing extremes.
+  // How much of a correction is allowed to land on the INTERCEPT rather than on the tells.
+  // The bias gradient is `err` with no feature multiplier, while a tell's is `err * value` and
+  // values are clamped to [0,1] — so without this the intercept always moves at least as much
+  // as any feature, and usually several times more. That makes a run of one-sided corrections
+  // teach "hide more of everything" instead of "this is what AI writing looks like", which is
+  // exactly what happened on the maintainer's model: bias -1.6 -> -0.571 (five times the
+  // largest tell's movement) off 59 label-1 corrections against 1 label-0 (FH-070).
+  var BIAS_LR = 0.25;
+
   function learn(weights, features, label, lr) {
     weights = weights || defaultWeights();
     lr = typeof lr === "number" ? lr : 0.3;
@@ -256,7 +265,7 @@
     var err = (label ? 1 : 0) - s.prob;
     var next: any = {};
     for (var k in weights) if (Object.prototype.hasOwnProperty.call(weights, k)) next[k] = weights[k];
-    next.bias = clampW((typeof next.bias === "number" ? next.bias : -1.6) + lr * err);
+    next.bias = clampW((typeof next.bias === "number" ? next.bias : -1.6) + lr * err * BIAS_LR);
     for (var i = 0; i < FEATURE_IDS.length; i++) {
       var id = FEATURE_IDS[i];
       var v = features[id] || 0;
@@ -301,6 +310,9 @@
         var key = keys[m];
         // mean log-likelihood gradient + a pull back toward the prior weight (ridge to prior)
         var step = grad[key] / n - lambda * (w[key] - (typeof prior[key] === "number" ? prior[key] : 0));
+        // The ridge pull toward the prior is NOT damped — only the data-driven half is, so the
+        // intercept is still free to return to where the prior puts it.
+        if (key === "bias") step = grad[key] / n * BIAS_LR - lambda * (w[key] - (typeof prior[key] === "number" ? prior[key] : 0));
         w[key] = clampW(w[key] + lr * step);
       }
     }
@@ -322,8 +334,7 @@
     prior = prior || defaultWeights();
     opts = opts || {};
     var minObs = typeof opts.minObs === "number" ? opts.minObs : 30;
-    var target = typeof opts.targetFrac === "number" ? opts.targetFrac : 0.28;
-    target = target < 0.05 ? 0.05 : target > 0.6 ? 0.6 : target;
+    var target = clampTarget(opts.targetFrac);
     var priorThr = typeof opts.priorThreshold === "number" ? opts.priorThreshold : THRESHOLD;
     var n = observations ? observations.length : 0;
     if (n < minObs) return { weights: prior, threshold: priorThr, calibrated: false, flaggedFrac: 0, freqs: {} };
@@ -344,10 +355,8 @@
       var base = typeof prior[id] === "number" ? prior[id] : 0;
       weights[id] = base > 0 ? base * factor : base;   // only damp positive (slop-ward) weights
     }
-    var probs: number[] = [];
-    for (var j = 0; j < n; j++) probs.push(score(observations[j].features || {}, weights).prob);
-    probs.sort(function (a, b) { return a - b; });
-    var idx = Math.floor((1 - target) * (n - 1));
+    var t = thresholdFor(weights, observations, target);
+    var probs = t.probs;
     // targetFrac is a CEILING, not a quota. The quantile caps how much can be hidden; the
     // floor decides whether anything deserves to be. Taking the higher of the two means a
     // clean feed loses nothing (the old fixed 0.4 clamp hid the top of the *human* cluster
@@ -357,14 +366,37 @@
     // 0.4, so — scores being bimodal, human ~0.2 and slop ~0.98 — the quantile always landed
     // inside a cluster and snapped to the clamp: target 0.28 and target 0.50 produced byte-
     // identical output and the slider did nothing (FH-046).
+    var flagged = 0;
+    for (var m = 0; m < n; m++) if (probs[m] >= t.threshold) flagged++;
+    return { weights: weights, threshold: t.threshold, calibrated: true, flaggedFrac: flagged / n, freqs: freqs };
+  }
+
+  // The threshold rule, in one place: put the cutoff at the (1 - target) quantile of the
+  // population's own scores UNDER A GIVEN MODEL, with a floor (so a clean feed loses nothing)
+  // and a cap (so it is never unhittable).
+  //
+  // Extracted for FH-070. It used to live inside `autocalibrate`, which meant the threshold
+  // could only ever be derived from the weights autocalibrate had just computed — and
+  // `liveCalibrate` then applied that number to a DIFFERENT model, the one it blends from the
+  // user's corrections and the running model. On the maintainer's 2026-09-18 export the gap was
+  // stark: threshold 0.57 flagged 24% of observations under the autonomous weights and **85%**
+  // under the weights actually judging posts, so 299 of 300 posts were hidden against a 28%
+  // target. A threshold means nothing apart from the model it is a quantile of.
+  function clampTarget(t) {
+    var v = typeof t === "number" ? t : 0.28;
+    return v < 0.05 ? 0.05 : v > 0.6 ? 0.6 : v;
+  }
+  function thresholdFor(weights, observations, target) {
+    var n = observations ? observations.length : 0;
+    var probs: number[] = [];
+    for (var j = 0; j < n; j++) probs.push(score(observations[j].features || {}, weights).prob);
+    probs.sort(function (a, b) { return a - b; });
     var floorThr = 0.85 - target;                              // 0.10 strict -> 0.75 ... 0.50 aggressive -> 0.35
     if (floorThr < 0.35) floorThr = 0.35; else if (floorThr > 0.8) floorThr = 0.8;
-    var thr = probs[idx];
+    var thr = n ? probs[Math.floor((1 - target) * (n - 1))] : floorThr;
     if (thr < floorThr) thr = floorThr;
     if (thr > 0.97) thr = 0.97;                                // never unhittable
-    var flagged = 0;
-    for (var m = 0; m < n; m++) if (probs[m] >= thr) flagged++;
-    return { weights: weights, threshold: thr, calibrated: true, flaggedFrac: flagged / n, freqs: freqs };
+    return { threshold: thr, probs: probs, floor: floorThr };
   }
 
   // Exponential-moving-average blend: move `current` a fraction `alpha` toward `target`.
@@ -416,7 +448,11 @@
     var alpha = typeof opts.alpha === "number" ? (opts.alpha < 0 ? 0 : opts.alpha > 1 ? 1 : opts.alpha) : 0.6;
     var weights = opts.current ? evolve(opts.current, target, alpha) : target;
     var curThr = typeof opts.currentThreshold === "number" ? opts.currentThreshold : auto.threshold;
-    var threshold = opts.current ? (curThr + alpha * (auto.threshold - curThr)) : auto.threshold;
+    // FH-070: the cutoff must be a quantile of THESE weights' scores, not of the autonomous
+    // ones. `auto.threshold` describes a model we are not running once corrections and the EMA
+    // have moved the intercept, and applying it anyway hid 85% of a feed aimed at 28%.
+    var liveThr = thresholdFor(weights, obs, clampTarget(opts.targetFrac)).threshold;
+    var threshold = opts.current ? (curThr + alpha * (liveThr - curThr)) : liveThr;
     var flagged = 0;
     for (var i = 0; i < obs.length; i++) if (score(obs[i].features || {}, weights).prob >= threshold) flagged++;
     return {
@@ -430,7 +466,8 @@
     EMOJI_RE: EMOJI_RE, words: words, sentences: sentences,
     defaultWeights: defaultWeights, extractFeatures: extractFeatures,
     score: score, classify: classify, learn: learn, retrain: retrain,
-    autocalibrate: autocalibrate, evolve: evolve, liveCalibrate: liveCalibrate
+    autocalibrate: autocalibrate, evolve: evolve, liveCalibrate: liveCalibrate,
+    thresholdFor: thresholdFor, BIAS_LR: BIAS_LR
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.FeedHackerScorer = api;
