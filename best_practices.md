@@ -763,6 +763,20 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     outcome keeps the invariant and drops the cost: bucket the run by reason instead of
     requiring adjacency — no row mixes filters, and the rows appear (FH-067).
 
+73. **Probe the failure mode before you build the safeguard — an inferred bug earns an
+    experiment, not a fix.** Reading `isNewsletterSignup`, I could see it swept the whole post
+    subtree for a Subscribe control, and reported that a reshare of someone's newsletter would
+    therefore be hidden as the *reshare's* newsletter signup. That inference was sound and the
+    conclusion was wrong. Twenty lines of throwaway probe (two fixtures, print the containers and
+    the flags) showed that a quoted post carrying its own marker is already a separate container,
+    so the case I described cannot happen — and that the case that *can* happen, a marker-less
+    quote, is exactly the one my proposed ownership check could not detect. The fix was redundant
+    where it applied and inert where it mattered. **Shipping it would have been worse than doing
+    nothing**: code that reads like a guarantee and provides none, plus tests certifying it. So:
+    when a bug is deduced from reading code rather than observed, the first deliverable is the
+    experiment that makes it visible. If the experiment refuses to produce it, the finding was a
+    hypothesis — record what the probe actually showed (FH-069) and move on.
+
 
 ## More tests & docs
 
