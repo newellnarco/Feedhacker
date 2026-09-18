@@ -11,6 +11,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.11.0] — unreleased
+
+### Fixed
+- **FeedHacker had started hiding almost everything, and the cause was not what it looked
+  like.** On the maintainer's 0.10.0 feed **299 of 300 judged posts were hidden** against a
+  target of ~28%. The learned model was healthy — every structural tell within 0.19 of its
+  shipped value — but the **intercept** had drifted from −1.6 to −0.571, which lifts every
+  post's score at once. Two things caused that, and both are fixed:
+  - **The cutoff was calibrated on a different model than the one judging posts.** The
+    auto-calibrator sets the threshold at a quantile of the feed's own scores, but it computed
+    those scores from the *shipped* weights while the extension judged posts with the *learned*
+    ones. On the maintainer's own observations that one threshold meant 24% hidden under the
+    first model and **85%** under the second. The threshold is now taken over the model actually
+    in use, and replaying their export through the fix walks the hidden share back from 85% to
+    **28.6%** across five calibration cycles — **no reset needed; an affected model repairs
+    itself as you browse.**
+  - **A correction taught "hide more of everything" more strongly than "this is what AI writing
+    looks like."** The intercept's gradient carries no feature multiplier, so it moved at least
+    as much as any tell and usually several times more; a one-sided run of *you missed one*
+    clicks (59 against 1 the other way) therefore landed mostly on it. Corrections now move the
+    intercept at a quarter rate, so they teach the tells instead. The pull back toward the
+    shipped prior is deliberately **not** damped, which is what lets a drifted model recover.
+
+  Nothing about your settings, muted authors or custom filters is touched, and the AI-slop
+  sensitivity slider works exactly as before.
+
 ## [0.10.0] — 2026-09-18
 
 ### Changed

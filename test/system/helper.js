@@ -56,8 +56,11 @@ function extensionBuilt() {
 }
 
 // Launch the extension and open a page whose URL is the real feed but whose body is
-// `fixtureHtml`. `sync` seeds chrome.storage.sync before the content script reads it.
-async function launchFeed({ fixtureHtml, sync }) {
+// `fixtureHtml`. `sync` seeds chrome.storage.sync before the content script reads it; `local`
+// does the same for chrome.storage.local, which is where the learned weights, the training
+// examples and the observation buffer live — so a test can start the content script from a
+// model state that took a real user days to reach.
+async function launchFeed({ fixtureHtml, sync, local }) {
   const { executablePath } = resolveChrome();
   const args = [
     `--disable-extensions-except=${EXT}`,
@@ -71,6 +74,9 @@ async function launchFeed({ fixtureHtml, sync }) {
   const sw = await extensionWorker(ctx);
   if (sync) {
     await sw.evaluate((s) => new Promise((r) => chrome.storage.sync.set(s, r)), sync);
+  }
+  if (local) {
+    await sw.evaluate((s) => new Promise((r) => chrome.storage.local.set(s, r)), local);
   }
   await ctx.route("https://www.linkedin.com/feed/", (route) =>
     route.fulfill({ status: 200, contentType: "text/html", body: fixtureHtml })

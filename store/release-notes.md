@@ -19,6 +19,18 @@ Three rules keep it useful:
 
 ---
 
+## 0.11.0
+
+**Fixes FeedHacker hiding far too much.** If your feed had turned into a wall of hidden-post
+rows, this is why: the cutoff for "how sloppy is too sloppy" was being calculated from a
+different version of the AI model than the one actually judging your posts, so as the model
+learned from your corrections the two drifted apart and almost everything crossed the line.
+
+The cutoff now follows the model you are running, and your corrections teach it *what* AI
+writing looks like rather than "hide more of everything". **An affected model fixes itself as
+you browse — there is nothing to reset**, and your settings, muted authors and custom filters
+are untouched.
+
 ## 0.10.0
 
 **Grouping now works on a mixed feed.** *Group flagged posts* only ever folded posts that were
