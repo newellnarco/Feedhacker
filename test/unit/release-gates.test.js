@@ -174,3 +174,28 @@ test("the publisher id is still not a gate (FH-048 stays fixed)", () => {
   assert.ok(!/CWS_PUBLISHER_ID/.test(cancelGate),
     "a misplaced publisher id must never turn this step into a silent skip again");
 });
+
+// --- the MSI's WiX v7 licence gate -------------------------------------------------------
+// WiX v7 refuses to build until its Open Source Maintenance Fee EULA is accepted and exits
+// with WIX7015. That failed the `msi` job on every release from the v7 bump until 2026-09-18,
+// so the MSI silently disappeared from the release assets. FireGiant documents -acceptEula as
+// the switch for CI; "wix7" is the v7 EULA ID. Asserted here because the failure it prevents
+// is invisible in the release itself: the job is best-effort, so a release just quietly ships
+// one asset fewer.
+test("the MSI build accepts the WiX v7 EULA, or it cannot build at all", () => {
+  const m = WF.match(/^\s*wix build .*$/m);
+  assert.ok(m, "the msi job still invokes `wix build`");
+  assert.match(m[0], /-acceptEula\s+wix7\b/,
+    "`wix build` must pass -acceptEula wix7; without it WiX v7 errors WIX7015 and no MSI is produced");
+});
+
+test("the msi job stays best-effort, so a licence change cannot block a release", () => {
+  // Deliberate: `release` lists msi in `needs:`, so a HARD msi failure would stop the GitHub
+  // Release and the store upload — a ship held hostage to an installer nobody asked for. The
+  // MSI is a convenience; the -win.zip installer is the supported Windows path.
+  const start = WF.indexOf("\n  msi:\n");
+  assert.ok(start !== -1, "the msi job exists");
+  const block = WF.slice(start, WF.indexOf("\n  webstore:\n"));
+  assert.match(block, /continue-on-error:\s*true/,
+    "msi must stay continue-on-error — see the test above for the signal that replaces it");
+});
