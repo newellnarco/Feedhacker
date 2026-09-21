@@ -35,7 +35,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 15 | **CLOSED 2026-09-18 — the Windows MSI is shipping again, proven in a real release** | — (closed) | **FH-068.** `wix build -acceptEula wix7`, the switch the maintainer found at `docs.firegiant.com/wix/osmf`. Run #30 was a build-only dry run; **Release run #31 is the proof that counts**: the `msi` job went green for the first time in this project's history and `FeedHacker-0.11.0.msi` (40,960 B) is attached to the v0.11.0 Release — five assets instead of four. The job deliberately stays `continue-on-error` so a future licence change cannot block a release. |
 | 16 | **`anniversary` is now the ONLY shipped filter with zero test coverage** | next session (small) | Found 2026-09-18 while closing the same gap for `newsletter`: a per-filter sweep of `test/` showed those two were the only ones of the nine with no test referencing them at all, so a regression in either was invisible to CI. `newsletter` now has `test/integration/newsletter.test.js` (8 cases, mutation-tested). **`anniversary` does not** — the maintainer scoped this round to the newsletter tests. It is a `CATEGORIES` regex filter, so the test is small: one post that matches, one that does not, and off-means-off. |
 | 17 | **CLOSED 2026-09-19 — 0.11.0 is LIVE on the store** | — (closed) | Tag `v0.11.0` @ `8849b70`, Release published 2026-09-18 23:23:18 UTC with five assets (first ever to include an MSI), store upload 23:22:53, and **confirmed live 2026-09-19 21:32 UTC** from the listing (`?hl=en-PH`) — inside ~22 hours. The FH-070 fix is reaching users; an affected model walks back to target as they browse, no reset needed. Slot **OPEN**. |
-| 18 | **GitHub is not creating `ci.yml` runs for `pull_request` events — MITIGATED in code, cause still unknown; check Settings → Actions** | maintainer (one look) | **FH-071.** Observed 2026-09-18 across **four heads** on one branch (`037d0d2`, `6d00cea`, `7b6a34b`, `42b7d04`): each push produced a **CodeQL** run and **no `ci.yml` run**, checked at 19:58, 20:15, 20:47 and 21:48. Actions itself was healthy — CI run **426** (`event: push`, head `fe15e08`) and Release run #31 both succeeded, `list_workflows` reported the workflow `active`, and `ci.yml` had been untouched since PR #46, parses clean, and carries no draft gate or `paths:` filter. *(Correction: an earlier draft of this row cited run 420 as the proof that push-CI worked — run 420 predates the failure window and proved nothing. 426 is the one that lands inside it.)* **What was done 2026-09-21:** a push to `main` or `claude/**` is now a first-class trigger and `concurrency` is keyed on the **head commit** rather than the ref, so either event alone yields a run on the exact commit and the two collapse into one (`test/unit/ci-gate.test.js`, `best_practices.md` §75). **That is a mitigation, not a root-cause fix** — a session cannot read Settings → Actions through the agent proxy, so the row stays open for one human look: confirm the repo has not had the `pull_request` event disabled or restricted under Settings → Actions → General. ⚠️ **Listing trap:** `list_workflow_runs` shows CI run 419 tagged `pull_requests: [110]` although its head is `fea8de2` — match on `head_sha` **and** `path`. **What it cost:** 0.11.0 merged without CI on the maintainer's explicit authorisation. |
+| 18 | **CLOSED 2026-09-21 — the `pull_request` CI outage was TRANSIENT and had already recovered a day before anyone fixed anything** | — (closed) | **FH-071.** The 2026-09-18 observation was real: four heads (`037d0d2`, `6d00cea`, `7b6a34b`, `42b7d04`), each with a **CodeQL** run and **no `ci.yml` run**, checked at 19:58, 20:15, 20:47 and 21:48, while `push` to main and `workflow_dispatch` both worked and the workflow was `active`. **But it cured itself:** by 2026-09-19 21:31–21:33 the trigger was firing again on that same branch — runs **423** (`pull_request`, head `0ebd8b08`) and **425** (`pull_request`, head `34e093c9`), both **success**. ⚠️ **Two records were therefore wrong and are now corrected:** #111 and #112 were logged as "merged without CI", and runs 423/425 show CI ran on both heads and **passed** — the session checked before the runs existed and never re-checked. (Same lesson as the run 420 slip: a negative observation about an async system expires.) **What was still worth shipping** is the guard, not a repair: a push to `main` or `claude/**` is now a first-class trigger and `concurrency` is keyed on the head commit, so the gate has two paths and still exactly one run. Proven live on PR #113's head `c00446b` — run **427** (`push`) **cancelled**, run **428** (`pull_request`) survived. ⚠️ **Listing trap, still live:** `list_workflow_runs` tags older runs on a reused branch with the branch's *current* PR number (423 and 425 both read `pull_requests: [113]`), so match on `head_sha` **and** `path`. |
 | 7 | **Windows sideload users must re-install once** | maintainer (now partly self-serving) | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user must re-run `installer\install.bat` from a current `feedhacker-<version>-win.zip`. **0.6.0 ships a release note saying exactly this** (`CHANGELOG.md`, which `store/README.md` makes the source of the store's release notes), so anyone who reads the notes is told. It stays open because the people who most need it are precisely the ones **not receiving updates** — a note in a release they never get cannot reach them. Closing it needs a channel they still see (the repo README / releases page, or a direct message), not another release note. |
 
 ## 2. Current state
@@ -50,7 +50,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | **Confirmed live on the store** | **0.11.0** — confirmed 2026-09-19 21:32 UTC from the listing (`?hl=en-PH`). *Previously 0.10.0* — confirmed 2026-09-18 15:13 UTC (`?hl=en-ZA`). *Previously 0.9.1* — confirmed 2026-09-18 (`?hl=en-AU`). *Previously 0.9.0* — confirmed 2026-09-17 from the listing. *Previously 0.8.0* — confirmed 2026-09-17 from the store listing (see the row above). *Previously 0.7.0*, confirmed 2026-09-15 two ways: the **store listing** ("Version 0.7.0, Updated September 15, 2026") and Google's publish email (19:54:24 UTC). *(This row read 0.5.0 until 2026-09-16; it had simply not been updated when 0.6.0 and 0.7.0 were each confirmed live. The listing is the authority — see `RELEASES.md`.)* |
 | **How to check what is live** | **Read the store listing** — `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. It is the authority and it is never ambiguous. **Correction (2026-09-15 20:18):** this row briefly claimed the item “publishes silently, three for three”. **That was wrong.** 0.6.0 and 0.7.0 both DID email (18:24:40 and 19:54:24 UTC). The 0.6.0 message sat in **Trash**, and `newer_than:2d` without `in:anywhere` does not search Trash — so an absent result proved nothing. **0.4.6 and 0.5.0 genuinely had no email** (that search did use `in:anywhere`). So: the email is a **fine positive signal**; its absence means nothing **unless you searched `in:anywhere`**, and even then prefer the listing. |
 | **Submission slot** | **OPEN** — 0.11.0 cleared review and is live, so nothing is pending. ⚠️ The next upload BLOCKS it again; pass `cancel_pending: false` when nothing is in review. |
-| **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change. `main` is at `8849b70`, which is what `v0.11.0` tags. ✅ **A push to `claude/**` now triggers CI on its own** (item 18) — so a PR gets a real run even if the `pull_request` event stays quiet. Verify it on the first push of the session rather than assuming: read the run's `head_sha` **and** `path`. |
+| **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change. `main` is at `8849b70`, which is what `v0.11.0` tags. ✅ **CI is healthy and now has two paths to a run** — `pull_request` *and* a push to `main`/`claude/**`, deduplicated by head commit, so exactly one run survives per commit (item 18, closed). ⚠️ When checking whether a run exists, match on `head_sha` **and** `path`, and re-read rather than trusting one look: `list_workflow_runs` tags old runs on a reused branch with the branch's current PR number. |
 | **Review** | no AI reviewer runs on this repo — **green CI is the merge gate** (`REVIEWERS_STATUS.md`) |
 
 ## 3. Startup checklist (run every new session)
@@ -96,32 +96,37 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 
 Newest first. One entry per session; keep entries short and factual.
 
-### 2026-09-21 — the CI gate no longer depends on one trigger (FH-071)
+### 2026-09-21 — the `pull_request` outage had already cured itself; the guard shipped anyway (FH-071)
 
-- **Asked:** *"fix the pull_request CI trigger."* **Ruled out, in order:** the file (`git log --
-  .github/workflows/ci.yml` shows it untouched since `99c4100`/PR #46, and it parses clean —
-  `on: {push: {branches: [main]}, pull_request: None}`); a disabled workflow (`list_workflows`
-  says `state: "active"`); and an Actions outage (CI run **426**, `event: push`, head `fe15e08`,
-  succeeded inside the failure window, as did Release run #31). So the cause is on GitHub's side,
-  and Settings → Actions is not reachable through the agent proxy.
-- **Also corrected my own evidence.** I first cited run **420** as proof that push-CI worked; 420
-  predates the failure window, so it proved nothing. Re-verified with 426 and fixed the row.
-- **What shipped is a mitigation, and is labelled one.** `push: branches: [main, "claude/**"]` is
-  now a first-class trigger, so either event alone produces a run on the exact head commit. The
-  obvious objection — the triad now runs twice — was answered by re-keying `concurrency` from
-  `github.ref` to `github.event.pull_request.head.sha || github.sha`: a push run and a PR run for
-  the same commit share one group, the later cancels the earlier, one survives.
+- **Asked:** *"fix the pull_request CI trigger."* **The premise turned out to be stale, and the
+  evidence that falsified it came from verifying my own fix.** `list_workflow_runs` shows runs
+  **423** (`pull_request`, head `0ebd8b08`) and **425** (`pull_request`, head `34e093c9`) both
+  **succeeded** at 21:31–21:33 on **2026-09-19** — on the very branch where four heads had produced
+  nothing the day before. The outage was transient and platform-side: nothing here caused it and
+  nothing here cured it.
+- **Two records were wrong, and are now fixed.** #111 and #112 were logged as "merged without CI";
+  runs 423 and 425 show CI ran on both heads and passed. The session had checked before the runs
+  existed and never re-checked. This is the run-420 slip in a second costume: **a negative
+  observation about an asynchronous system expires, and a claim built on one has to be re-read
+  before it is written down** (§44/§45).
+- **What shipped is a guard, and is labelled one everywhere.** `push: branches: [main,
+  "claude/**"]` as a first-class trigger, so either event alone produces a run on the exact head
+  commit — because for one day the gate had a single path and that path went quiet. The objection
+  that the triad now runs twice was answered by re-keying `concurrency` from `github.ref` to
+  `github.event.pull_request.head.sha || github.sha`.
+- **Verified live, not argued.** On PR #113's head `c00446b` both events fired and the dedup did
+  its job: run **427** (`push`) → **cancelled**, run **428** (`pull_request`) → survived. Two
+  paths, one run.
 - **Test:** `test/unit/ci-gate.test.js` (7 cases) **evaluates** the group expression under a push
   payload and a PR payload — a grep cannot tell `github.ref` from `github.sha`, and on a PR event
   `github.sha` is the *merge* commit, not the head. Mutation-tested five ways (drop the glob, drop
   `pull_request`, re-key on the ref, drop a tier from `package`'s `needs:`, turn off
-  `cancel-in-progress`): each fails it. Full triad green — 203 / 145 / 38.
-- **Records:** FH-071 in `KNOWN_ISSUES.md` (🟡 mitigated), `best_practices.md` §75, a **CI gate
-  itself** row in `TEST_MATRIX.md`, §1 item 18 rewritten to say mitigated-not-fixed and left open
-  for one human look. **No version bump and no CHANGELOG entry** — the change ships nothing to
-  users, and bumping to 0.12.0 would oblige a store release note for something nobody can see.
-- **Still open:** item 16 (`anniversary`, the only shipped filter with no test) and item 18's one
-  human look at Settings → Actions.
+  `cancel-in-progress`): each fails it. Full triad green locally — 203 / 145 / 38.
+- **Records:** FH-071 ✅ in `KNOWN_ISSUES.md` (transient, self-resolved, guard shipped),
+  `best_practices.md` §75, a **CI gate itself** row in `TEST_MATRIX.md`, §1 item 18 **closed**.
+- **No version bump and no CHANGELOG entry** — the change ships nothing to users, and bumping to
+  0.12.0 would oblige a store release note for something nobody can see.
+- **Still open:** item 16 (`anniversary`, the only shipped filter with no test).
 
 ### 2026-09-19 — 0.11.0 is LIVE; the FH-070 fix is reaching users
 

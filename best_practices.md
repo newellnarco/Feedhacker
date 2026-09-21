@@ -835,6 +835,20 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     expression under both event payloads rather than grepping it — a grep cannot tell
     `github.ref` from `github.sha`, and on a PR event `github.sha` is the *merge* commit, not the
     head. And **say which kind of fix you shipped.** This one removes a single point of failure;
-    it does not explain why the platform went quiet, and a session cannot read Settings → Actions
-    through the agent proxy. Calling a mitigation a root-cause fix is how a live problem gets
-    marked closed (§44/§45).
+    it never explained why the platform went quiet. Calling a guard a root-cause fix is how a
+    live problem gets marked closed (§44/§45).
+
+    And the sting in the tail, which is the more useful half of this entry: **the outage had
+    already cured itself a day before anyone touched it, and three records said otherwise because
+    nobody re-read them.** Runs 423 and 425 — `pull_request`, on the same branch, both green —
+    were sitting in the run list from 2026-09-19 while the task was still written as "the trigger
+    is broken", and two merges were logged as "merged without CI" when CI had in fact run and
+    passed on both heads. The general rule: **a negative observation about an asynchronous system
+    expires.** "No run appeared", "no email arrived", "the endpoint returned nothing" are all
+    statements about a moment, not properties of the system, and the moment you write one into a
+    durable record it starts aging. Before acting on an absence — and *always* before recording
+    one as a fact — re-read the source. The same mistake in a different costume was citing run
+    420 as proof that push-CI worked when 420 predated the failure window; both are the habit of
+    treating a stale read as a standing truth. Cheapest guard: when a record rests on something
+    NOT being there, verify it on the way past, and prefer the check that would also show you the
+    thing you claim is missing.
