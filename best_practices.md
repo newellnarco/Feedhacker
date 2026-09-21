@@ -810,3 +810,45 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     page isn't shipped.
 29. **Change a CI workflow → groom `TEST_MATRIX.md` in the same PR** so the matrix can't drift from
     the pipeline.
+75. **A gate reached by one trigger has a single point of failure — give it two, and deduplicate
+    by the thing being gated, not by the trigger.** FeedHacker's CI ran on `pull_request` plus
+    `push` to `main`, which looks like two triggers and is one: every pre-merge run came from the
+    PR event. On 2026-09-18 GitHub stopped creating those runs for this repo. Four pushes to one
+    branch produced a CodeQL run each and **no CI run at all**, checked four times over two
+    hours; `push` to `main` ran fine, `workflow_dispatch` ran fine, the workflow was `active`,
+    and `ci.yml` had not been edited since PR #46. Nothing was wrong with the configuration, and
+    nothing in it could be fixed — so the release merged with **no CI**, on the maintainer's
+    explicit authorisation, with a local run standing in for the gate (FH-071).
+
+    The cost was not the outage; it was that the gate had no second path. Adding the branch push
+    as a first-class trigger means either event alone produces a run on the exact head commit,
+    which is what the merge gate actually needs. **The naive objection — "now every PR runs the
+    triad twice" — is the right worry and points at the wrong fix.** Don't pick one trigger;
+    re-key the deduplication. `concurrency` grouped on `github.ref` treats a push run and a PR
+    run for the same commit as rivals and loses one of them; grouped on the **head commit**
+    (`github.event.pull_request.head.sha || github.sha`) they share a group, the later cancels
+    the earlier, and exactly one survives. Generally: **deduplicate on the identity of the work,
+    not on the route that requested it** — the commit, the job key, the idempotency token.
+
+    Two riders, both paid for here. **Assert the triggers in a test.** They are the one part of
+    CI that CI cannot check by running, so `test/unit/ci-gate.test.js` evaluates the group
+    expression under both event payloads rather than grepping it — a grep cannot tell
+    `github.ref` from `github.sha`, and on a PR event `github.sha` is the *merge* commit, not the
+    head. And **say which kind of fix you shipped.** This one removes a single point of failure;
+    it never explained why the platform went quiet. Calling a guard a root-cause fix is how a
+    live problem gets marked closed (§44/§45).
+
+    And the sting in the tail, which is the more useful half of this entry: **the outage had
+    already cured itself a day before anyone touched it, and three records said otherwise because
+    nobody re-read them.** Runs 423 and 425 — `pull_request`, on the same branch, both green —
+    were sitting in the run list from 2026-09-19 while the task was still written as "the trigger
+    is broken", and two merges were logged as "merged without CI" when CI had in fact run and
+    passed on both heads. The general rule: **a negative observation about an asynchronous system
+    expires.** "No run appeared", "no email arrived", "the endpoint returned nothing" are all
+    statements about a moment, not properties of the system, and the moment you write one into a
+    durable record it starts aging. Before acting on an absence — and *always* before recording
+    one as a fact — re-read the source. The same mistake in a different costume was citing run
+    420 as proof that push-CI worked when 420 predated the failure window; both are the habit of
+    treating a stale read as a standing truth. Cheapest guard: when a record rests on something
+    NOT being there, verify it on the way past, and prefer the check that would also show you the
+    thing you claim is missing.

@@ -1,15 +1,31 @@
 name: CI
 
-# Run once per change, not twice: the PR event is the review gate; the push event is
-# only the post-merge gate on main. (A feature-branch push with an open PR would
-# otherwise run the whole triad twice.)
+# TWO triggers on purpose, deduplicated by COMMIT rather than by trigger.
+#
+# This used to run on `pull_request` plus `push` to main only, so the review gate rested entirely
+# on the PR event. On 2026-09-18 that event produced nothing: four pushes to one branch made a
+# CodeQL run each and no CI run at all, checked four times over two hours, while `push` to main
+# and `workflow_dispatch` kept working, the workflow stayed `active`, and this file had not been
+# touched since PR #46. 0.11.0 was merged with no CI on the maintainer's explicit authorisation.
+#
+# It was TRANSIENT and platform-side: by 2026-09-19 21:31 the trigger was firing again on this
+# same branch (runs 423 and 425, both `event: pull_request`, both success). So nothing here caused
+# it and nothing here cured it — but a gate reached by ONE trigger has a single point of failure,
+# and for one day that gate did not exist. Hence the branch push as a first-class trigger: either
+# event alone produces a run on the exact head commit, which is what the merge gate needs.
+#
+# The obvious objection is that the triad now runs twice, which is the right worry and the wrong
+# fix. Keying `concurrency` on the HEAD COMMIT instead of the ref solves it properly: a push run
+# and a pull_request run for the same commit land in the same group, so the later one cancels the
+# earlier and exactly one survives. `github.event.pull_request.head.sha` is the branch head on a
+# PR event; `github.sha` is the same commit on a push. See FH-071 and best_practices.md §75.
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
   pull_request:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 # Least privilege: CI only reads the repo and uploads a build artifact.
