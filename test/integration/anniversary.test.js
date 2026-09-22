@@ -114,12 +114,20 @@ test("and off is the SHIPPED default", () => {
     "with shipped defaults the post is not hidden");
 });
 
-// --- CHARACTERIZATION: two over-matches, recorded rather than fixed ---------------------
+// --- CHARACTERIZATION: two over-matches, and the maintainer's decision to KEEP them -----
 // Both were found by probing the regex for this suite, and both are real: the filter hides posts
-// that are not work-anniversary posts. Recorded instead of narrowed because narrowing a shipped
-// filter's reach is a product decision, not a test's to make — and because the obvious narrowing
-// loses true positives ("10 years at Acme!" IS an anniversary post). See KNOWN_ISSUES FH-072.
-// If the regex is ever narrowed, these two assertions are the ones to INVERT deliberately.
+// that are not work-anniversary posts (KNOWN_ISSUES FH-072).
+//
+// **SETTLED 2026-09-22 — the regex stays as it is. The maintainer was shown both over-matches and
+// the three options, and chose to leave it: "leave the anniversary regex as-is."** So these two
+// cases are no longer "pending a decision" — they are the AGREED behaviour, and the assertions
+// below are the contract. Do not narrow the pattern to "fix" them, and do not re-open the
+// question without the maintainer asking: the reasoning is that the obvious narrowing loses true
+// positives ("10 years at Acme!" IS an anniversary post), and the filter ships default-OFF, so
+// only a user who opted in sees either one.
+//
+// If it is ever narrowed deliberately, on the maintainer's word, these are the two assertions to
+// invert — and this comment is the thing to rewrite first.
 test("a reflection post is caught by 'N years at' (over-match, documented)", () => {
   const { posts } = scan(body(
     "After 10 years at Google I've learned that microservices are mostly a tax on your future self."));
