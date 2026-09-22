@@ -852,3 +852,32 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     treating a stale read as a standing truth. Cheapest guard: when a record rests on something
     NOT being there, verify it on the way past, and prefer the check that would also show you the
     thing you claim is missing.
+76. **Writing the first test for an already-shipped feature is bug-hunting, not paperwork —
+    budget for a finding, and record an over-match instead of quietly narrowing it.** FeedHacker
+    had nine shipped filters and two of them, `newsletter` and `anniversary`, were referenced by
+    no test anywhere. Both were written up as small chores ("one post that matches, one that
+    doesn't, off means off"). Both produced findings instead. `newsletter` turned out to read no
+    words at all — it looks for a Subscribe *control*, so a prose newsletter plug sails through
+    (FH-069). `anniversary` turned out to hide two things that are not work anniversaries at all:
+    `\b\d+\s+years?\s+at\b` catches *"After 10 years at Google I've learned…"*, an ordinary
+    technical reflection, and `my .{0,10}anniversary` catches *"my wedding anniversary"* on a
+    filter labelled **Work anniversaries** (FH-072). Neither was deduced from reading the regex;
+    both came out of probing it before asserting anything (§73).
+
+    Two rules follow. **Enumerate the alternatives.** A textual filter's regex is a list of
+    independent claims, and a suite that exercises two of six leaves four free to rot — the
+    mutation that proves this is deleting one alternative and watching nothing fail. And
+    **characterize, don't quietly correct.** When the first test finds a real over-match, the
+    reflex is to narrow the pattern in the same commit; resist it. Narrowing a shipped filter
+    changes what disappears from someone's feed, which is a product decision, and here the
+    obvious narrowing also loses true positives, because *"10 years at Acme!"* really is an
+    anniversary post. So the over-match gets an assertion that states it is deliberate, a
+    KNOWN_ISSUES row, and a sentence to the maintainer — and the assertion names itself as the
+    one to invert if the rule is ever narrowed on purpose. A test that encodes a known wart with
+    its reason attached is worth more than one that pretends the wart isn't there, and far more
+    than a silent behaviour change nobody asked for.
+
+    The corollary for the ledger: **keep scoring these in the Found by column.** "Found by:
+    writing the missing test" is now a recurring entry, and it is the cheapest bug source this
+    project has — cheaper than a user report, and it arrives with the regression test already
+    written.

@@ -33,7 +33,8 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 13 | **CLOSED 2026-09-18 — grouping buckets a run by filter, confirmed on the maintainer's own feed** | — (closed) | **FH-067.** Their screenshot showed seven consecutive stubs with **Group flagged posts ON**, because the kinds alternated and FH-061 had made a change of reason *end* the run: correct rows, inert feature. Fixed by bucketing a run of `GROUP_MIN`(3)+ by reason, each bucket of `GROUP_BUCKET_MIN`(2)+ folding on its own, headed on its first member so nothing moves in the feed, `GROUP_MAX`(8) still capping a row. The FH-061 invariant holds — no row mixes filters. **Confirmed by the maintainer on 0.10.0: "yes the 10.0 folds them together."** |
 | 14 | **CLOSED 2026-09-18 — 0.10.0 is LIVE on the store** | — (closed) | Tag `v0.10.0` @ `eb67b23`, GitHub Release published 14:28:35 UTC, store upload `Publish successful` 14:28:27, and **confirmed live at 15:13 UTC** by reading the listing at `?hl=en-ZA` (*"Version 0.10.0, Updated 18 September 2026"*) — so **within ~45 minutes**. Store users get it automatically within a few hours; Chrome does that on its own schedule. The slot is **OPEN**. |
 | 15 | **CLOSED 2026-09-18 — the Windows MSI is shipping again, proven in a real release** | — (closed) | **FH-068.** `wix build -acceptEula wix7`, the switch the maintainer found at `docs.firegiant.com/wix/osmf`. Run #30 was a build-only dry run; **Release run #31 is the proof that counts**: the `msi` job went green for the first time in this project's history and `FeedHacker-0.11.0.msi` (40,960 B) is attached to the v0.11.0 Release — five assets instead of four. The job deliberately stays `continue-on-error` so a future licence change cannot block a release. |
-| 16 | **`anniversary` is now the ONLY shipped filter with zero test coverage** | next session (small) | Found 2026-09-18 while closing the same gap for `newsletter`: a per-filter sweep of `test/` showed those two were the only ones of the nine with no test referencing them at all, so a regression in either was invisible to CI. `newsletter` now has `test/integration/newsletter.test.js` (8 cases, mutation-tested). **`anniversary` does not** — the maintainer scoped this round to the newsletter tests. It is a `CATEGORIES` regex filter, so the test is small: one post that matches, one that does not, and off-means-off. |
+| 16 | **CLOSED 2026-09-22 — `anniversary` has tests, and writing them found a bug** | — (closed) | `test/integration/anniversary.test.js`, 12 cases, mutation-tested five ways. **All nine shipped filters now have a test**; this and `newsletter` were the last two with none. Scoped as a chore ("one that matches, one that doesn't, off means off") and, like `newsletter` before it, produced a finding instead: **FH-072**, two over-matches where the filter hides posts that are not work anniversaries — *"After 10 years at Google I've learned…"* via `\b\d+\s+years?\s+at\b`, and *"my wedding anniversary"* via `my .{0,10}anniversary`. **Recorded, not narrowed** — see the new §1 item below for the one decision that is now waiting on the maintainer. Lesson folded out as `best_practices.md` §76. |
+| 19 | **Decide whether to narrow the Work-anniversary regex, or leave the two over-matches as they are** | maintainer (one call) | **FH-072.** The filter hides two things that are not work anniversaries: a tenure-mentioning reflection post (*"After 10 years at Google I've learned that microservices are mostly a tax…"*) and a personal anniversary (*"Today is my wedding anniversary"*, on a filter labelled **Work anniversaries**). Both are pinned as characterization cases in `test/integration/anniversary.test.js` that **name themselves as the assertions to invert** if the regex is narrowed on purpose. **Not narrowed unilaterally** because it changes what disappears from a feed, and because the obvious narrowing loses true positives — *"10 years at Acme!"* really is an anniversary post. **Mitigating fact:** the filter ships **default-OFF**, so only users who opted in see either, and that default now has its own assertion. Three ways to go: leave as-is (the over-matches are the price of catching the real ones), drop the bare `N years at/with` alternative (loses the commonest true positive), or require an anniversary cue near the tenure phrase (more code, needs its own fixtures). No work until you pick. |
 | 17 | **CLOSED 2026-09-19 — 0.11.0 is LIVE on the store** | — (closed) | Tag `v0.11.0` @ `8849b70`, Release published 2026-09-18 23:23:18 UTC with five assets (first ever to include an MSI), store upload 23:22:53, and **confirmed live 2026-09-19 21:32 UTC** from the listing (`?hl=en-PH`) — inside ~22 hours. The FH-070 fix is reaching users; an affected model walks back to target as they browse, no reset needed. Slot **OPEN**. |
 | 18 | **CLOSED 2026-09-21 — the `pull_request` CI outage was TRANSIENT and had already recovered a day before anyone fixed anything** | — (closed) | **FH-071.** The 2026-09-18 observation was real: four heads (`037d0d2`, `6d00cea`, `7b6a34b`, `42b7d04`), each with a **CodeQL** run and **no `ci.yml` run**, checked at 19:58, 20:15, 20:47 and 21:48, while `push` to main and `workflow_dispatch` both worked and the workflow was `active`. **But it cured itself:** by 2026-09-19 21:31–21:33 the trigger was firing again on that same branch — runs **423** (`pull_request`, head `0ebd8b08`) and **425** (`pull_request`, head `34e093c9`), both **success**. ⚠️ **Two records were therefore wrong and are now corrected:** #111 and #112 were logged as "merged without CI", and runs 423/425 show CI ran on both heads and **passed** — the session checked before the runs existed and never re-checked. (Same lesson as the run 420 slip: a negative observation about an async system expires.) **What was still worth shipping** is the guard, not a repair: a push to `main` or `claude/**` is now a first-class trigger and `concurrency` is keyed on the head commit, so the gate has two paths and still exactly one run. Proven live on PR #113's head `c00446b` — run **427** (`push`) **cancelled**, run **428** (`pull_request`) survived. ⚠️ **Listing trap, still live:** `list_workflow_runs` tags older runs on a reused branch with the branch's *current* PR number (423 and 425 both read `pull_requests: [113]`), so match on `head_sha` **and** `path`. |
 | 7 | **Windows sideload users must re-install once** | maintainer (now partly self-serving) | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user must re-run `installer\install.bat` from a current `feedhacker-<version>-win.zip`. **0.6.0 ships a release note saying exactly this** (`CHANGELOG.md`, which `store/README.md` makes the source of the store's release notes), so anyone who reads the notes is told. It stays open because the people who most need it are precisely the ones **not receiving updates** — a note in a release they never get cannot reach them. Closing it needs a channel they still see (the repo README / releases page, or a direct message), not another release note. |
@@ -95,6 +96,41 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-09-22 — `anniversary` tested; every shipped filter now has one, and the test found a bug
+
+- **Asked:** *"do the anniversary test"*, and first *"make sure anything open passes and ships
+  first."* **Verified before starting, by re-reading rather than trusting the previous turn:** no
+  open PRs, local `=` `origin/main` `=` `17cb767`, nothing unpushed, and CI run **435** green on
+  that exact head. Slate was clear.
+- **`test/integration/anniversary.test.js` — 12 cases.** Four true-positive forms (`work
+  anniversary`, `happy … anniversary`, `celebrating N years`, `N years of service`), the
+  bare-word narrowing (a post that merely says "anniversary" survives — the assertion that would
+  fail if someone "simplified" the regex to `/anniversary/i`), the same-line constraint (`.` does
+  not cross a newline, invisible in the source and silently widened by a stray `s` flag),
+  comments-excluded, off-means-off, and the shipped default as its own case.
+- **This closes the last gap: all nine shipped filters now have a test.**
+- **And it found FH-072**, which is the interesting part. The filter hides two things that are not
+  work anniversaries: *"After 10 years at Google I've learned that microservices are mostly a
+  tax…"* (`\b\d+\s+years?\s+at\b` can't tell an anniversary from a mentioned tenure) and
+  *"Today is my wedding anniversary"* (`my .{0,10}anniversary`, on a filter labelled **Work
+  anniversaries**). **Probed out of the live regex, not deduced from reading it** (§73).
+- **Recorded, not narrowed — deliberately.** Both are characterization cases that state they are
+  intentional and name themselves as the ones to invert if the regex is ever narrowed. Narrowing
+  changes what vanishes from a feed (a product call), and the obvious narrowing loses true
+  positives: *"10 years at Acme!"* really is an anniversary post. **§1 item 19** is the maintainer's
+  decision, with three options costed. Mitigating fact: the filter is **default-OFF**.
+- **Mutation-tested five ways** — delete the category (6 fail), widen to bare `/anniversary/i`
+  (2 fail), drop one alternative (1), flip the default ON (1), disable comment stripping (1).
+  The comment case was checked for vacuity *specifically* because two suites in this project have
+  passed with their fix reverted; it fails exactly when stripping is off. Source mutated **and
+  rebuilt** each time, since the suites load `build/` (§61).
+- **`best_practices.md` §76** — the class: writing the first test for an already-shipped feature
+  is bug-hunting, not paperwork. Enumerate a regex's alternatives; characterize an over-match
+  rather than quietly correcting it. "Found by: writing the missing test" is now the cheapest bug
+  source this project has, and it arrives with the regression test already written.
+- **No version bump and no CHANGELOG entry** — tests and records only, nothing reaches users.
+  0.11.0 stays live; no "ship" was given for a version.
 
 ### 2026-09-21 — the `pull_request` outage had already cured itself; the guard shipped anyway (FH-071)
 
