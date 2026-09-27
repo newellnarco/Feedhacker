@@ -41,14 +41,23 @@ FeedHacker PR from a different account or bot identity.
   instead of opening the PR — a PR opened under the wrong account can't be reassigned after the
   fact. PRs created with this session's GitHub token normally already pass this check; run it anyway.
 
-- **No AI reviewer runs on this repo** (see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md) —
-  CodeRabbit was removed from every repo except `max3`/`netsniff`; Greptile and Aikido cancelled).
-  Review is **CI + shift-left self-review against [`best_practices.md`](best_practices.md)**. Do the
-  self-review **before** you push, not after: the rulebook is the checklist, and there is no bot
-  coming behind you to catch what you skip.
-  - `.coderabbit.yaml` is **deliberately absent** — don't recreate it, and never invoke
-    `@coderabbitai` commands (they consume paid quota). If a stray bot comment appears, it's
-    advisory and never blocking.
+- **CodeRabbit reviews this repo again, throttled and advisory** (re-enabled by the maintainer
+  2026-09-27, reversing the 2026-07-29 removal — see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md);
+  Greptile and Aikido stay cancelled). Review is still **CI + shift-left self-review against
+  [`best_practices.md`](best_practices.md)** first. Do the self-review **before** you push, not
+  after: the rulebook is the checklist, and the bot is a second opinion, not a safety net.
+  - [`.coderabbit.yaml`](.coderabbit.yaml) reviews **only the opening push of a non-draft PR**
+    (`auto_incremental_review: false`, `auto_pause_after_reviewed_commits: 1`, `drafts: false`).
+    Don't turn draft or incremental reviews back on; that is what made the old config expensive.
+  - **Every review costs quota, and CodeRabbit counts per push.** Batch fixes into one push, and
+    don't push within ~5 minutes of a requested review (a superseded review is still charged).
+  - **Request a re-review only through the throttle**: `scripts/coderabbit-review.sh <pr>`, or,
+    since sessions have no `gh`, the same steps by hand with the GitHub MCP tools — no CodeRabbit
+    check still running, no unexpired rate-limit comment (back off with jitter), **at most one
+    `@coderabbitai review` per push**, four attempts at most, **never on a timer**.
+    `@coderabbitai rate limit` is free and is how to check the allowance. No other
+    `@coderabbitai` commands.
+  - Its comments are **advisory and never blocking** — fix real bugs through the loop below.
 - **Open PRs as drafts** while CI runs, then promote to ready + merge once CI is green. **Green CI
   is the merge gate** — never wait on a review comment, and never read silence as approval.
 - **One PR per branch** (reuse over creation). If the branch's PR is already merged, restart the
@@ -64,7 +73,7 @@ FeedHacker PR from a different account or bot identity.
 4. if it's a general class, a numbered rule in [`best_practices.md`](best_practices.md), the
    project's coding standard. **If the same class bites twice, the standard was missing — add it.**
    Keep `best_practices.md` and `KNOWN_ISSUES.md` current; they are how a bug class gets paid for
-   exactly once, and with no bot reviewer they're the whole review apparatus.
+   exactly once, and with only an advisory bot reviewer they're most of the review apparatus.
 
 ## Testing (standing rule)
 
