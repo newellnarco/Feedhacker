@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://www.coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit configuration for FeedHacker: the standard newellnarco "slow-lane" throttle.
+# Re-enabled 2026-09-27 by the maintainer, reversing the 2026-07-29 removal (REVIEWERS_STATUS.md).
+#
+# Why these settings: CodeRabbit counts one review per PUSH (not per commit). A push made while a
+# review is still running (~5 min) supersedes it but is still charged. Sustained activity over
+# 24h/7d lowers the hourly refill rate (the Fair Usage "slow lane"). A rate limit shows up as a
+# CodeRabbit comment plus a passing "Review rate limited" check, never as HTTP 429.
+# So: review the opening push only, skip drafts/bots/WIP, and ask for any later review through
+# scripts/coderabbit-review.sh. See REVIEWERS_STATUS.md ("How to use it").
+#
+# The config removed on 2026-07-29 did the opposite (drafts: true, auto_incremental_review: true),
+# which is what made it expensive. Do not turn those back on.
+language: en-US
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  sequence_diagrams: false
+  # Advisory only: green CI stays the merge gate (CLAUDE.md), so the bot never blocks a PR.
+  request_changes_workflow: false
+  path_filters:
+    # Lockfile: machine-written by npm.
+    - "!**/package-lock.json"
+    # tsc output (src/ -> build/) plus the generated build/banlist.js (from claudisms.json).
+    - "!build/**"
+    # Packaged extension from `npm run build`: dist/feedhacker/ and the dist/*.zip / *.msi assets.
+    - "!dist/**"
+    - "!**/*.zip"
+    - "!**/*.msi"
+    # Release-time copy of dist/feedhacker/ into the Windows bundle (release.yml).
+    - "!installer/windows/payload/**"
+    # Minified or vendored code, should any ever be added.
+    - "!**/*.min.js"
+    - "!**/vendor/**"
+  path_instructions:
+    - path: "best_practices.md"
+      instructions: >-
+        The numbered rules are stable §N identifiers grouped by topic and cross-referenced across
+        the docs, not an ordered list. Never suggest renumbering them. The block between
+        BEGIN/END SHARED CORE is synced byte-identical across repos and must not be edited here.
+    - path: "{manifest.json,icons/**,store/**}"
+      instructions: >-
+        These are the project's own committed files, not untrusted input. Do not suggest
+        path-traversal or input-validation guards for reading them.
+  auto_review:
+    enabled: true
+    # Review the opening push only; later pushes are reviewed on request, through
+    # scripts/coderabbit-review.sh, so fix-push loops don't burn the allowance.
+    auto_incremental_review: false
+    # If incremental reviews are ever turned back on, pause after one reviewed commit.
+    auto_pause_after_reviewed_commits: 1
+    # PRs open as drafts while CI runs (CLAUDE.md); review once they are marked ready.
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "[skip review]"
+      - "[no review]"
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+      - "github-actions[bot]"
+chat:
+  auto_reply: true
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    # The numbered coding standard; CLAUDE.md is already in CodeRabbit's defaults.
+    filePatterns:
+      - "best_practices.md"

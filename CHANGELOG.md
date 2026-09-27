@@ -11,6 +11,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.12.0] — unreleased
+
+### Changed
+- **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
+  on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the
+  opening push of a non-draft PR (`auto_incremental_review: false`,
+  `auto_pause_after_reviewed_commits: 1`, `drafts: false`), skips lockfile / `build/` / `dist/` /
+  release-zip output, and points its code guidelines at `best_practices.md`. Re-reviews go through
+  the new `scripts/coderabbit-review.sh`, which waits out a running review, honours CodeRabbit's
+  rate-limit comments with jittered backoff, asks at most once and gives up after four attempts.
+  It stays advisory: **green CI is still the merge gate.** `CLAUDE.md`, `REVIEWERS_STATUS.md`,
+  `best_practices.md`, `the_wall.md` and `SESSION-STATE.md` say this now. Nothing in the extension
+  changed.
+
 ## [0.11.0] — 2026-09-18
 
 ### Fixed

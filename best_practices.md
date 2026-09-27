@@ -141,9 +141,10 @@
 
 # FeedHacker — best_practices.md
 
-The numbered coding standard for FeedHacker. With no hosted AI reviewer on the repo
-(see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md)), this file **is** the review criteria:
-read it and self-review against it before pushing.
+The numbered coding standard for FeedHacker. CodeRabbit is back on the repo but only as a
+throttled, advisory second opinion (see [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md)), and it
+is pointed at this file, so this file **is** the review criteria: read it and self-review
+against it before pushing.
 
 **The loop:** every real bug becomes (1) a fix, (2) a regression test at the right tier
 (unit / integration / system), (3) a row in [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md), and
