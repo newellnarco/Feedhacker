@@ -61,8 +61,12 @@ Source: <https://docs.coderabbit.ai/management/rate-limits>.
    scripts/coderabbit-review.sh <pr> --status   # "@coderabbitai rate limit" (free), at most once an hour
    scripts/coderabbit-review.sh <pr> --dry-run  # show what it would post
    ```
-   It needs an authenticated `gh` and `jq`. Tunables: `CR_MAX_RETRIES` (4), `CR_BASE_DELAY`
-   (120 s), `CR_MAX_DELAY` (3600 s).
+   It needs an authenticated `gh` and `jq`. Tunables: `CR_MAX_WAIT` (1200 s; `0` = no cap),
+   `CR_MAX_RETRIES` (4), `CR_BASE_DELAY` (120 s), `CR_MAX_DELAY` (3600 s).
+   If CodeRabbit is rate limited, the script waits only when the limit clears within
+   `CR_MAX_WAIT` (20 minutes, counting every rate-limit wait in the run). A longer limit, or a
+   notice naming no time, exits 4 with nothing posted: not an error, proceed without a
+   CodeRabbit review.
 3. **Don't push again for ~5 minutes after requesting a review**; that push would supersede the
    review and still be charged.
 4. **Agents and automation follow the same logic.** Claude sessions here have **no `gh` CLI**
