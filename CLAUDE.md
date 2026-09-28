@@ -55,6 +55,9 @@ FeedHacker PR from a different account or bot identity.
     since sessions have no `gh`, the same steps by hand with the GitHub MCP tools — no CodeRabbit
     check still running, no unexpired rate-limit comment (back off with jitter), **at most one
     `@coderabbitai review` per push**, four attempts at most, **never on a timer**.
+    **If CodeRabbit is rate limited, wait only when the limit clears within 20 minutes**
+    (`CR_MAX_WAIT`, all waits counted); a longer limit, or one naming no time, means proceed
+    without a CodeRabbit review (the script exits 4).
     `@coderabbitai rate limit` is free and is how to check the allowance. No other
     `@coderabbitai` commands.
   - Its comments are **advisory and never blocking** — fix real bugs through the loop below.

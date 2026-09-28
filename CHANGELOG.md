@@ -21,6 +21,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   release-zip output, and points its code guidelines at `best_practices.md`. Re-reviews go through
   the new `scripts/coderabbit-review.sh`, which waits out a running review, honours CodeRabbit's
   rate-limit comments with jittered backoff, asks at most once and gives up after four attempts.
+  It waits out a rate limit only when the limit clears within 20 minutes (`CR_MAX_WAIT`); a
+  longer one, or one naming no time, exits 4 and the work proceeds without a CodeRabbit review.
   It stays advisory: **green CI is still the merge gate.** `CLAUDE.md`, `REVIEWERS_STATUS.md`,
   `best_practices.md`, `the_wall.md` and `SESSION-STATE.md` say this now. Nothing in the extension
   changed.
