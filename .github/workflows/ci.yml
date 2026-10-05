@@ -38,7 +38,8 @@ permissions:
 # or for a fork's pull request. No job here reads a secret (rule 3 does not apply).
 jobs:
   # --- Docs-only changes (docs/, root *.md, LICENSE) skip the levels below (Actions rule 4).
-  # Anything unreadable counts as code (absent is not zero).
+  # Anything unreadable counts as code (absent is not zero). --no-renames lists a rename's old path
+  # too, so moving code into docs/ still runs the tests.
   changes:
     runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
     outputs:
@@ -52,9 +53,9 @@ jobs:
         name: Docs-only change?
         run: |
           if [ "${{ github.event_name }}" = pull_request ]; then
-            files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" || true)
+            files=$(git diff --name-only --no-renames "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" || true)
           else
-            files=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || true)
+            files=$(git diff --name-only --no-renames "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || true)
           fi
           if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(docs/|LICENSE$|[^/]+\.md$)'; then code=false; else code=true; fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
