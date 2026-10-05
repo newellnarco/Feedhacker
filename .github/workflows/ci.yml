@@ -19,10 +19,36 @@ name: CI
 # and a pull_request run for the same commit land in the same group, so the later one cancels the
 # earlier and exactly one survives. `github.event.pull_request.head.sha` is the branch head on a
 # PR event; `github.sha` is the same commit on a push. See FH-071 and best_practices.md §75.
+#
+# Docs-only changes skip CI (the owner's Actions rules, CLAUDE.md "GitHub Actions: local first",
+# rule 4). `paths` with negations rather than `paths-ignore`, because some .md files ARE tested and
+# must keep triggering CI: store/** ships in the store package (store-notes.test.js), and
+# SESSION-STATE.md / CLAUDE.md are checked by session-state.test.js. Later patterns win, so those
+# are re-included after the exclusions. Keep the two lists identical. Safe only while no CI job
+# is a REQUIRED status check (TEST_MATRIX.md rule 8): main had no branch protection or ruleset on
+# 2026-10-05.
 on:
   push:
     branches: [main, "claude/**"]
+    paths:
+      - "**"
+      - "!*.md"
+      - "!**/*.md"
+      - "!docs/**"
+      - "!roadmap.json"
+      - "store/**"
+      - "SESSION-STATE.md"
+      - "CLAUDE.md"
   pull_request:
+    paths:
+      - "**"
+      - "!*.md"
+      - "!**/*.md"
+      - "!docs/**"
+      - "!roadmap.json"
+      - "store/**"
+      - "SESSION-STATE.md"
+      - "CLAUDE.md"
 
 concurrency:
   group: ci-${{ github.event.pull_request.head.sha || github.sha }}
@@ -35,7 +61,7 @@ permissions:
 jobs:
   # --- Level 1: unit — pure per-module logic (fast, no DOM host, no browser) ---
   unit:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +76,7 @@ jobs:
 
   # --- Level 2: integration — modules wired together via jsdom + a mock chrome ---
   integration:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,7 +90,7 @@ jobs:
 
   # --- Level 3: system — the packaged extension in real headless Chromium ---
   system:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,14 +100,20 @@ jobs:
           node-version: "22"
           cache: "npm"
       - run: npm ci
-      - name: Install Chromium for Playwright
+      # --with-deps calls `sudo apt-get`: only on GitHub-hosted runners, never sudo on the owner's PC.
+      # The self-hosted runner must already have Chromium's system libraries installed.
+      - name: Install Chromium for Playwright (with system deps, GitHub-hosted)
+        if: runner.environment == 'github-hosted'
         run: npx playwright install --with-deps chromium
+      - name: Install Chromium for Playwright (self-hosted, no sudo)
+        if: runner.environment != 'github-hosted'
+        run: npx playwright install chromium
       - run: npm run test:system # builds the extension, then drives it end-to-end
 
   # --- Publish the green build so end users / the auto-updater never build locally ---
   package:
     needs: [unit, integration, system]
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
         with:

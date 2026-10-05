@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.12.0] — unreleased
 
 ### Changed
+- **CI and the release build run on the owner's own PC first** (the owner's GitHub Actions rules of
+  2026-10-05, now in `CLAUDE.md`). Jobs default to a self-hosted runner and use GitHub-hosted
+  runners only when `HOSTED_OK=true`; the Chrome Web Store upload, which needs secrets, stays
+  hosted. Docs-only changes no longer run CI. No change to the extension itself.
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
   on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the
   opening push of a non-draft PR (`auto_incremental_review: false`,
