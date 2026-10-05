@@ -14,6 +14,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 ## [0.12.0] — unreleased
 
 ### Changed
+- **CI runs on the owner's PC, and docs-only changes skip it.** Every CI job's `runs-on` is now the
+  owner's local-first expression (Actions rules, 2026-10-05): MU/TH/UR points it at the PC's runner
+  with `RUNNER`; with `RUNNER` unset a job waits for the PC, and GitHub-hosted is used only with
+  `HOSTED_OK` or for a fork's PR. A new `changes` job skips unit, integration, system and package
+  when a push or PR touches only `docs/`, root `*.md` or `LICENSE`. On the PC, Playwright fetches
+  Chromium without `--with-deps` (no sudo there). `release.yml` is unchanged.
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
   on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the
   opening push of a non-draft PR (`auto_incremental_review: false`,
