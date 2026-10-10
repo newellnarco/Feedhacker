@@ -882,3 +882,14 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     writing the missing test" is now a recurring entry, and it is the cheapest bug source this
     project has — cheaper than a user report, and it arrives with the regression test already
     written.
+
+77. **A gate that decides *whether* to run must not also silence the alarm that says it should
+    have.** FeedHacker's path check (`isMainFeed`) sits in front of both the scan and the
+    heartbeat. When LinkedIn moved the home feed to `/feed/foryou/`, the check said "not the feed",
+    so the scan never ran — and neither did the heartbeat whose whole job is to notice LinkedIn
+    changing under us (FH-073). A selector break shouts; a gate break whispers nothing. Two rules
+    follow. **Match a host's routes by what you have seen, and test at the URL the host actually
+    serves today** — a fixture pinned to last quarter's URL keeps the suite green against a page
+    nobody visits. And **a "not applicable here" exit is a failure path too:** when the page looks
+    like the feed (post markers present) but the path gate says it isn't, that disagreement is
+    evidence, and it belongs in front of the heartbeat, not behind the gate.

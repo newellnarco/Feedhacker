@@ -60,7 +60,7 @@ function extensionBuilt() {
 // does the same for chrome.storage.local, which is where the learned weights, the training
 // examples and the observation buffer live — so a test can start the content script from a
 // model state that took a real user days to reach.
-async function launchFeed({ fixtureHtml, sync, local }) {
+async function launchFeed({ fixtureHtml, sync, local, url = "https://www.linkedin.com/feed/" }) {
   const { executablePath } = resolveChrome();
   const args = [
     `--disable-extensions-except=${EXT}`,
@@ -78,11 +78,11 @@ async function launchFeed({ fixtureHtml, sync, local }) {
   if (local) {
     await sw.evaluate((s) => new Promise((r) => chrome.storage.local.set(s, r)), local);
   }
-  await ctx.route("https://www.linkedin.com/feed/", (route) =>
+  await ctx.route(url, (route) =>
     route.fulfill({ status: 200, contentType: "text/html", body: fixtureHtml })
   );
   const page = await ctx.newPage();
-  await page.goto("https://www.linkedin.com/feed/", { waitUntil: "domcontentloaded" });
+  await page.goto(url, { waitUntil: "domcontentloaded" });
   const close = async () => {
     await ctx.close();
     try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch { /* best-effort */ }

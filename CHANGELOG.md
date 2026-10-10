@@ -13,6 +13,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.12.0] — unreleased
 
+### Fixed
+- **FeedHacker hid nothing at all on LinkedIn's current home feed (FH-073).** LinkedIn now serves
+  the home feed from `/feed/foryou/`, and a bare `/feed/` redirects there. FeedHacker only
+  treated `/feed` and `/feed/` as the home feed, so on every real visit it decided it was off the
+  feed, revealed everything and idled — every filter on, nothing hidden, and no warning, because
+  the "selectors may be out of date" heartbeat runs behind the same check. `/feed/foryou/` is now
+  the home feed too (`selectors.HOME_FEED_RE`); other `/feed/` sub-paths are still left alone.
+
 ### Changed
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
   on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the

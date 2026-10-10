@@ -16,6 +16,19 @@ test("isHomeFeed matches only the home feed path", () => {
   assert.strictEqual(selectors.isHomeFeed(""), false);
 });
 
+// FH-073: LinkedIn moved the home feed to /feed/foryou/ (bare /feed/ now redirects there). The
+// gate only accepted /feed and /feed/, so on every real visit FeedHacker decided it was off the
+// feed and did nothing. Both shapes must count; other /feed/ sub-paths still must not.
+test("isHomeFeed accepts LinkedIn's /feed/foryou/ home feed (FH-073)", () => {
+  for (const p of ["/feed/foryou/", "/feed/foryou"]) {
+    assert.strictEqual(selectors.isHomeFeed(p), true, `${p} is the home feed`);
+    assert.strictEqual(selectors.isSupportedSurface(p), true, `${p} is a supported surface`);
+  }
+  for (const p of ["/feed/foryou/x", "/feed/foryouz/", "/feed/following/", "/feed/update/urn:li:activity:1/"]) {
+    assert.strictEqual(selectors.isHomeFeed(p), false, `${p} is not the home feed`);
+  }
+});
+
 test("isSupportedSurface covers the opt-in surfaces beyond the home feed", () => {
   for (const p of ["/feed/", "/feed/update/urn:li:activity:1/", "/search/results/all/", "/company/acme/", "/school/mit/", "/in/jane-doe"]) {
     assert.strictEqual(selectors.isSupportedSurface(p), true, `${p} should be supported`);
