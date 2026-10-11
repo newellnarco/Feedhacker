@@ -61,6 +61,12 @@ FeedHacker PR from a different account or bot identity.
     `@coderabbitai rate limit` is free and is how to check the allowance. No other
     `@coderabbitai` commands.
   - Its comments are **advisory and never blocking** — fix real bugs through the loop below.
+- **Copilot is requested only while Muther's `COPILOT_REVIEW` Actions variable is exactly `on`**
+  (2026-10-11; GitHub's automatic Copilot review is off on the account).
+  [`.github/workflows/copilot-review.yml`](.github/workflows/copilot-review.yml) is the only thing
+  that asks. While the switch is off or unset, **nobody requests Copilot by hand**: no
+  `request_copilot_review`, no reviewer picker. Never set the variable from a session; Muther owns
+  it. See [`REVIEWERS_STATUS.md`](REVIEWERS_STATUS.md).
 - **Open PRs as drafts** while CI runs, then promote to ready + merge once CI is green. **Green CI
   is the merge gate** — never wait on a review comment, and never read silence as approval.
 - **One PR per branch** (reuse over creation). If the branch's PR is already merged, restart the
