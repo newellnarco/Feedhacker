@@ -44,7 +44,9 @@ test("the store listing names the public support page as its Support URL", () =>
 });
 
 test("the support page gives the publisher's email and website", () => {
+  // Exact equality on each whole href, never a substring test (CodeQL js/incomplete-url-substring-sanitization).
   const h = hrefs(read("support.html"));
-  assert.ok(h.includes("mailto:info@maxresearchcollective.com"), "contact email");
-  assert.ok(h.includes("https://www.maxresearchcollective.com"), "publisher website");
+  const has = (want) => h.some((href) => href === want);
+  assert.ok(has("mailto:info@maxresearchcollective.com"), "contact email");
+  assert.ok(has("https://www.maxresearchcollective.com"), "publisher website");
 });
