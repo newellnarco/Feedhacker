@@ -41,6 +41,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 20 | **CLOSED 2026-10-11 — CodeRabbit is back on FeedHacker, app-side too** | — (closed) | The open question was whether the 2026-07-29 app-side removal had been undone. **Observed, not inferred:** on draft PR #123 (2026-10-11 14:31 UTC) `coderabbitai[bot]` posted its *"Draft PR not reviewed"* notice — so the app is installed and reading this repo, and `drafts: false` is being honoured. The first actual review will come on the opening push of a non-draft PR. Branch protection untouched: `CodeRabbit` must never be a required check. |
 | 21 | **FH-073 SHIPPED to GitHub as v0.12.0 — store publish blocked, see item 22** | — (closed into 22) | Merged as #123 (`e7b4765`) on green CI; Release run #32 cut tag `v0.12.0` and the GitHub Release with five assets. The fix reaches **sideload/MSI** users now and **store** users only once item 22 clears. **Still unconfirmed:** whether the maintainer's original "stopped working" symptom was this or something a saved page cannot show (CSS) — ask if it persists after 0.12.0 is live. |
 | 22 | **0.12.0 resubmitted to the store after FH-074 — awaiting Google review** | Google; then next session (confirm Live from the listing) | Run #32's publish was refused (`400 … Support URL is not reachable`) because the repo was private. **Resolved 2026-10-11:** the public support page `https://newellnarco.github.io/Feedhacker/support.html` went live (#125, verified 200); the maintainer reports setting it as the Support URL and pressing **Submit for review** on the 0.12.0 draft — *reported, not observed*: sessions cannot see the dashboard. The maintainer also made the repo **PUBLIC** — **verified** logged-out: API `"visibility": "public"`, repo/releases/`feedhacker-0.12.0-win.zip`/`api.github.com/…/releases/latest` all 200, the latter serving `v0.12.0` (so the Windows updater works again); Pull requests restricted to **collaborators only**; custom social preview uploaded (repo `og:image` is a `repository-images` URL). Listing at `?hl=en-IE` still reads **0.11.0, 18 September 2026** with the old Support link — expected until publish. **Close this row only when the listing reads 0.12.0.** |
+| 23 | **Copilot gate: two CodeRabbit findings from #127 still to land here** | the "Fix CodeRabbit findings in the fleet Copilot gate" session (AlienInterface first, then netsniff, then FeedHacker) | `.github/workflows/copilot-review.yml`: (1) the quota-refusal search reads only `first:20` updated PRs, so an older refusal is missed while the switch is `on`; (2) `landed` accepts any login starting `copilot`. Both are advisory and harmless while `COPILOT_REVIEW` is off (until 2026-11-01). Close when the fixed gate and its regression cases merge here. |
 
 ## 2. Current state
 
@@ -55,7 +56,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | **How to check what is live** | **Read the store listing** — `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. It is the authority and it is never ambiguous. **Correction (2026-09-15 20:18):** this row briefly claimed the item “publishes silently, three for three”. **That was wrong.** 0.6.0 and 0.7.0 both DID email (18:24:40 and 19:54:24 UTC). The 0.6.0 message sat in **Trash**, and `newer_than:2d` without `in:anywhere` does not search Trash — so an absent result proved nothing. **0.4.6 and 0.5.0 genuinely had no email** (that search did use `in:anywhere`). So: the email is a **fine positive signal**; its absence means nothing **unless you searched `in:anywhere`**, and even then prefer the listing. |
 | **Submission slot** | **BLOCKED (presumed)** — the maintainer submitted the 0.12.0 draft for review 2026-10-11 ~15:05 UTC (reported). Until the listing shows 0.12.0, a new upload would hit `ITEM_NOT_UPDATABLE`. |
 | **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change. **read `main`'s head yourself rather than trusting a SHA written here** — this row claimed `8849b70` for two sessions after `main` had moved past it, which is §75's own lesson biting the file that teaches it. `v0.11.0` tags `8849b70`; that one does not move. ✅ **CI is healthy and now has two paths to a run** — `pull_request` *and* a push to `main`/`claude/**`, deduplicated by head commit, so exactly one run survives per commit (item 18, closed). ⚠️ When checking whether a run exists, match on `head_sha` **and** `path`, and re-read rather than trusting one look: `list_workflow_runs` tags old runs on a reused branch with the branch's current PR number. |
-| **Review** | **CodeRabbit re-enabled 2026-09-27, throttled and advisory** (opening push of a non-draft PR only; re-reviews only via `scripts/coderabbit-review.sh` or its logic, at most one per push) — **green CI is still the merge gate** (`REVIEWERS_STATUS.md`) |
+| **Review** | **CodeRabbit re-enabled 2026-09-27, throttled and advisory** (opening push of a non-draft PR only; re-reviews only via `scripts/coderabbit-review.sh` or its logic, at most one per push) — **green CI is still the merge gate** (`REVIEWERS_STATUS.md`). **Copilot** is asked only by `.github/workflows/copilot-review.yml`, and only while Muther's `COPILOT_REVIEW` variable is exactly `on` (currently `off until 2026-11-01 (quota refusal)`, read from the lane's job log 2026-10-11). Nobody requests Copilot by hand while it is off. |
 
 ## 3. Startup checklist (run every new session)
 
@@ -99,6 +100,24 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-10-11 (later) — Copilot lane on Muther's switch; the suite passes on Windows
+
+- **Asked** (by the AlienInterface session, owner direction 2026-10-11): add the gated Copilot
+  lane. The repo is **public**, so it runs on `ubuntu-latest` (fleet Actions rule 7).
+- **#127 merged** (`137c73b`): `.github/workflows/copilot-review.yml`, copied from AlienInterface
+  #207. It asks Copilot only on exactly `on` and still stops on this month's quota refusal.
+  A skip logs `skipped: Copilot quota`. Guarded by `test/unit/copilot-review.test.js` (7).
+  **Observed:** the ready-for-review run 38177505238 logged `COPILOT_REVIEW: off until
+  2026-11-01 (quota refusal)` plus the skip notice, and no reviewer was requested.
+- **CodeRabbit on #127** made two advisory findings, both in the shared gate code: the quota
+  search only covers the first 20 PRs, and any `copilot*` login counts as Copilot pending. Being
+  fixed fleet-wide (AlienInterface first, then netsniff and here) by the "Fix CodeRabbit findings
+  in the fleet Copilot gate" session; **not yet landed here** as of this entry.
+- **#128** (this PR), **FH-075**: on Windows with `core.autocrlf=true`, 5 unit tests failed on an
+  unchanged `main` (CRLF checkout vs `"\n"` patterns). New `test/text.js` `readText()`, plus
+  `test/unit/text.test.js`, `best_practices.md` §78. Windows run: 5 failures → 0.
+- No release, no version bump (0.12.0 still open). The store listing was not re-read this session.
 
 ### 2026-10-11 — "stopped working again" was not a break; FH-073 (new reshare headers) fixed
 
