@@ -895,3 +895,10 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     pattern ships with a fail-closed control — a post that merely *says* the phrase — because a
     reshare filter that eats ordinary posts is worse than one that misses a header. And every
     new header form gets a test transcribed from the live capture it was found in.
+
+78. **A test that parses a repository text file reads it through `test/text.js`, never raw.**
+    The checkout's line endings are a property of the machine, not the repo: `* text=auto` plus
+    `core.autocrlf=true` gives a Windows working copy CRLF, and a `"\n"`-shaped pattern then fails
+    there while CI (LF) passes (FH-075). A suite that is red on one platform and green on another
+    trains everyone to ignore red. `readText()` normalises to the committed LF, so a parse means
+    the same thing everywhere; new suites that read workflows, Markdown or JSON-as-text use it.
