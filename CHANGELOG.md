@@ -36,6 +36,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   only — the extension package is unchanged.
 
 ### Changed
+- **The test suite passes on a Windows checkout too** (FH-075). Five unit tests parsed
+  `ci.yml`, `release.yml` and the store Markdown with `"\n"` patterns and failed wherever Git
+  checks files out with CRLF (`core.autocrlf=true`), although CI passed. They now read through a
+  shared `test/text.js` reader that normalises to LF, guarded by `test/unit/text.test.js`.
+  Nothing in the extension changed.
 - **Copilot review now has its own lane, gated on Muther's `COPILOT_REVIEW` switch.** GitHub's
   automatic Copilot review was turned off on the account on 2026-10-11 after the monthly quota ran
   out fleet-wide. The new `.github/workflows/copilot-review.yml` (copied from AlienInterface's gate)
