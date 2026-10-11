@@ -882,3 +882,16 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     writing the missing test" is now a recurring entry, and it is the cheapest bug source this
     project has — cheaper than a user report, and it arrives with the regression test already
     written.
+
+77. **Read LinkedIn identity from structure, not from header prose — and a new header wording is
+    a new fixture.** Reshare attribution has broken twice. FH-043: the reactor's profile link
+    comes first in document order. FH-073: LinkedIn added "X commented" and "Followed by X", the
+    hard-coded verb list matched neither, and the fallback credited every such post to the
+    connection in the header. Text parsing cannot fix the second at all — "Followed by Pete
+    Follower Angie Author • 2nd" has no boundary between the two names. The structure does:
+    distinct profile links, in order, where the first is the person the header names. So: the
+    *recogniser* may be wording-based (it has to be), but the *identity* comes from links, and the
+    recogniser and the attribution share one function so they cannot disagree. Every loose
+    pattern ships with a fail-closed control — a post that merely *says* the phrase — because a
+    reshare filter that eats ordinary posts is worse than one that misses a header. And every
+    new header form gets a test transcribed from the live capture it was found in.

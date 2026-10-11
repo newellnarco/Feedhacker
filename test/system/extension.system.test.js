@@ -158,6 +158,49 @@ test("Mute on a reshare stub mutes the author, not the reactor", { skip, timeout
   }
 });
 
+// --- FH-073: LinkedIn's 2026-10 reshare headers, in a real browser -----------------------
+// "Followed by X" and "X commented" surface someone else's post. Shapes transcribed from the
+// maintainer's live capture (names replaced). Real innerText is what the header parse reads,
+// so this is the tier that proves the head text actually looks the way the regexes expect.
+const NEW_RESHARE_FIXTURE = `<!doctype html><html><head><title>Feed</title></head><body><main><div id="feed">
+  ${post("p-followed", `
+    <div>Followed by</div><a href="/in/pete-follower">Pete Follower</a>
+    <div><a href="/in/angie-author">Angie Author</a> • 2nd</div><div>AI Advisor</div><div>Oct 7</div>
+    <div>When I was young I saw a strange swirling light over our family farm.</div>`)}
+  ${post("p-commented", `
+    <div><a href="/in/mike-commenter">Mike Commenter</a></div><div>commented</div>
+    <div><a href="/in/yan-author">Yan Author</a> • 2nd</div><div>National Director</div><div>2h</div>
+    <div>I feel personally attacked.</div>`)}
+  ${post("p-plain", `
+    <div><a href="/in/dana-dev">Dana Dev</a> • 1st</div><div>30m</div>
+    <div>I commented on the RFC and got followed by two recruiters.</div>`)}
+</div></main></body></html>`;
+
+test("'Followed by' and 'commented' posts are hidden as reshares, credited to their author", { skip, timeout: 60000 }, async () => {
+  const { ctx, page, close } = await launchFeed({ fixtureHtml: NEW_RESHARE_FIXTURE, sync: { muteLikes: true } });
+  try {
+    await page.waitForSelector("#p-followed .feedhacker-stub", { timeout: 20000 });
+    await page.waitForSelector("#p-commented .feedhacker-stub", { timeout: 20000 });
+    await page.waitForSelector("#p-plain[data-feedhacker-scanned]", { timeout: 20000 });
+    const plainHidden = await page.locator("#p-plain").evaluate((el) => el.classList.contains("feedhacker-hidden"));
+    assert.strictEqual(plainHidden, false, "a post that merely SAYS 'commented' / 'followed by' stays visible");
+    const actors = await page.evaluate(() => ["p-followed", "p-commented"].map((id) => document.getElementById(id).dataset.feedhackerActor));
+    assert.deepStrictEqual(actors, ["Angie Author", "Yan Author"], "credited to the writer, not the connection in the header");
+
+    await page.locator('#p-followed [data-fh-act="mute"]').click();
+    const sw = await extensionWorker(ctx);
+    let stored = {};
+    for (let i = 0; i < 40 && !Object.keys(stored.muted || {}).length; i++) {
+      await page.waitForTimeout(250);
+      stored = await sw.evaluate(() => new Promise((r) =>
+        chrome.storage.local.get("feedhacker:authors", (o) => r(o["feedhacker:authors"] || {}))));
+    }
+    assert.deepStrictEqual(Object.keys(stored.muted || {}), ["/in/angie-author"], "Mute takes the author, not the follower");
+  } finally {
+    await close();
+  }
+});
+
 // --- FH-044: the AI-slop splat must be reachable on a folded run --------------------
 test("a folded group row exposes the AI-slop splat end-to-end", { skip, timeout: 60000 }, async () => {
   const { page, close } = await launchFeed({ fixtureHtml: RUN_FIXTURE, sync: { mutePromoted: true } });

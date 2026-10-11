@@ -13,6 +13,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.12.0] — unreleased
 
+### Fixed
+- **Posts LinkedIn surfaces through someone else now count as reaction reshares, and are
+  credited to the right author** (FH-073). LinkedIn's 2026-10 feed introduced two headers
+  FeedHacker did not recognise — **"X commented"** (it used to say "commented on this") and
+  **"Followed by X"** (a stranger's post, shown because a connection follows them) — so with
+  *Reaction reshares* muted they still showed, and every one was attributed to the connection in
+  the header. Mute on such a post muted the wrong person. Both are now reshares; the
+  "Followed by" case was the maintainer's call. Separately, **"X follows this page"** promoted
+  posts were credited to *"page Rescana 3,189 followers Promoted Yo"* instead of *Rescana*. On a
+  reshare the author is now read from the second distinct profile link when the first belongs to
+  the person named in the header, which handles all three. Measured on the maintainer's live
+  capture of 2026-10-11: 6 of the 9 posts left showing carried one of the new headers; all 9
+  misattributed authors are now correct.
+
 ### Changed
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
   on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the
