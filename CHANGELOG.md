@@ -26,6 +26,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   the person named in the header, which handles all three. Measured on the maintainer's live
   capture of 2026-10-11: 6 of the 9 posts left showing carried one of the new headers; all 9
   misattributed authors are now correct.
+- **A public support page, so the Chrome Web Store will publish again** (FH-074). The store
+  refused 0.12.0 with *"Publish condition not met: Support URL is not reachable"*: the repository
+  is private, so anything on `github.com/newellnarco/Feedhacker` is a 404 to Google and to users —
+  and the public landing page and privacy policy both linked there. New
+  `https://newellnarco.github.io/Feedhacker/support.html` (troubleshooting, updating, resetting,
+  and contact: info@maxresearchcollective.com · www.maxresearchcollective.com); the landing page
+  and privacy policy now point to it, and `store/listing.md` names it as the Support URL. Website
+  only — the extension package is unchanged.
 
 ### Changed
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
