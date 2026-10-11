@@ -36,6 +36,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   only — the extension package is unchanged.
 
 ### Changed
+- **The Copilot lane reads every PR updated this month before asking, and counts only Copilot's own logins**
+  (FH-075, CodeRabbit on #127). The quota look read only the 20 most recently updated PRs, so this
+  month's refusal on an older PR was missed and Copilot was asked again; and any pending reviewer whose
+  login started with "copilot" was taken for Copilot. CI only; nothing in the extension changed.
 - **Copilot review now has its own lane, gated on Muther's `COPILOT_REVIEW` switch.** GitHub's
   automatic Copilot review was turned off on the account on 2026-10-11 after the monthly quota ran
   out fleet-wide. The new `.github/workflows/copilot-review.yml` (copied from AlienInterface's gate)

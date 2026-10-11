@@ -895,3 +895,11 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     pattern ships with a fail-closed control — a post that merely *says* the phrase — because a
     reshare filter that eats ordinary posts is worse than one that misses a header. And every
     new header form gets a test transcribed from the live capture it was found in.
+
+78. **One page of a paged API is not the record, and a prefix is not an identity.** FH-075: the
+    Copilot lane read `search(first:20)` and treated it as "the newest Copilot review in the
+    repository", so a refusal one page down was invisible; and it took any login starting with
+    "copilot" for Copilot. Read a paged source to its end, or to a stopping rule you can justify
+    (here: nothing on a later page can be newer than what was seen), bound it, and **say when the
+    bound cut the read short**. Match an identity against the exact forms it can take, with a test
+    for a look-alike that must *not* match.

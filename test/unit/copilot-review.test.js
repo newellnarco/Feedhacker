@@ -34,24 +34,27 @@ function scriptBody() {
   return body.join("\n");
 }
 
-// Run the lane with COPILOT_REVIEW = env (undefined = unset) and these recent Copilot reviews.
-async function runLane(env, reviews, { gqlThrows = false } = {}) {
-  const calls = { requested: 0, graphql: 0, notices: [], warnings: [], headings: [], raw: [] };
+// Run the lane with COPILOT_REVIEW = env (undefined = unset) and these recent Copilot reviews. `pages`, when
+// given, are the search pages GraphQL returns in turn; `pending` is the reviewer list read back after the ask.
+async function runLane(env, reviews, { gqlThrows = false, pages = null, pending = ["Copilot"] } = {}) {
+  const calls = { requested: 0, graphql: 0, vars: [], notices: [], warnings: [], headings: [], raw: [] };
   const summary = {
     addHeading: (h) => (calls.headings.push(h), summary),
     addRaw: (r) => (calls.raw.push(r), summary),
     write: async () => undefined,
   };
   const github = {
-    graphql: async () => {
+    graphql: async (_query, vars) => {
       calls.graphql++;
+      calls.vars.push(vars);
       if (gqlThrows) throw new Error("boom");
+      if (pages) return { search: pages[calls.graphql - 1] };
       return { search: { nodes: [{ reviews: { nodes: reviews } }] } };
     },
     rest: {
       pulls: {
         requestReviewers: async () => (calls.requested++, {}),
-        listRequestedReviewers: async () => ({ data: { users: [{ login: "Copilot" }] } }),
+        listRequestedReviewers: async () => ({ data: { users: pending.map((login) => ({ login })) } }),
       },
     },
   };
@@ -122,6 +125,54 @@ test("with the switch on, this month's quota refusal still stops it (the switch 
   const blind = await runLane("on", [], { gqlThrows: true });
   assert.equal(blind.requested, 1, "on, but the refusal check could not look: asks, and warns");
   assert.match(blind.warnings[0], /could not look/);
+});
+
+// CodeRabbit on #127: the look read ONE page (the 20 most recently updated PRs), so this month's refusal on an
+// older PR was missed and Copilot was asked again while the switch said "on".
+test("a refusal this month on a PR past the first page still stops it, and the look stops once nothing can be newer", async () => {
+  const ago = (min) => new Date(Date.now() - min * 60_000).toISOString();
+  const quiet = Array.from({ length: 50 }, () => ({ updatedAt: ago(1), reviews: { nodes: [] } }));
+  const refused = await runLane("on", [], {
+    pages: [
+      { pageInfo: { hasNextPage: true, endCursor: "c1" }, nodes: quiet },
+      { pageInfo: { hasNextPage: false, endCursor: "c2" }, nodes: [{ updatedAt: ago(5), reviews: { nodes: [{ submittedAt: ago(5), body: REFUSAL }] } }] },
+    ],
+  });
+  assert.equal(refused.graphql, 2, "the second page was read");
+  assert.equal(refused.vars[1].after, "c1", "with the first page's cursor");
+  assert.match(refused.vars[0].q, /^repo:o\/r is:pr updated:>=\d{4}-\d{2}-01T00:00:00Z sort:updated-desc$/, "only PRs updated this month (UTC)");
+  assert.equal(refused.requested, 0, "the refusal on page two holds");
+  assert.match(refused.notices[0], /^skipped: Copilot quota \(until \d{4}-\d{2}-01\)/);
+
+  const settled = await runLane("on", [], {
+    pages: [
+      { pageInfo: { hasNextPage: true, endCursor: "c1" }, nodes: [
+        { updatedAt: ago(1), reviews: { nodes: [{ submittedAt: ago(1), body: "## overview" }] } },
+        { updatedAt: ago(9), reviews: { nodes: [] } },
+      ] },
+      { pageInfo: { hasNextPage: false, endCursor: "c2" }, nodes: [{ updatedAt: ago(10), reviews: { nodes: [{ submittedAt: ago(10), body: REFUSAL }] } }] },
+    ],
+  });
+  assert.equal(settled.graphql, 1, "page one already reached PRs older than its newest review: no second read");
+  assert.equal(settled.requested, 1, "a review newer than the old refusal: asked");
+
+  const capped = await runLane("on", [], {
+    pages: Array.from({ length: 12 }, (_, i) => ({ pageInfo: { hasNextPage: true, endCursor: `c${i + 1}` }, nodes: quiet })),
+  });
+  assert.equal(capped.graphql, 10, "bounded at 10 pages");
+  assert.match(capped.warnings[0], /stopped after 10 pages/);
+});
+
+// CodeRabbit on #127: `startsWith('copilot')` counted any similarly named reviewer as Copilot.
+test("only the Copilot reviewer logins count as landed, not any login starting with \"copilot\"", async () => {
+  for (const login of ["Copilot", "copilot-pull-request-reviewer", "Copilot-Pull-Request-Reviewer[bot]"]) {
+    const r = await runLane("on", [], { pending: ["someone", login] });
+    assert.equal(r.headings.at(-1), "Copilot review — requested", `${login} is Copilot`);
+  }
+  for (const login of ["copilot-helper", "copilotx", "not-copilot"]) {
+    const r = await runLane("on", [], { pending: [login] });
+    assert.equal(r.headings.at(-1), "Copilot review — accepted but NOT pending", `${login} is not Copilot`);
+  }
 });
 
 test("public repo: GitHub-hosted runner only, GITHUB_TOKEN only, never drafts or docs-only", () => {
