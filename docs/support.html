@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FeedHacker — Support</title>
+  <meta name="description" content="Help for the FeedHacker Chrome extension: fixes for common problems, updating, resetting, and how to get in touch.">
+  <style>
+    :root { color-scheme: light dark; }
+    body { max-width: 720px; margin: 0 auto; padding: 40px 22px 72px;
+      font: 16px/1.6 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2226; background: #f6f7f9; }
+    h1 { font-size: 26px; margin: 0 0 4px; }
+    h2 { font-size: 18px; margin: 30px 0 8px; }
+    .lede { color: #4a5560; margin: 0 0 24px; }
+    strong { color: #0a2540; }
+    a { color: #0a66c2; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 4px 0; }
+    .note { color: #6a7686; font-size: 14px; margin-top: 32px; border-top: 1px solid #e2e4e8; padding-top: 16px; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e7e9ec; background: #14171a; }
+      .lede { color: #9aa4b0; }
+      strong { color: #cfe0ff; }
+      .note { border-top-color: #2b3138; color: #9aa4b0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>FeedHacker — Support</h1>
+  <p class="lede">Fixes for the common problems, and how to get in touch. FeedHacker runs entirely
+     in your browser, so almost everything can be checked and fixed from its own settings.</p>
+
+  <h2>FeedHacker isn't hiding anything</h2>
+  <ol>
+    <li>Open the FeedHacker popup from Chrome's toolbar and check that it is <strong>enabled</strong>
+        and that at least one kind of post is muted.</li>
+    <li>Reload your LinkedIn tab. After FeedHacker updates, an open tab keeps running the old
+        version until it is reloaded.</li>
+    <li>FeedHacker works on the LinkedIn <strong>home feed</strong> in English. Other pages and
+        other languages may not be filtered.</li>
+    <li>LinkedIn changes its page layout from time to time, and a change can stop FeedHacker
+        recognising posts until an update catches up. Check that you are on the latest version
+        (see <a href="#updating">Updating</a>).</li>
+  </ol>
+
+  <h2>FeedHacker is hiding too much</h2>
+  <ul>
+    <li>Every hidden post leaves a one-line row saying <strong>why</strong> it was hidden. Click
+        <strong>Show anyway</strong> on a row that got it wrong — for AI slop, that also teaches
+        the model.</li>
+    <li>Turn the <strong>Sensitivity</strong> slider in the popup down to hide less AI slop.</li>
+    <li>If the AI-slop filter has drifted, use <strong>Reset AI-slop learning</strong> in the popup
+        to go back to the shipped model. Your other settings are kept.</li>
+  </ul>
+
+  <h2>Seeing why a post was hidden</h2>
+  <p>Open <strong>Advanced Settings</strong> from the popup. The <strong>AI-slop decision
+     log</strong> lists recent decisions with the score and the signals that fired, and
+     <strong>Export log (JSON)</strong> saves it to a file. The log stays on your computer unless
+     you choose to share it.</p>
+
+  <h2 id="updating">Updating</h2>
+  <p>Chrome updates Web Store extensions automatically, usually within a few hours of a release.
+     To update straight away, open <strong>Advanced Settings</strong> and use <strong>Check for
+     updates</strong> and then <strong>Update now</strong>, then reload your LinkedIn tab.</p>
+
+  <h2>Starting over</h2>
+  <p><strong>Factory reset</strong> in Advanced Settings clears everything FeedHacker has stored
+     — settings, muted authors, the learned model and the logs — and restores the defaults.</p>
+
+  <h2>Getting in touch</h2>
+  <p>Questions, bug reports and suggestions are welcome:</p>
+  <ul>
+    <li>Email <a href="mailto:info@maxresearchcollective.com">info@maxresearchcollective.com</a></li>
+    <li>Website <a href="https://www.maxresearchcollective.com">www.maxresearchcollective.com</a></li>
+  </ul>
+  <p>If you report a problem, say which version you are on (shown in Advanced Settings) and what
+     you saw on the feed.</p>
+
+  <p class="note">FeedHacker is published by MAX Research Collective. It is unofficial and not
+     affiliated with, endorsed by, or sponsored by LinkedIn. See the
+     <a href="privacy-policy.html">privacy policy</a> · <a href="index.html">home</a>.</p>
+</body>
+</html>

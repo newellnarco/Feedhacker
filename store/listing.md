@@ -60,6 +60,9 @@ network requests — its curated AI-slop phrase list ships inside the package.
 - Data sold to third parties? **No.**
 - Data used only for the single purpose above? **Yes** (and it never leaves the device).
 - **Privacy policy URL:** `https://newellnarco.github.io/Feedhacker/privacy-policy.html`
+- **Support URL:** `https://newellnarco.github.io/Feedhacker/support.html` — Google checks this is
+  reachable before it will publish (FH-074). The repo is **private**, so never point a listing field
+  at `github.com/newellnarco/Feedhacker…`: it is a 404 to everyone but the maintainer.
   — the hosted GitHub Pages copy. Do **not** paste a `raw.githubusercontent.com` link: raw
   files are served as `text/plain` and Google's checker often flags them "not reachable".
 
