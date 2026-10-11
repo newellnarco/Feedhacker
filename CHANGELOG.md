@@ -36,6 +36,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   only — the extension package is unchanged.
 
 ### Changed
+- **The Copilot lane reads every PR updated this month before asking, and counts only Copilot's own logins**
+  (FH-076, CodeRabbit on #127). The quota look read only the 20 most recently updated PRs, so this
+  month's refusal on an older PR was missed and Copilot was asked again; and any pending reviewer whose
+  login started with "copilot" was taken for Copilot. CI only; nothing in the extension changed.
 - **The test suite passes on a Windows checkout too** (FH-075). Five unit tests parsed
   `ci.yml`, `release.yml` and the store Markdown with `"\n"` patterns and failed wherever Git
   checks files out with CRLF (`core.autocrlf=true`), although CI passed. They now read through a

@@ -69,20 +69,43 @@ jobs:
             // the same decision fleet-wide (AlienInterface src/shared/copilot-skip.ts) from the allowance too.
             const QUOTA = /unable to review this pull request because the user who requested the review has reached their quota limit/i;
             const monthEnd = (ms) => { const d = new Date(ms); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); };
-            let latest = null, lookErr = null;
+            // The look reads EVERY PR updated this month (UTC), newest first, a page at a time, and stops once a
+            // page reaches PRs last updated before the newest Copilot review already seen: a PR's reviews are
+            // never newer than its own updatedAt, so nothing further down can change the answer. One page of
+            // the 20 most recently updated PRs missed this month's refusal sitting on an older PR, and asked
+            // again (CodeRabbit, FeedHacker#127). Bounded at 10 pages of 50; a look cut short says so.
+            const now = new Date();
+            const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().replace('.000Z', 'Z');
+            let latest = null, lookErr = null, capped = false, after = null;
             try {
-              const r = await github.graphql(
-                'query($q:String!){search(query:$q,type:ISSUE,first:20){nodes{... on PullRequest{reviews(last:2,author:"copilot-pull-request-reviewer[bot]"){nodes{submittedAt body}}}}}}',
-                { q: `repo:${context.repo.owner}/${context.repo.repo} is:pr sort:updated-desc` });
-              for (const n of r.search.nodes || []) {
-                for (const v of (n && n.reviews && n.reviews.nodes) || []) {
-                  const at = Date.parse((v && v.submittedAt) || '');
-                  if (Number.isFinite(at) && (!latest || at > latest.at)) latest = { at, refused: QUOTA.test((v && v.body) || '') };
+              for (let page = 1; ; page++) {
+                // Braces closed one per word: a line holding an unpaired double close brace reads as a split
+                // expression to netsniff's tests/test_muster_scope.py.
+                const r = await github.graphql(
+                  'query($q:String!,$after:String){search(query:$q,type:ISSUE,first:50,after:$after){' +
+                    'pageInfo{hasNextPage endCursor} nodes{... on PullRequest{updatedAt ' +
+                    'reviews(last:2,author:"copilot-pull-request-reviewer[bot]"){nodes{submittedAt body} } } } } }',
+                  { q: `repo:${context.repo.owner}/${context.repo.repo} is:pr updated:>=${monthStart} sort:updated-desc`, after });
+                const s = (r && r.search) || {};
+                let oldest = Infinity;
+                for (const n of s.nodes || []) {
+                  const u = Date.parse((n && n.updatedAt) || '');
+                  if (Number.isFinite(u) && u < oldest) oldest = u;
+                  for (const v of (n && n.reviews && n.reviews.nodes) || []) {
+                    const at = Date.parse((v && v.submittedAt) || '');
+                    if (Number.isFinite(at) && (!latest || at > latest.at)) latest = { at, refused: QUOTA.test((v && v.body) || '') };
+                  }
                 }
+                const info = s.pageInfo || {};
+                if (!info.hasNextPage || !info.endCursor) break;
+                if (latest && oldest <= latest.at) break;
+                if (page >= 10) { capped = true; break; }
+                after = info.endCursor;
               }
             } catch (e) {
               lookErr = String(e.message || e).slice(0, 300);
             }
+            if (capped) core.warning('Copilot quota check stopped after 10 pages of PRs updated this month; deciding from those');
             if (latest && latest.refused && monthEnd(latest.at) === monthEnd(Date.now())) {
               const until = new Date(monthEnd(Date.now())).toISOString().slice(0, 10);
               core.notice(`skipped: Copilot quota (until ${until})`);
@@ -135,10 +158,14 @@ jobs:
               }
               if (pending) {
               // Case-INSENSITIVE: GitHub returns this reviewer under more than one login
-              // form, including a capitalised `Copilot`. A case-sensitive prefix reports
+              // form, including a capitalised `Copilot`. A case-sensitive match reports
               // a request that DID land as a coverage gap.
               const logins = (pending.users || []).map(u => u.login);
-              const landed = logins.some(l => String(l || '').toLowerCase().startsWith('copilot'));
+              // EXACT login forms only: a prefix match counted any `copilot…` reviewer (say
+              // `copilot-helper`) as Copilot, reporting a request that never landed as pending
+              // (CodeRabbit, FeedHacker#127).
+              const COPILOT_LOGINS = ['copilot', 'copilot-pull-request-reviewer', 'copilot-pull-request-reviewer[bot]'];
+              const landed = logins.some(l => COPILOT_LOGINS.includes(String(l || '').toLowerCase()));
               outcome = landed ? 'requested' : 'accepted but NOT pending';
               detail = landed
                 ? [
