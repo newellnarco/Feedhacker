@@ -113,7 +113,11 @@ Newest first. One entry per session; keep entries short and factual.
 - **CodeRabbit on #127** made two advisory findings, both in the shared gate code: the quota
   search only covers the first 20 PRs, and any `copilot*` login counts as Copilot pending. Being
   fixed fleet-wide (AlienInterface first, then netsniff and here) by the "Fix CodeRabbit findings
-  in the fleet Copilot gate" session; **not yet landed here** as of this entry.
+  in the fleet Copilot gate" session as Feedhacker #129 (CI green, **not merged** as of this
+  entry; see §1 item 23).
+- **CodeRabbit was rate limited** on both #128 and #129: 1 review/hour after 111 attempts in 7 days.
+  #128's next slot was 35 minutes away, over the 20-minute cap, so #128 was merged without a
+  CodeRabbit review; green CI was the gate.
 - **#128** (this PR), **FH-075**: on Windows with `core.autocrlf=true`, 5 unit tests failed on an
   unchanged `main` (CRLF checkout vs `"\n"` patterns). New `test/text.js` `readText()`, plus
   `test/unit/text.test.js`, `best_practices.md` §78. Windows run: 5 failures → 0.
