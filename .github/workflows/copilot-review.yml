@@ -1,0 +1,182 @@
+# Copilot code review, asked by this workflow, never while the month's allowance is gone.
+#
+# Fleet SOP (max3 docs/md/REVIEW_AND_CI_SOP.md, the Copilot row): Copilot is asked on every code PR "until
+# the month's allowance is gone; then skip until the 1st. Do not retry." From 2026-10-04 every request came
+# back as a review saying the requester "has reached their quota limit" (721 PRs asked, 60 reviewed).
+# Copied from AlienInterface's lane (newellnarco/AlienInterface#207), the same gate as netsniff's
+# (newellnarco/netsniff#448). Muther computes the decision fleet-wide too (AlienInterface
+# src/shared/copilot-skip.ts, fleet.review_budget copilot.review_skip, telemetry "Copilot: skipped (quota)").
+#
+# The owner turned GitHub's own AUTOMATIC Copilot review off on the account (2026-10-11), so this workflow is the
+# only thing that asks, and it asks only while Muther's COPILOT_REVIEW variable is exactly "on".
+#
+# FeedHacker is a PUBLIC repository, so this job runs on GitHub-hosted ubuntu-latest, never on one of
+# Muther's self-hosted runners (fleet Actions rule 7: a self-hosted runner never runs a stranger's code).
+# No secret beyond GITHUB_TOKEN, no checkout; drafts and docs-only changes are not asked (Copilot reviews
+# code). On a fork PR the token is read-only, so the request fails and the summary says "not requested".
+# Guarded by test/unit/copilot-review.test.js; the review rules are in REVIEWERS_STATUS.md.
+name: Copilot review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: copilot-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  request:
+    name: Request Copilot review
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest   # public repo: GitHub-hosted only (fleet Actions rule 7)
+    timeout-minutes: 5
+    steps:
+      - name: Ask Copilot to review this PR (skipped while the quota is spent)
+        uses: actions/github-script@v7
+        env:
+          # Muther's switch (owner, 2026-10-11): automatic Copilot review is off on the account, and Copilot is
+          # asked only while COPILOT_REVIEW is exactly "on". "off until <date> (reason)" is her hard off while the
+          # month's quota is spent; unset means she has not said. Either way nothing asks.
+          COPILOT_REVIEW: ${{ vars.COPILOT_REVIEW }}
+        with:
+          script: |
+            const pr = context.payload.pull_request.number;
+            let outcome, detail;
+            const sw = String(process.env.COPILOT_REVIEW || '').trim();
+            if (sw !== 'on') {
+              const why = sw ? `skipped: Copilot quota (Muther's COPILOT_REVIEW is "${sw}")` : "skipped: Muther's COPILOT_REVIEW switch is not set";
+              core.notice(why);
+              await core.summary
+                .addHeading(`Copilot review — ${why}`)
+                .addRaw('Copilot was **not** asked. Muther alone turns Copilot on (the COPILOT_REVIEW variable); while it is off, nobody requests a Copilot review. That is a coverage gap, not a passing review.')
+                .write();
+              return;
+            }
+            // ── SKIP WHILE THE MONTH'S ALLOWANCE IS GONE (fleet SOP, max3 REVIEW_AND_CI_SOP.md, the Copilot
+            // row: "until the month's allowance is gone; then skip until the 1st. Do not retry."). From
+            // 2026-10-04 every request across the fleet came back as a review saying the requester "has
+            // reached their quota limit": 721 PRs asked, 60 reviewed. The signal is the newest Copilot review
+            // in this repository: the quota-limit text, written this month (UTC), means skip until the 1st.
+            // Could not look = ask as before (a refusal costs nothing; a silent skip would). Muther computes
+            // the same decision fleet-wide (AlienInterface src/shared/copilot-skip.ts) from the allowance too.
+            const QUOTA = /unable to review this pull request because the user who requested the review has reached their quota limit/i;
+            const monthEnd = (ms) => { const d = new Date(ms); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); };
+            let latest = null, lookErr = null;
+            try {
+              const r = await github.graphql(
+                'query($q:String!){search(query:$q,type:ISSUE,first:20){nodes{... on PullRequest{reviews(last:2,author:"copilot-pull-request-reviewer[bot]"){nodes{submittedAt body}}}}}}',
+                { q: `repo:${context.repo.owner}/${context.repo.repo} is:pr sort:updated-desc` });
+              for (const n of r.search.nodes || []) {
+                for (const v of (n && n.reviews && n.reviews.nodes) || []) {
+                  const at = Date.parse((v && v.submittedAt) || '');
+                  if (Number.isFinite(at) && (!latest || at > latest.at)) latest = { at, refused: QUOTA.test((v && v.body) || '') };
+                }
+              }
+            } catch (e) {
+              lookErr = String(e.message || e).slice(0, 300);
+            }
+            if (latest && latest.refused && monthEnd(latest.at) === monthEnd(Date.now())) {
+              const until = new Date(monthEnd(Date.now())).toISOString().slice(0, 10);
+              core.notice(`skipped: Copilot quota (until ${until})`);
+              await core.summary
+                .addHeading(`Copilot review — skipped: Copilot quota until ${until}`)
+                .addRaw([
+                  'Copilot was **not** asked: its newest review here (' + new Date(latest.at).toISOString() + ')',
+                  'says the requester has reached the quota limit, and the fleet SOP says skip until the',
+                  '1st rather than retry. That is a coverage gap for this month, not a passing review.',
+                ].join('\n'))
+                .write();
+              return;
+            }
+            if (lookErr) core.warning(`Copilot quota check could not look (${lookErr}); asking as before`);
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr,
+                reviewers: ['copilot-pull-request-reviewer[bot]'],
+              });
+              // A 200 from requestReviewers proves the REQUEST was accepted. It
+              // does NOT prove a reviewer was added, and it certainly does not
+              // prove a review will arrive — across the fleet Copilot has been
+              // "requested" on PRs it never reviewed. So read the PR
+              // back and say which of those two things actually happened.
+              // The readback gets its OWN try. Sharing the outer one meant a request
+              // that LANDED and a readback that merely failed both fell into the catch
+              // arm and reported 'not requested' — stating as fact that Copilot was never
+              // asked, when it was. "Could not look" rendered as "did not ask", which is
+              // the class netsniff#239 fixed (CodeRabbit's finding).
+              let pending = null;
+              try {
+                ({ data: pending } = await github.rest.pulls.listRequestedReviewers({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr,
+                }));
+              } catch (readErr) {
+                outcome = 'requested — could not verify';
+                detail = [
+                  'The request was accepted, but reading the pending-reviewer list back',
+                  'failed — so this job cannot confirm the reviewer was actually added.',
+                  'That is an unknown, not a coverage gap and not a review.',
+                  '',
+                  '```',
+                  String(readErr.message || readErr).slice(0, 500),
+                  '```',
+                ].join('\n');
+              }
+              if (pending) {
+              // Case-INSENSITIVE: GitHub returns this reviewer under more than one login
+              // form, including a capitalised `Copilot`. A case-sensitive prefix reports
+              // a request that DID land as a coverage gap.
+              const logins = (pending.users || []).map(u => u.login);
+              const landed = logins.some(l => String(l || '').toLowerCase().startsWith('copilot'));
+              outcome = landed ? 'requested' : 'accepted but NOT pending';
+              detail = landed
+                ? [
+                    'Copilot has been asked to review this pull request and is',
+                    'listed as a pending reviewer.',
+                    '',
+                    '**A request is not a review.** Whether one arrives shows on the PR.',
+                  ].join('\n')
+                : [
+                    'The GitHub API accepted the request, but Copilot is **not** in',
+                    'this PR\'s requested-reviewer list afterwards — so nothing is',
+                    'waiting to review it. That is a coverage gap, not a passing',
+                    'review.',
+                    '',
+                    'Pending reviewers seen: `' + (logins.join('`, `') || 'none') + '`',
+                    '',
+                    'Most likely: Copilot code review is not enabled for this',
+                    'repository or account, so the reviewer is silently dropped.',
+                  ].join('\n');
+              }
+            } catch (err) {
+              // Honest absence: name what failed and what it means, and do NOT
+              // let a refusal read as a review that happened.
+              outcome = 'not requested';
+              detail = [
+                'Copilot was **not** asked to review this pull request, so this',
+                'lane contributed nothing here. That is a coverage gap, not a',
+                'passing review.',
+                '',
+                '```',
+                String(err.message || err).slice(0, 500),
+                '```',
+                '',
+                'Most likely: Copilot code review is not enabled for this',
+                'account or repository, or the reviewer login has changed.',
+              ].join('\n');
+            }
+            await core.summary
+              .addHeading(`Copilot review — ${outcome}`)
+              .addRaw(detail)
+              .write();
