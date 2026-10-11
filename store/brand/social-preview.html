@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- GitHub social preview (Settings -> General -> Social preview), 1280x640. Every element sits
+     inside an 80px margin, GitHub's recommended 40pt safe border at 2x, so nothing is cropped.
+     Rendered to social-preview-1280x640.png by headless Chromium; images are relative to this file. -->
+<html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+  body { font-family: "DejaVu Sans", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #f3f5f8 0%, #e6ebf2 100%); color: #1d2226; position: relative; }
+  .left { position: absolute; left: 96px; top: 104px; width: 560px; }
+  .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 34px; }
+  .brand img { width: 64px; height: 64px; border-radius: 10px; }
+  .brand span { font-size: 34px; font-weight: 700; }
+  h1 { font-size: 58px; line-height: 1.08; margin: 0 0 26px; font-weight: 800; letter-spacing: -0.5px; }
+  h1 em { font-style: normal; color: #0a66c2; }
+  p { font-size: 23px; line-height: 1.45; color: #4a5560; margin: 0 0 30px; }
+  .by { font-size: 19px; color: #6a7686; }
+  .by b { color: #0a66c2; font-weight: 600; }
+  /* The carousel's feed card spans x 710-1208, y 81-719 at 1280 wide; show it scaled 0.9 and cut
+     just below the third stub so no half-post peeks in at the bottom. */
+  .shot { position: absolute; right: 96px; top: 118px; width: 448px; height: 392px; overflow: hidden;
+    border-radius: 18px; box-shadow: 0 16px 40px rgba(22,41,68,.16); background: #fff; }
+  .shot img { position: absolute; width: 1152px; left: -639px; top: -73px; }
+</style></head><body>
+  <div class="left">
+    <div class="brand"><img src="store-icon-128.png" alt=""><span>FeedHacker</span></div>
+    <h1>Mute the noise in your <em>LinkedIn feed</em></h1>
+    <p>AI slop, promoted posts and engagement bait collapse to one-line stubs. Runs entirely in your browser.</p>
+    <div class="by">A Chrome extension by <b>MAX Research Collective</b></div>
+  </div>
+  <div class="shot"><img src="../../docs/carousel/carousel-1-feed.png" alt=""></div>
+</body></html>
