@@ -15,10 +15,11 @@
 // actually occur, so a future edit that re-couples them fails here instead of on a release.
 const test = require("node:test");
 const assert = require("node:assert");
-const fs = require("node:fs");
 const path = require("node:path");
 
-const WF = fs.readFileSync(path.join(__dirname, "..", "..", ".github", "workflows", "release.yml"), "utf8");
+const { readText } = require("../text");
+
+const WF = readText(path.join(__dirname, "..", "..", ".github", "workflows", "release.yml"));
 
 // --- extract a job's gate ---------------------------------------------------------------
 // Jobs sit at two-space indent; a job's `if:` is the first one inside it. Deliberately
