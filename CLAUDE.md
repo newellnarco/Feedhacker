@@ -215,3 +215,14 @@ rules bind every Claude session in this repository.
    more hosted minutes, asks Muther how to get it done within the budget. She owns the plan, the cap
    and `HOSTED_OK`. MAX holds anyone who ignores these rules to them (the owner: *"and MAX if they
    need a beat down"*).
+9. **Reviewers: ask Muther, never wait blind** (owner, 2026-10-12: *"make sure the ci process uses muther to check
+   her flag for copilot review or not based on her budget. rule for everyone. not just sit and wait 20+ minutes"*).
+   - **Copilot is asked only when Muther's `COPILOT_REVIEW` variable is exactly `on`.** It is her budget switch.
+     Every repo's `copilot-review.yml` checks it first, and no session asks Copilot by hand while it reads anything else.
+     While it is off, nobody waits for a Copilot review: none is coming.
+   - **Before waiting on any reviewer, ask Muther** (her `review_wait` tool, with the repo and PR). She answers per
+     reviewer: arrived, not asked (no budget), wait until a stated time, or skip.
+   - Her time comes from the reviewer's own latest note on the PR (CodeRabbit's *"available in 27 minutes"*), its
+     allowance, or its median reply this month after being asked. Expected within 20 minutes: wait until that
+     time. Later, or no basis: skip and merge when everything else is green. Never sit through 20 minutes just
+     to see whether a reply comes.
