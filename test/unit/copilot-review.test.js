@@ -92,7 +92,7 @@ test('off is a hard off: nothing asks, nothing even looks, and the run says "ski
   const off = await runLane("off until 2026-11-01 (quota refusal)", []);
   assert.equal(off.requested, 0, "Copilot is not asked");
   assert.equal(off.graphql, 0, "the skip returns before the quota look-up");
-  assert.match(off.notices[0], /^skipped: Copilot quota \(Muther's COPILOT_REVIEW is "off until 2026-11-01 \(quota refusal\)"\)/);
+  assert.match(off.notices[0], /^skipped: Copilot quota \(Muther's COPILOT_REVIEW is "off until 2026-11-01 \(quota refusal\)", not exactly "on"\)/);
   assert.match(off.headings[0], /skipped: Copilot quota/);
   assert.match(off.raw.join("\n"), /coverage gap/, "the summary calls the skip a coverage gap, not a review");
 });
@@ -113,7 +113,8 @@ test('only EXACTLY "on" asks — near misses are offs', async () => {
   const on = await runLane("on", [{ submittedAt: "2020-01-01T00:00:00Z", body: "## overview" }]);
   assert.equal(on.requested, 1, '"on" with no refusal on record: asked once');
   const padded = await runLane("  on\n", []);
-  assert.equal(padded.requested, 1, "surrounding whitespace in the variable is trimmed");
+  assert.equal(padded.requested, 0, "a padded value is not exactly \"on\": nothing is trimmed, nothing asks");
+  assert.match(padded.notices[0], /COPILOT_REVIEW is "  on\\n", not exactly "on"\)/, "the skip shows the raw value");
 });
 
 test("with the switch on, this month's quota refusal still stops it (the switch may lag)", async () => {
