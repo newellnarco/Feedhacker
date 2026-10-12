@@ -913,11 +913,14 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
 
 80. **A gate that decides *whether* to run must not also silence the alarm that says it should
     have.** FeedHacker's path check (`isMainFeed`) sits in front of both the scan and the
-    heartbeat. When LinkedIn moved the home feed to `/feed/foryou/`, the check said "not the feed",
-    so the scan never ran — and neither did the heartbeat whose whole job is to notice LinkedIn
-    changing under us (FH-077). A selector break shouts; a gate break whispers nothing. Two rules
-    follow. **Match a host's routes by what you have seen, and test at the URL the host actually
-    serves today** — a fixture pinned to last quarter's URL keeps the suite green against a page
-    nobody visits. And **a "not applicable here" exit is a failure path too:** when the page looks
-    like the feed (post markers present) but the path gate says it isn't, that disagreement is
-    evidence, and it belongs in front of the heartbeat, not behind the gate.
+    heartbeat. When LinkedIn moved the home feed to `/feed/foryou/` for some accounts, the check
+    said "not the feed", so the scan never ran — and neither did the heartbeat whose whole job is
+    to notice LinkedIn changing under us (FH-077). A selector break shouts; a gate break whispers
+    nothing. Three rules follow. **Gate a host's routes by family, naming the exceptions, not by an
+    exact allow-list** — the first fix added `/feed/foryou` to the list, which is the same bug
+    waiting for the next tab name; any one-level `/feed/<name>/` is now the feed except the named
+    pages that are not. **Test at the URL the host actually serves today**, and remember that it
+    may serve different URLs to different users. And **a "not applicable here" exit is a failure
+    path too:** when the page looks like the feed (posts present) but the gate says it isn't, log
+    that disagreement, naming the path (`offFeedBreak`) — an idle extension otherwise leaves an
+    empty error log that looks exactly like a healthy one.

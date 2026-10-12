@@ -16,16 +16,50 @@ test("isHomeFeed matches only the home feed path", () => {
   assert.strictEqual(selectors.isHomeFeed(""), false);
 });
 
-// FH-077: LinkedIn moved the home feed to /feed/foryou/ (bare /feed/ now redirects there). The
-// gate only accepted /feed and /feed/, so on every real visit FeedHacker decided it was off the
-// feed and did nothing. Both shapes must count; other /feed/ sub-paths still must not.
-test("isHomeFeed accepts LinkedIn's /feed/foryou/ home feed (FH-077)", () => {
-  for (const p of ["/feed/foryou/", "/feed/foryou"]) {
+// FH-077: LinkedIn serves the home feed from /feed/foryou/ on some accounts and /feed/ on others
+// (a staged rollout; both seen 2026-10-12). The gate only accepted /feed and /feed/, so on an
+// affected account FeedHacker decided it was off the feed and did nothing. The fix is generic: any
+// ONE-level /feed/<name>/ is the home feed, except the named /feed/ pages that are not.
+test("isHomeFeed accepts any one-level /feed/<name>/ as the home feed (FH-077)", () => {
+  for (const p of ["/feed", "/feed/", "/feed/foryou/", "/feed/foryou", "/feed/following/", "/feed/recent/", "/feed/For-You_2/"]) {
     assert.strictEqual(selectors.isHomeFeed(p), true, `${p} is the home feed`);
     assert.strictEqual(selectors.isSupportedSurface(p), true, `${p} is a supported surface`);
   }
-  for (const p of ["/feed/foryou/x", "/feed/foryouz/", "/feed/following/", "/feed/update/urn:li:activity:1/"]) {
+});
+
+test("isHomeFeed still refuses the /feed/ pages that are not the home feed (FH-077)", () => {
+  for (const p of [
+    "/feed/update/", "/feed/update/urn:li:activity:1/",   // permalinks
+    "/feed/hashtag/", "/feed/hashtag/ai/",                // hashtag feeds (?keywords= or a path)
+    "/feed/follow/",                                      // follow suggestions, no posts
+    "/feed/foryou/x", "/feed//", "/feedback/", "/feeds/", "/", "",
+  ]) {
     assert.strictEqual(selectors.isHomeFeed(p), false, `${p} is not the home feed`);
+  }
+});
+
+// content.ts carries a copy of the pattern for the (should-never-happen) case that selectors.js
+// failed to load. Two copies of a gate drift; this keeps them byte-identical.
+test("content.ts's fallback home-feed pattern is HOME_FEED_RE itself (FH-077)", () => {
+  const { readText } = require("../text");
+  const src = readText(path.join(__dirname, "..", "..", "src", "content.ts"));
+  const re = selectors.HOME_FEED_RE;
+  assert.ok(src.includes(`/${re.source}/${re.flags}.test(p)`), "content.ts isMainFeed fallback matches selectors.HOME_FEED_RE");
+});
+
+// best_practices §80: the off-feed alarm. A path the gate rejects, full of posts, on a page we
+// know nothing about, is how a moved home feed shows itself — and an idle extension logs nothing.
+test("offFeedBreak fires only for an active, settled, post-full page on an unknown path (FH-077)", () => {
+  const base = { active: true, loading: false, markers: 5, path: "/home/" };
+  assert.strictEqual(selectors.offFeedBreak(base), true, "posts on an unknown path alarm");
+  assert.strictEqual(selectors.offFeedBreak({ ...base, path: "/" }), true, "the site root counts as unknown");
+  assert.strictEqual(selectors.offFeedBreak({ ...base, markers: 2 }), false, "fewer than three posts is not a feed");
+  assert.strictEqual(selectors.offFeedBreak({ ...base, active: false }), false, "background tab stays quiet");
+  assert.strictEqual(selectors.offFeedBreak({ ...base, loading: true }), false, "mid-load stays quiet");
+  assert.strictEqual(selectors.offFeedBreak(null), false);
+  for (const p of ["/feed/", "/feed/foryou/", "/feed/update/urn:li:activity:1/", "/feed/hashtag/ai/", "/in/jane/", "/company/acme/",
+    "/search/results/content/", "/groups/123/", "/posts/jane_slug-activity-1/", "/my-items/saved-posts/", "/newsletters/x/", "/events/1/", "/pulse/x/"]) {
+    assert.strictEqual(selectors.offFeedBreak({ ...base, path: p }), false, `${p} is a page we know: no alarm`);
   }
 });
 
