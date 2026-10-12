@@ -42,6 +42,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 21 | **FH-073 SHIPPED to GitHub as v0.12.0 — store publish blocked, see item 22** | — (closed into 22) | Merged as #123 (`e7b4765`) on green CI; Release run #32 cut tag `v0.12.0` and the GitHub Release with five assets. The fix reaches **sideload/MSI** users now and **store** users only once item 22 clears. **Still unconfirmed:** whether the maintainer's original "stopped working" symptom was this or something a saved page cannot show (CSS) — ask if it persists after 0.12.0 is live. |
 | 22 | **0.12.0 resubmitted to the store after FH-074 — awaiting Google review** | Google; then next session (confirm Live from the listing) | Run #32's publish was refused (`400 … Support URL is not reachable`) because the repo was private. **Resolved 2026-10-11:** the public support page `https://newellnarco.github.io/Feedhacker/support.html` went live (#125, verified 200); the maintainer reports setting it as the Support URL and pressing **Submit for review** on the 0.12.0 draft — *reported, not observed*: sessions cannot see the dashboard. The maintainer also made the repo **PUBLIC** — **verified** logged-out: API `"visibility": "public"`, repo/releases/`feedhacker-0.12.0-win.zip`/`api.github.com/…/releases/latest` all 200, the latter serving `v0.12.0` (so the Windows updater works again); Pull requests restricted to **collaborators only**; custom social preview uploaded (repo `og:image` is a `repository-images` URL). Listing at `?hl=en-IE` still reads **0.11.0, 18 September 2026** with the old Support link — expected until publish. **Close this row only when the listing reads 0.12.0.** |
 | 23 | **CLOSED 2026-10-11 — the two CodeRabbit findings in the Copilot gate are fixed here** | — (closed) | #129 merged (`cd032a1`, 22:34:38 UTC). Two fixes in `.github/workflows/copilot-review.yml`: the quota-refusal look now reads every PR updated this month, not just the first 20, and only Copilot's own logins count as landed. Each has regression cases in `test/unit/copilot-review.test.js`; the ledger row is **FH-076** (the squash commit's subject says FH-075, a title not updated before the merge: FH-075 is #128's CRLF fix). The same fix landed elsewhere: **netsniff #453 merged** (`4fa4c33`); AlienInterface #213 was folded into #207 and then #212 (open). Muther's own read had the same one-page shape: AlienInterface #216 (stacked on #212). Those are the other repos' to track. |
+| 24 | **GitHub Actions run LOCAL FIRST — CI (#122, merged) and the Release workflow (#121) wait for a Feedhacker runner** | Muther (RUNNER CONTROLS › SET UP RUNNER for Feedhacker), or the owner (`HOSTED_OK=true`) | Since #122 merged 2026-10-12 16:46 UTC, every `ci.yml` job targets the PC runner; CI run 510 on `main` (`5d96557`) and every PR run after it sat **queued** with no runner picking them up. #121 moves Release `build`/`release`/`msi` the same way (`webstore` stays hosted: secrets). ⚠️ The repo is **public** since 2026-10-11, and fleet Actions rule 7 says public repos stay GitHub-hosted; the owner's instruction 2026-10-12 was to keep using the local runner "as usual". **A `ship` will wait on the runner too** once #121 is in. Close this row when a run on the PC is observed green. |
 
 ## 2. Current state
 
@@ -174,6 +175,22 @@ Newest first. One entry per session; keep entries short and factual.
   commits, none found). The maintainer then flipped it public (verified logged-out: 200s, API
   `visibility: public`), restricted PRs to collaborators, uploaded the social preview, set the
   store Support URL and resubmitted 0.12.0 (the last two reported — the dashboard is not visible).
+### 2026-10-05 — GitHub Actions switched to local first (the owner's fleet rules)
+
+- **Asked:** the owner's Actions minutes ran out on day 4; every Claude repo follows the same hard
+  rules. The rules text is now a `CLAUDE.md` section, word for word from the canonical copy in
+  AlienInterface `docs/ACTIONS_RULES.md`.
+- **Workflows:** CI `unit`/`integration`/`system`/`package` and Release `build`/`release` use the
+  local-first Linux expression, Release `msi` the Windows one. `webstore` stays hosted (secrets).
+  The Playwright `--with-deps` install (sudo apt-get) runs only on GitHub-hosted runners; `msi`
+  uses `dotnet tool update` so a persistent runner does not fail on an already-installed WiX;
+  `release` checks for `gh`/`jq`/`git` first on a self-hosted runner. CI now skips docs-only
+  changes (roadmap NS-2 done; TEST_MATRIX rule 8 updated).
+- **Open:** §1 item 21 — no runner registered for Feedhacker yet, so CI waits. PR left as a draft.
+- **2026-10-12, when #121 was brought up to date:** its `ci.yml` half had already landed differently
+  through #122 (a `changes` job, not a `paths` filter), so `main`'s version was kept, with one
+  thing #121 had and #122 lacked: `CLAUDE.md`/`SESSION-STATE.md` still run CI, because a test
+  reads them. The open row is now §1 item 24.
 
 ### 2026-09-27 — CodeRabbit re-enabled, on the slow-lane throttle
 

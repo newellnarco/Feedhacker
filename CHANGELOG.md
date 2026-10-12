@@ -68,6 +68,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   It runs on GitHub-hosted runners because the repo is public, and
   `test/unit/copilot-review.test.js` guards it. `CLAUDE.md` and `REVIEWERS_STATUS.md` now say
   nobody requests Copilot by hand while the switch is off. Nothing in the extension changed.
+- **The release build runs on the owner's own PC first** (the owner's GitHub Actions rules of
+  2026-10-05, now in `CLAUDE.md`; CI moved the same way in #122). The Release workflow's `build`,
+  `release` and `msi` jobs default to a self-hosted runner and use GitHub-hosted runners only when
+  `HOSTED_OK=true`; the Chrome Web Store upload, which needs secrets, stays hosted. On a
+  self-hosted runner `release` checks for `gh`/`jq`/`git` before publishing anything, and `msi`
+  uses `dotnet tool update` so an already-installed WiX does not fail it. No change to the
+  extension itself.
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
   on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the
   opening push of a non-draft PR (`auto_incremental_review: false`,

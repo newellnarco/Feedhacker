@@ -174,3 +174,44 @@ shipped in each version and where it stands. **The Chrome Web Store lags GitHub*
 review; one pending version at a time), so track the two separately. Update it whenever a
 version's state changes, and only mark a version **Live** in the store column once it is
 **confirmed published on the Chrome Web Store** — not when it was merely uploaded/submitted.
+
+<!-- ACTIONS RULES: the canonical text lives in newellnarco/AlienInterface docs/ACTIONS_RULES.md. Every
+     Claude repo of the owner carries this section word for word; change it there first, then everywhere. -->
+## GitHub Actions: local first (the owner's hard rules, 2026-10-05)
+
+The month's 3,000 included Actions minutes ran out on day 4. The owner said: *"begin the changes to work
+locally across all repos as of now...immediately"*, *"only use hosted when really needed or for
+needed items"* and *"make sure all claude repos follow this same hard and fast set of rules."* These
+rules bind every Claude session in this repository.
+
+1. **Local first.** Every job's `runs-on` defaults to the owner's PC with this exact expression
+   (Muther recognises it byte for byte):
+   `${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}`
+   Windows jobs use the same expression with `WINDOWS_RUNNER`, `windows-latest` and
+   `["self-hosted","windows","mother"]`. With `RUNNER` unset, a job **waits for the PC**. It never falls
+   back to GitHub-hosted by itself.
+2. **GitHub-hosted only with `HOSTED_OK=true`.** Only **Muther or the owner** set it. MAX may set it
+   only with their permission. It is a **monthly budget** decision, never a one-off OK. Muther sets it
+   from the owner's monthly hosted budget and its pace, and may use it for catch-up in the down hours
+   when local CI falls behind, never over the budget.
+3. **Secrets never run on the owner's PC.** A job that reads a secret other than `GITHUB_TOKEN` stays
+   on `ubuntu-latest` and carries a `# HOSTED ONLY: <reason>` comment. Its schedule is as sparse as
+   its purpose allows: weekly unless the purpose needs more, and never every few minutes.
+4. **Spend no minutes on nothing.**
+   - Docs-only changes skip CI.
+   - Drafts skip the expensive jobs.
+   - The push to `main` after a merge re-runs only what the PC runs.
+   - Run the repo's checks locally before pushing, and push once per round.
+   - No empty commits or close-and-reopen to re-run CI.
+5. **One air-traffic controller.** Muther coordinates every runner on the PC within one cap (MAX
+   ONLINE), MAX/Scout's included. MAX asks Muther before running Scout. Nobody else starts, stops,
+   renames or deletes a runner, and nobody else sets `RUNNER`, `WINDOWS_RUNNER`, `SCOUT_RUNNER` or
+   `HOSTED_OK`.
+6. **A new repository** gets a runner from Muther (RUNNER CONTROLS › SET UP RUNNER) before it gets
+   workflows. Until then its jobs wait, or the owner allows `HOSTED_OK` for it.
+7. **Public repositories** are the exception. Their hosted minutes are free, and a self-hosted runner
+   must never run a stranger's code, so they stay on GitHub-hosted runners.
+8. **Unsure, or need more budget? Ask Muther.** A session that is unsure how to proceed, or wants
+   more hosted minutes, asks Muther how to get it done within the budget. She owns the plan, the cap
+   and `HOSTED_OK`. MAX holds anyone who ignores these rules to them (the owner: *"and MAX if they
+   need a beat down"*).

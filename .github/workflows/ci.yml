@@ -57,7 +57,10 @@ jobs:
           else
             files=$(git diff --name-only --no-renames "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || true)
           fi
-          if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(docs/|LICENSE$|[^/]+\.md$)'; then code=false; else code=true; fi
+          # CLAUDE.md and SESSION-STATE.md are Markdown, but test/unit/session-state.test.js reads them,
+          # so a change to either is a code change for this gate.
+          if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(docs/|LICENSE$|[^/]+\.md$)' \
+            && ! printf '%s\n' "$files" | grep -qxE '(CLAUDE|SESSION-STATE)\.md'; then code=false; else code=true; fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "changed files: $(printf '%s\n' "$files" | wc -l); code=$code"
 
