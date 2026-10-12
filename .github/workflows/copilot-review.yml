@@ -50,9 +50,9 @@ jobs:
           script: |
             const pr = context.payload.pull_request.number;
             let outcome, detail;
-            const sw = String(process.env.COPILOT_REVIEW || '').trim();
+            const sw = String(process.env.COPILOT_REVIEW || '');
             if (sw !== 'on') {
-              const why = sw ? `skipped: Copilot quota (Muther's COPILOT_REVIEW is "${sw}")` : "skipped: Muther's COPILOT_REVIEW switch is not set";
+              const why = sw ? `skipped: Copilot quota (Muther's COPILOT_REVIEW is ${JSON.stringify(sw)}, not exactly "on")` : "skipped: Muther's COPILOT_REVIEW switch is not set";
               core.notice(why);
               await core.summary
                 .addHeading(`Copilot review — ${why}`)
