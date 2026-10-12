@@ -218,7 +218,7 @@ rules bind every Claude session in this repository.
 9. **Reviewers: ask Muther, never wait blind** (owner, 2026-10-12: *"make sure the ci process uses muther to check
    her flag for copilot review or not based on her budget. rule for everyone. not just sit and wait 20+ minutes"*).
    - **Copilot is asked only when Muther's `COPILOT_REVIEW` variable is exactly `on`.** It is her budget switch.
-     Every repo's `copilot-review.yml` checks it first, and no session asks Copilot by hand while it reads anything else.
+     Every repo's `copilot-review.yml` checks it first, and nobody asks Copilot by hand while it reads anything else.
      While it is off, nobody waits for a Copilot review: none is coming.
    - **Before waiting on any reviewer, ask Muther** (her `review_wait` tool, with the repo and PR). She answers per
      reviewer: arrived, not asked (no budget), wait until a stated time, or skip.
