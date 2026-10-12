@@ -112,14 +112,41 @@ jobs:
         with:
           name: msi
           path: dist
-      # GitHub-hosted images ship gh and jq; a self-hosted runner may not. Fail loudly and early
-      # rather than half-way through publishing (no sudo installs on the owner's PC).
-      - name: Check required tools (self-hosted)
+      # GitHub-hosted images ship gh and jq; the owner's PC runner does not have gh (release run
+      # #33, 2026-10-12: "gh is not installed on this self-hosted runner", FH-079), and nothing may
+      # be installed there with sudo. So on a self-hosted runner, a missing gh or jq is fetched
+      # into the job's temp dir, pinned and checksum-verified, and put on PATH for later steps.
+      # git is still required as-is (checkout already used it). Fails before anything is published.
+      - name: Provide gh and jq (self-hosted)
         if: runner.environment != 'github-hosted'
+        env:
+          GH_VERSION: "2.62.0"
+          JQ_VERSION: "1.7.1"
         run: |
-          for t in gh jq git; do
-            command -v "$t" >/dev/null || { echo "::error title=Missing tool::$t is not installed on this self-hosted runner"; exit 1; }
-          done
+          set -euo pipefail
+          command -v git >/dev/null || { echo "::error title=Missing tool::git is not installed on this self-hosted runner"; exit 1; }
+          case "$(uname -m)" in
+            x86_64|amd64) ARCH=amd64 ;;
+            aarch64|arm64) ARCH=arm64 ;;
+            *) echo "::error title=Unsupported runner::no gh/jq download for $(uname -m)"; exit 1 ;;
+          esac
+          BIN="$RUNNER_TEMP/fh-tools/bin"; mkdir -p "$BIN"; cd "$RUNNER_TEMP/fh-tools"
+          if ! command -v gh >/dev/null; then
+            GH="gh_${GH_VERSION}_linux_${ARCH}"
+            curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH}.tar.gz"
+            curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" | grep " ${GH}.tar.gz\$" | sha256sum -c -
+            tar -xzf "${GH}.tar.gz"
+            mv "${GH}/bin/gh" "$BIN/gh"
+          fi
+          if ! command -v jq >/dev/null; then
+            curl -fsSL -o "jq-linux-${ARCH}" "https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux-${ARCH}"
+            curl -fsSL "https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/sha256sum.txt" | grep " jq-linux-${ARCH}\$" | sha256sum -c -
+            mv "jq-linux-${ARCH}" "$BIN/jq"
+          fi
+          chmod +x "$BIN"/* 2>/dev/null || true
+          echo "$BIN" >> "$GITHUB_PATH"
+          PATH="$BIN:$PATH" gh --version | head -1
+          PATH="$BIN:$PATH" jq --version
       - name: Create GitHub Release with prebuilt assets
         env:
           GH_TOKEN: ${{ github.token }}

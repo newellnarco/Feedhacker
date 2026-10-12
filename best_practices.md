@@ -830,6 +830,13 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     (`github.event.pull_request.head.sha || github.sha`) they share a group, the later cancels
     the earlier, and exactly one survives. Generally: **deduplicate on the identity of the work,
     not on the route that requested it** — the commit, the job key, the idempotency token.
+    **Amended by FH-078 (2026-10-12): the identity of the work is the BRANCH, not the commit.**
+    Keyed on the commit, the two triggers collapsed, but every superseded commit kept its own
+    run. That was harmless on hosted runners and a pile-up on the owner's single PC runner: four
+    stale runs held it on one day, and a session cancelled each by hand. Only the newest head of
+    a branch is ever under review, so the group is now the repository plus the branch name
+    (`github.head_ref || github.ref_name`), which a push and a PR event share. The repository is in
+    the key so a fork's `main` cannot cancel this repo's `main`.
 
     Two riders, both paid for here. **Assert the triggers in a test.** They are the one part of
     CI that CI cannot check by running, so `test/unit/ci-gate.test.js` evaluates the group

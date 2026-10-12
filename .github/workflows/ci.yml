@@ -14,18 +14,22 @@ name: CI
 # and for one day that gate did not exist. Hence the branch push as a first-class trigger: either
 # event alone produces a run on the exact head commit, which is what the merge gate needs.
 #
-# The obvious objection is that the triad now runs twice, which is the right worry and the wrong
-# fix. Keying `concurrency` on the HEAD COMMIT instead of the ref solves it properly: a push run
-# and a pull_request run for the same commit land in the same group, so the later one cancels the
-# earlier and exactly one survives. `github.event.pull_request.head.sha` is the branch head on a
-# PR event; `github.sha` is the same commit on a push. See FH-071 and best_practices.md §75.
+# The obvious objection is that the triad now runs twice, which is the right worry. `concurrency`
+# answers it by keying on the BRANCH NAME, which a push and a pull_request event for the same branch
+# share (`github.ref_name` on a push, `github.head_ref` on a PR), so the later run cancels the
+# earlier and exactly one survives. FH-071 first keyed it on the head COMMIT, which deduplicated the
+# two triggers but never cancelled an OLDER commit's run on the same branch; on the owner's single PC
+# runner those piled up (FH-078: four superseded runs held the runner on 2026-10-12). Keyed on the
+# branch, a newer push supersedes an older one too, and a newer merge to main supersedes the last
+# main run. The repository (or a fork PR's head repository) is part of the key so a fork's `main`
+# can never cancel this repo's `main`. See FH-071, FH-078 and best_practices.md §75.
 on:
   push:
     branches: [main, "claude/**"]
   pull_request:
 
 concurrency:
-  group: ci-${{ github.event.pull_request.head.sha || github.sha }}
+  group: ci-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 # Least privilege: CI only reads the repo and uploads a build artifact.

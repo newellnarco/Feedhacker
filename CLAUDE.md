@@ -72,6 +72,14 @@ FeedHacker PR from a different account or bot identity.
 - **One PR per branch** (reuse over creation). If the branch's PR is already merged, restart the
   branch from the latest default branch for the next change.
 
+## Work found in passing (standing rule)
+
+**Never hand work off as a suggested task or a local worktree** (the owner, 2026-10-12: *"you stop
+it or tell muther to. don't ask for a local worktree ever again: rule"*). No `spawn_task` cards and
+no "start this on your machine" offers. When a session finds something outside its current change
+that needs doing, it either **fixes it itself** (its own PR, through the normal loop) or **tells
+Muther**. If it can do neither, it records the item in `SESSION-STATE.md` §1 with who it waits on.
+
 ## Code review & the learning loop (standing rule)
 
 **Close the loop on every real bug — four things, same PR when practical:**

@@ -11,11 +11,13 @@
 // explicit authorisation (FH-071) — that is what a one-trigger gate costs.
 //
 // Two triggers only help if a duplicate run does not cost the triad twice, which is why
-// `concurrency` is keyed on the HEAD COMMIT rather than the ref: a push run and a pull_request run
-// for the same commit share a group, so the later cancels the earlier and exactly one survives.
-// The cases below EVALUATE that expression under both event shapes instead of grepping it — a
-// grep cannot tell `github.ref` from `github.sha`, and keying on the ref is precisely the version
-// that runs everything twice (§59).
+// `concurrency` is keyed on the BRANCH NAME (plus the repository): a push run and a pull_request
+// run for the same branch share a group, so the later cancels the earlier and exactly one
+// survives. FH-071 keyed it on the head commit, which deduplicated the two triggers but let every
+// superseded commit keep its own run; on the owner's single PC runner those piled up (FH-078).
+// The cases below EVALUATE the expression under each event shape instead of grepping it — a grep
+// cannot tell `github.ref` (which differs between a push and a PR) from `github.ref_name` /
+// `github.head_ref` (which agree), and the wrong one runs everything twice (§59).
 const test = require("node:test");
 const assert = require("node:assert");
 const path = require("node:path");
@@ -56,25 +58,20 @@ test("a push to a claude/** branch also triggers CI", () => {
 // --- the deduplication ------------------------------------------------------------------
 const CONCURRENCY = topBlock("concurrency");
 
-// Only the two constructs this expression uses are modelled: dotted context lookups and `||`
-// as a coalescing operator. Anything else is rejected rather than guessed at, because an
-// evaluator that quietly mis-reads the group would make this file green while the workflow ran
-// the triad twice — or, worse, cancelled a run it should have kept.
+// Only the constructs this expression uses are modelled: dotted context lookups and `||` as a
+// coalescing operator, inside one or more `${{ }}` blocks. Anything else is rejected rather than
+// guessed at, because an evaluator that quietly mis-reads the group would make this file green
+// while the workflow ran the triad twice — or, worse, cancelled a run it should have kept.
 function evalGroup(expr, ctx) {
-  const parts = [];
-  const literal = expr.replace(/\$\{\{([^}]*)\}\}/g, (_, inner) => {
-    parts.push(inner.trim());
-    return "\u0000";
+  return expr.replace(/\$\{\{([^}]*)\}\}/g, (_, inner) => {
+    const terms = inner.trim().split("||").map((t) => t.trim());
+    for (const t of terms) {
+      assert.match(t, /^[A-Za-z_][\w.]*$/, `unmodelled term \`${t}\` — teach this test before using it`);
+      const v = t.split(".").reduce((o, k) => (o == null ? undefined : o[k]), ctx);
+      if (v !== undefined && v !== null && v !== "") return String(v);
+    }
+    return "";
   });
-  assert.strictEqual(parts.length, 1, "the group is one literal prefix plus one expression");
-  const terms = parts[0].split("||").map((t) => t.trim());
-  const out = [];
-  for (const t of terms) {
-    assert.match(t, /^[A-Za-z_][\w.]*$/, `unmodelled term \`${t}\` — teach this test before using it`);
-    out.push(t.split(".").reduce((o, k) => (o == null ? undefined : o[k]), ctx));
-  }
-  const value = out.find((v) => v !== undefined && v !== null && v !== "");
-  return literal.replace("\u0000", value === undefined ? "" : String(value));
 }
 
 const groupExpr = (() => {
@@ -83,40 +80,53 @@ const groupExpr = (() => {
   return m[1].trim();
 })();
 
-const SHA = "fe15e08f0e4b4b6c5a1f2d3e4a5b6c7d8e9f0a1b";
-// A pull_request event: `github.sha` is the MERGE commit, not the branch head, which is exactly
-// why the head sha has to be read out of the event payload.
-const PR_EVENT = {
-  github: { sha: "9999999999999999999999999999999999999999", ref: "refs/pull/113/merge",
-    event: { pull_request: { head: { sha: SHA } } } },
-};
-const PUSH_EVENT = { github: { sha: SHA, ref: "refs/heads/claude/determined-thompson-bjujrt", event: {} } };
+const REPO = "newellnarco/Feedhacker";
+const BRANCH = "claude/determined-thompson-bjujrt";
+// Event payload shapes as GitHub sends them. On a pull_request event `github.ref` is
+// `refs/pull/N/merge` and `github.sha` the merge commit; `head_ref` is the PR's branch name. On a
+// push `head_ref` is empty and `ref_name` is the branch.
+const push = (branch, sha, repo = REPO) => ({
+  github: { repository: repo, sha, ref: `refs/heads/${branch}`, ref_name: branch, head_ref: "", event: {} },
+});
+const pr = (n, branch, sha, headRepo = REPO) => ({
+  github: { repository: REPO, sha: "9".repeat(40), ref: `refs/pull/${n}/merge`, ref_name: `${n}/merge`, head_ref: branch,
+    event: { pull_request: { number: n, head: { sha, ref: branch, repo: { full_name: headRepo } } } } },
+});
+const g = (ctx) => evalGroup(groupExpr, ctx);
 
 test("a push run and a PR run for the same commit land in ONE group", () => {
-  // The whole point of the two-trigger design. If these differ, every PR runs the triad twice.
-  assert.strictEqual(evalGroup(groupExpr, PUSH_EVENT), evalGroup(groupExpr, PR_EVENT));
+  // The two-trigger design (FH-071). If these differ, every PR runs the triad twice.
+  assert.strictEqual(g(push(BRANCH, "a".repeat(40))), g(pr(113, BRANCH, "a".repeat(40))));
 });
 
-test("two different commits do NOT share a group", () => {
-  // The other half: a group keyed on something commit-independent (the ref, the workflow name)
-  // would cancel the run for the commit under review as soon as the next push arrived.
-  const older = { github: { sha: "1111111111111111111111111111111111111111", ref: PUSH_EVENT.github.ref, event: {} } };
-  assert.notStrictEqual(evalGroup(groupExpr, PUSH_EVENT), evalGroup(groupExpr, older));
+test("a newer commit on the same branch supersedes the older one (FH-078)", () => {
+  // The pile-up: keyed on the commit, an older head kept its run after a newer push landed.
+  assert.strictEqual(g(push(BRANCH, "1".repeat(40))), g(push(BRANCH, "2".repeat(40))), "two pushes to one branch");
+  assert.strictEqual(g(pr(113, BRANCH, "1".repeat(40))), g(pr(113, BRANCH, "2".repeat(40))), "two heads of one PR");
+  assert.strictEqual(g(push("main", "1".repeat(40))), g(push("main", "2".repeat(40))), "two merges to main");
 });
 
-test("the group is keyed on the commit, not the ref", () => {
-  // Stated as its own assertion because `ci-${{ github.ref }}` is the version this replaced and
-  // it reads perfectly well: same ref for the push and the PR, so one of the two runs is lost.
-  assert.ok(!/github\.ref/.test(groupExpr),
-    "keying on the ref makes a branch push cancel its own PR run (or vice versa)");
-  assert.match(groupExpr, /github\.sha/, "the push side must resolve to the pushed commit");
-  assert.match(groupExpr, /pull_request\.head\.sha/,
-    "the PR side must use the HEAD sha — `github.sha` on a PR event is the merge commit");
+test("different branches never cancel each other", () => {
+  assert.notStrictEqual(g(push(BRANCH, "a".repeat(40))), g(push("claude/other-branch", "a".repeat(40))));
+  assert.notStrictEqual(g(push("main", "a".repeat(40))), g(push(BRANCH, "a".repeat(40))), "a branch push never cancels main");
+});
+
+test("a fork's PR cannot cancel this repository's run on a same-named branch", () => {
+  assert.notStrictEqual(g(pr(200, "main", "b".repeat(40), "stranger/Feedhacker")), g(push("main", "b".repeat(40))));
+});
+
+test("the group is keyed on the branch name, never on `github.ref` or a commit sha", () => {
+  // `github.ref` differs between a push (refs/heads/x) and a PR (refs/pull/N/merge), so keying
+  // on it runs both; a sha key is the FH-078 pile-up.
+  assert.ok(!/github\.ref\b(?!_name)/.test(groupExpr), "`github.ref` splits the push and PR runs of one branch");
+  assert.ok(!/\bsha\b/.test(groupExpr), "a commit key lets superseded commits keep their runs (FH-078)");
+  assert.match(groupExpr, /github\.head_ref/, "the PR side must use the PR's branch name");
+  assert.match(groupExpr, /github\.ref_name/, "the push side must use the pushed branch name");
 });
 
 test("the surviving run is the newer one", () => {
   assert.match(CONCURRENCY, /cancel-in-progress:\s*true/,
-    "without this the two triggers queue instead of collapsing");
+    "without this the runs queue instead of collapsing");
 });
 
 // --- the gate still gates ----------------------------------------------------------------
