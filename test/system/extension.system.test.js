@@ -38,6 +38,24 @@ test("hides a Promoted post end-to-end when Promoted muting is on", { skip, time
   }
 });
 
+// FH-077: LinkedIn serves the home feed from /feed/foryou/ now, and bare /feed/ redirects there.
+// The path gate only knew /feed/, so in production the extension loaded, decided it was off the
+// feed, and hid nothing — and the heartbeat sits behind the same gate, so no alarm either.
+test("hides a Promoted post on LinkedIn's /feed/foryou/ home feed", { skip, timeout: 60000 }, async () => {
+  const { page, close } = await launchFeed({
+    fixtureHtml: FIXTURE,
+    sync: { mutePromoted: true },
+    url: "https://www.linkedin.com/feed/foryou/",
+  });
+  try {
+    await page.waitForSelector("#p-ad.feedhacker-hidden", { timeout: 20000 });
+    const okHidden = await page.locator("#p-ok").evaluate((el) => el.classList.contains("feedhacker-hidden"));
+    assert.strictEqual(okHidden, false, "a normal human post must stay visible");
+  } finally {
+    await close();
+  }
+});
+
 // FH-053: LinkedIn's own feed modules wear the same hidden "Feed post" heading a real post
 // does. Mute has no prose gate, so before the guard these were hidden as if a member had
 // written them. (Solo, which hid everything off-category, was removed in 0.8.0 — this case used

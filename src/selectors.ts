@@ -43,10 +43,13 @@
 
     // URL paths FeedHacker may operate on. "feed" is the home feed only; the rest
     // are opt-in (settings.scanEverywhere) because their markup varies.
-    isHomeFeed: function (path) { return /^\/feed\/?$/.test(path || ""); },
+    // LinkedIn now serves the home feed at /feed/foryou/ (bare /feed/ redirects there, seen
+    // live 2026-10-10). Both shapes are the home feed; other /feed/ sub-paths are not.
+    HOME_FEED_RE: /^\/feed(?:\/foryou)?\/?$/,
+    isHomeFeed: function (path) { return api.HOME_FEED_RE.test(path || ""); },
     isSupportedSurface: function (path) {
       path = path || "";
-      return /^\/feed\/?$/.test(path) ||          // home feed
+      return api.HOME_FEED_RE.test(path) ||       // home feed (/feed/ or /feed/foryou/)
         /^\/feed\/update\//.test(path) ||          // single post permalink
         /^\/search\/results\//.test(path) ||       // search results
         /^\/(company|school)\//.test(path) ||      // company / school pages

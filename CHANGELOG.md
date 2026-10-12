@@ -34,6 +34,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
   and contact: info@maxresearchcollective.com · www.maxresearchcollective.com); the landing page
   and privacy policy now point to it, and `store/listing.md` names it as the Support URL. Website
   only — the extension package is unchanged.
+- **FeedHacker hid nothing at all on LinkedIn's current home feed (FH-077).** LinkedIn now serves
+  the home feed from `/feed/foryou/`, and a bare `/feed/` redirects there. FeedHacker only
+  treated `/feed` and `/feed/` as the home feed, so on every real visit it decided it was off the
+  feed, revealed everything and idled — every filter on, nothing hidden, and no warning, because
+  the "selectors may be out of date" heartbeat runs behind the same check. `/feed/foryou/` is now
+  the home feed too (`selectors.HOME_FEED_RE`); other `/feed/` sub-paths are still left alone.
 
 ### Changed
 - **The Copilot lane reads every PR updated this month before asking, and counts only Copilot's own logins**

@@ -447,7 +447,7 @@
   function isMainFeed() {
     var p = location.pathname;
     if (SEL) return settings.scanEverywhere ? SEL.isSupportedSurface(p) : SEL.isHomeFeed(p);
-    return /^\/feed\/?$/.test(p);
+    return /^\/feed(?:\/foryou)?\/?$/.test(p); // keep in step with selectors HOME_FEED_RE
   }
 
   // DOM-break heartbeat: if we're on a feed but repeatedly find zero post markers,
