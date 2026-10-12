@@ -19,6 +19,12 @@ Three rules keep it useful:
 
 ---
 
+## 0.13.0
+
+**Works again on LinkedIn's new feed address.** LinkedIn has begun moving some people's home feed
+to a new address, and there FeedHacker hid nothing at all. It now filters the home feed wherever
+LinkedIn puts it under /feed/, and if the feed ever moves somewhere else, the error log says so.
+
 ## 0.12.0
 
 **Catches LinkedIn's new "Followed by" and "commented" posts.** LinkedIn started showing other
