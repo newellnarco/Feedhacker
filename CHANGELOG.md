@@ -13,13 +13,46 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 
 ## [0.12.0] — unreleased
 
+### Fixed
+- **Posts LinkedIn surfaces through someone else now count as reaction reshares, and are
+  credited to the right author** (FH-073). LinkedIn's 2026-10 feed introduced two headers
+  FeedHacker did not recognise — **"X commented"** (it used to say "commented on this") and
+  **"Followed by X"** (a stranger's post, shown because a connection follows them) — so with
+  *Reaction reshares* muted they still showed, and every one was attributed to the connection in
+  the header. Mute on such a post muted the wrong person. Both are now reshares; the
+  "Followed by" case was the maintainer's call. Separately, **"X follows this page"** promoted
+  posts were credited to *"page Rescana 3,189 followers Promoted Yo"* instead of *Rescana*. On a
+  reshare the author is now read from the second distinct profile link when the first belongs to
+  the person named in the header, which handles all three. Measured on the maintainer's live
+  capture of 2026-10-11: 6 of the 9 posts left showing carried one of the new headers; all 9
+  misattributed authors are now correct.
+- **A public support page, so the Chrome Web Store will publish again** (FH-074). The store
+  refused 0.12.0 with *"Publish condition not met: Support URL is not reachable"*: the repository
+  is private, so anything on `github.com/newellnarco/Feedhacker` is a 404 to Google and to users —
+  and the public landing page and privacy policy both linked there. New
+  `https://newellnarco.github.io/Feedhacker/support.html` (troubleshooting, updating, resetting,
+  and contact: info@maxresearchcollective.com · www.maxresearchcollective.com); the landing page
+  and privacy policy now point to it, and `store/listing.md` names it as the Support URL. Website
+  only — the extension package is unchanged.
+
 ### Changed
-- **CI runs on the owner's PC, and docs-only changes skip it.** Every CI job's `runs-on` is now the
-  owner's local-first expression (Actions rules, 2026-10-05): MU/TH/UR points it at the PC's runner
-  with `RUNNER`; with `RUNNER` unset a job waits for the PC, and GitHub-hosted is used only with
-  `HOSTED_OK` or for a fork's PR. A new `changes` job skips unit, integration, system and package
-  when a push or PR touches only `docs/`, root `*.md` or `LICENSE`. On the PC, Playwright fetches
-  Chromium without `--with-deps` (no sudo there). `release.yml` is unchanged.
+- **The Copilot lane reads every PR updated this month before asking, and counts only Copilot's own logins**
+  (FH-076, CodeRabbit on #127). The quota look read only the 20 most recently updated PRs, so this
+  month's refusal on an older PR was missed and Copilot was asked again; and any pending reviewer whose
+  login started with "copilot" was taken for Copilot. CI only; nothing in the extension changed.
+- **The test suite passes on a Windows checkout too** (FH-075). Five unit tests parsed
+  `ci.yml`, `release.yml` and the store Markdown with `"\n"` patterns and failed wherever Git
+  checks files out with CRLF (`core.autocrlf=true`), although CI passed. They now read through a
+  shared `test/text.js` reader that normalises to LF, guarded by `test/unit/text.test.js`.
+  Nothing in the extension changed.
+- **Copilot review now has its own lane, gated on Muther's `COPILOT_REVIEW` switch.** GitHub's
+  automatic Copilot review was turned off on the account on 2026-10-11 after the monthly quota ran
+  out fleet-wide. The new `.github/workflows/copilot-review.yml` (copied from AlienInterface's gate)
+  asks Copilot on a non-draft code PR only while the variable is exactly `on`, and still stops on
+  this month's quota refusal. A skip posts `skipped: Copilot quota` and calls it a coverage gap.
+  It runs on GitHub-hosted runners because the repo is public, and
+  `test/unit/copilot-review.test.js` guards it. `CLAUDE.md` and `REVIEWERS_STATUS.md` now say
+  nobody requests Copilot by hand while the switch is off. Nothing in the extension changed.
 - **CodeRabbit reviews FeedHacker again, on the slow-lane throttle.** The maintainer re-enabled it
   on 2026-09-27, reversing the 2026-07-29 removal. The new `.coderabbit.yaml` reviews only the
   opening push of a non-draft PR (`auto_incremental_review: false`,

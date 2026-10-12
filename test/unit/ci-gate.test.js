@@ -18,10 +18,11 @@
 // that runs everything twice (§59).
 const test = require("node:test");
 const assert = require("node:assert");
-const fs = require("node:fs");
 const path = require("node:path");
 
-const WF = fs.readFileSync(path.join(__dirname, "..", "..", ".github", "workflows", "ci.yml"), "utf8");
+const { readText } = require("../text");
+
+const WF = readText(path.join(__dirname, "..", "..", ".github", "workflows", "ci.yml"));
 
 // --- the `on:` block -------------------------------------------------------------------
 // Top-level keys sit at column 0; the block runs to the next one.

@@ -5,6 +5,39 @@
 against [`best_practices.md`](best_practices.md), done *before* pushing, is still the first
 review. Never wait on a bot comment, and never read its silence as approval.
 
+**Copilot is asked only while Muther's `COPILOT_REVIEW` variable is exactly `on`** (2026-10-11,
+below). While it is off, nobody requests a Copilot review — not the workflow, not a session, not
+by hand.
+
+## Copilot — asked by one gated workflow, only while `COPILOT_REVIEW` is `on` (2026-10-11)
+
+The owner turned GitHub's **automatic** Copilot review off on the account on 2026-10-11: from
+2026-10-04 every Copilot request across the fleet came back as a review saying the requester had
+*"reached their quota limit"*. Muther (`newellnarco/AlienInterface`) now holds the only switch,
+the Actions variable **`COPILOT_REVIEW`** on every fleet repo, FeedHacker included:
+
+| Value | Meaning |
+|---|---|
+| exactly `on` | Copilot may be asked |
+| `off until YYYY-MM-DD (reason)` | hard off — the month's quota is spent; skip until that date, do not retry |
+| unset | Muther has not said — do not ask |
+
+[`.github/workflows/copilot-review.yml`](.github/workflows/copilot-review.yml) is the **only**
+thing that asks. On a non-draft PR that touches code (opened, reopened or marked ready; not
+`docs/**` or `*.md`-only), it reads the switch first and requests
+`copilot-pull-request-reviewer[bot]` only on exactly `on`. Even then it stops if the newest Copilot
+review here is this month's quota refusal, in case the switch lags. A skip asks nothing: it posts a
+`skipped: Copilot quota` notice and a job summary that calls it **a coverage gap, not a passing
+review**. FeedHacker is public, so the lane runs on GitHub-hosted `ubuntu-latest`, never on a
+self-hosted runner, with `GITHUB_TOKEN` only and no checkout.
+[`test/unit/copilot-review.test.js`](test/unit/copilot-review.test.js) runs the workflow's own script
+under stubs to guard all of this.
+
+**Rules for sessions:** never request Copilot by hand (no `request_copilot_review`, no reviewer
+picker) while the switch is anything but `on`. Never set or change `COPILOT_REVIEW` from here;
+Muther owns it. A session cannot read the variable through the API (`CLAUDE.md`), but the lane's
+job log prints it. Like CodeRabbit, Copilot is **advisory**, and green CI is the merge gate.
+
 ## CodeRabbit — RE-ENABLED with the slow-lane throttle (2026-09-27)
 
 **The maintainer re-enabled CodeRabbit on FeedHacker on 2026-09-27, explicitly reversing the

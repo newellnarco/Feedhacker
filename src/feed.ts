@@ -85,12 +85,28 @@
     if (/#hiring\b|\bis hiring\b|we['’]?re hiring|\bwe are hiring\b|\bnow hiring\b|\bhiring for\b|\bjoin (our|the|my) team\b|\bwe['’]?re looking to hire\b|\bopen role(s)?\b|\bopen position(s)?\b/i.test(t)) return true;
     return leafWithText(el, /^view job$/i);                                        // job-card CTA
   }
-  // "Surfaced by a reaction" header — not just likes: celebrates / loves / supports /
-  // reposted / follows / commented on, plus "finds this insightful/funny".
+  // "Surfaced by someone else" header — the post is in the feed because a connection
+  // reacted to it, commented on it, or follows its author, not because you follow the author.
+  //   * "X likes / celebrates / loves / supports / reposted / follows / reacted to this",
+  //     "X follows this page", "X finds this insightful/funny" — the original forms;
+  //   * "X commented" — FH-073: LinkedIn's 2026-10 feed dropped the old "commented on this";
+  //   * "Followed by X" — FH-073: a stranger's post surfaced because X follows them.
+  // Tested against the post's HEAD only (marker stripped, whitespace collapsed), so a body
+  // that merely says "likes this" further down never counts. The bare "commented" form is
+  // the loose one, so it must open the head and be preceded only by a name: a few words,
+  // no digits (a company header reads "Acme 3,189 followers") and no "•" (a person's header
+  // reads "Jane Doe • 2nd"), which keeps "commented" in an ordinary post's body out of it.
+  var RESHARE_VERB_RE = /\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b(?:\s+page\b)?|\bfinds this \w+/i;
+  var RESHARE_COMMENTED_RE = /^(?:[^\s•·\d!?:;]+\s+){1,8}?commented\b/i;
+  var RESHARE_FOLLOWED_RE = /^followed by\b/i;
+  function reshareHead(text) {
+    return String(text || "").replace(/\s+/g, " ").replace(/^\s*(Feed post|Promoted)\s*/i, "").slice(0, 110);
+  }
+  function isReshareHead(head) {
+    return RESHARE_FOLLOWED_RE.test(head) || RESHARE_COMMENTED_RE.test(head) || RESHARE_VERB_RE.test(head);
+  }
   function isReactionReshare(el) {
-    var t = getText(el).replace(/\s+/g, " ").replace(/^(Feed post|Promoted)\s*/i, "").slice(0, 100);
-    return /\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b/i.test(t) ||
-           /\bfinds this \w+/i.test(t);
+    return isReshareHead(reshareHead(getText(el)));
   }
 
   function markerCountWithin(el) {
@@ -125,34 +141,52 @@
 
   // Actor name (best-effort): strip a leading "{X} celebrates/likes/… this" header,
   // then take the name before the first separator. Falls back to a profile/company link.
-  // First actor link (document order) that actually has a name — skips the empty
-  // avatar link, and reads the clean company/person name instead of the header blob.
-  function actorLinkName(el) {
+  // Distinct named actor links in document order (one per href) — skips the empty avatar
+  // link, and reads the clean company/person name instead of the header blob.
+  function namedActorLinks(el) {
     var links = el.querySelectorAll('a[href*="/in/"], a[href*="/company/"]');
+    var out: any[] = [], seen: any = {};
     for (var i = 0; i < links.length; i++) {
       var txt = getText(links[i]).replace(/\s+/g, " ").trim();
       txt = txt.replace(/\s+(Verified|Premium)\s+Profile\b.*$/i, "")   // "Ben Davis Premium Profile 3rd+ Ben Davis" -> "Ben Davis"
                .replace(/\s*[•·].*$/, "")
                .replace(/\s+(1st|2nd|3rd\+?)\b.*$/i, "")
                .replace(/\s*\d[\d,]*\s*followers?.*/i, "").trim();
-      if (txt.length >= 2 && !/^(Promoted|Follow|Page)$/i.test(txt)) return txt.slice(0, 40);
+      if (txt.length < 2 || /^(Promoted|Follow|Page)$/i.test(txt)) continue;
+      var href = (links[i].getAttribute("href") || "").split("?")[0];
+      if (seen[href]) continue;
+      seen[href] = 1;
+      out.push({ a: links[i], name: txt.slice(0, 40) });
     }
-    return "";
+    return out;
   }
-  // For reshares the author follows the "X <reaction> this" header (reactor's link
-  // comes first, so link-order would pick the reactor). NOTE: call while the post is
-  // still visible — innerText must carry the spaces this parse relies on.
+  function actorLinkName(el) {
+    var named = namedActorLinks(el);
+    return named.length ? named[0].name : "";
+  }
+  // For reshares the author follows the header (reactor's link comes first, so link-order
+  // would pick the reactor). NOTE: call while the post is still visible — innerText must
+  // carry the spaces the text fallback relies on.
+  //
+  // FH-073: the author is read from the SECOND distinct profile link when the first one is
+  // the person named in the header. Text alone cannot do it for "Followed by Pete Vomocil
+  // Angie Carel • 2nd" — the follower's and the author's names run together with nothing
+  // between them — and for "X follows this page Rescana 3,189 followers Promoted …" it
+  // produced "page Rescana 3,189 followers Promoted Yo". The header check keeps this from
+  // firing on a reshare whose reactor has no link (the second link could be a body mention).
   function getActor(el) {
     var raw = getText(el).replace(/\s+/g, " ").trim();
-    var head = raw.replace(/^(Feed post|Promoted)\s*/i, "").slice(0, 110);
-    var isReshare = /\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b|\bfinds this \w+/i.test(head);
-    if (isReshare) {
+    var head = reshareHead(raw);
+    if (isReshareHead(head)) {
+      var named = namedActorLinks(el);
+      if (named.length > 1 && head.toLowerCase().indexOf(named[0].name.toLowerCase()) !== -1) return named[1].name;
       var t = raw.replace(/^(Feed post|Promoted)\s*/i, "");
-      t = t.replace(/^.{0,90}?\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b\s*/i, "");
+      t = t.replace(/^.{0,90}?\b(?:likes?|loves?|celebrates?|supports?|reposted|follows?|commented on|reacted to) this\b(?:\s+page\b)?\s*/i, "");
       t = t.replace(/^.{0,90}?\bfinds this \w+\s*/i, "");
+      t = t.replace(/^(?:[^\s•·\d!?:;]+\s+){1,8}?commented\s+/i, "");
       t = t.replace(/^(Feed post|Promoted)\s*/i, "");
       var nm = (t.split(/[•·]/)[0] || "").trim().replace(/\s+\d+\s*(?:s|m|h|d|w|mo|y)$/i, "").trim();
-      if (nm.length >= 2) return nm.slice(0, 40);
+      if (nm.length >= 2 && !RESHARE_FOLLOWED_RE.test(nm)) return nm.slice(0, 40);
     }
     var byLink = actorLinkName(el);
     if (byLink) return byLink;

@@ -19,6 +19,12 @@ Three rules keep it useful:
 
 ---
 
+## 0.12.0
+
+**Catches LinkedIn's new "Followed by" and "commented" posts.** LinkedIn started showing other
+people's posts under "Followed by …" and "… commented" headers. With *Reaction reshares* on,
+those are now hidden too, and Mute on one mutes the person who wrote it, not your connection.
+
 ## 0.11.0
 
 **Fixes FeedHacker hiding far too much.** If your feed had turned into a wall of hidden-post
