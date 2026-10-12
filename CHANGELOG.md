@@ -11,6 +11,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
+## [0.13.0] — unreleased
+
+### Fixed
+- **FeedHacker hid nothing at all on LinkedIn's new home-feed address (FH-077).** LinkedIn has
+  started serving the home feed from `/feed/foryou/` on some accounts (others still see `/feed/`,
+  so it looks like a staged rollout). FeedHacker only treated `/feed` and `/feed/` as the home
+  feed, so on an affected account it decided it was off the feed, revealed everything and idled —
+  every filter on, nothing hidden, and nothing logged, because the "selectors may be out of date"
+  check runs behind the same test. Reported by Wes: *"FeedHacker wasn't blocking anything."* Now
+  **any** one-level `/feed/<name>/` counts as the home feed (`/feed/foryou/`, `/feed/following/`,
+  and whatever LinkedIn names next), except the `/feed/` pages that are not feeds (`update`,
+  `hashtag`, `follow`). And if LinkedIn ever moves the feed somewhere else entirely, FeedHacker now
+  says so: a page full of posts at an address it does not scan is logged once in the error log,
+  naming the address, instead of being silently ignored.
+
 ## [0.12.0] — unreleased
 
 ### Fixed

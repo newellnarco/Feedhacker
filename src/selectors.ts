@@ -43,14 +43,39 @@
 
     // URL paths FeedHacker may operate on. "feed" is the home feed only; the rest
     // are opt-in (settings.scanEverywhere) because their markup varies.
-    isHomeFeed: function (path) { return /^\/feed\/?$/.test(path || ""); },
+    //
+    // The home feed is /feed/ AND any ONE-level /feed/<name>/ (FH-077). LinkedIn has started
+    // serving the home feed from /feed/foryou/ on some accounts while others still see /feed/
+    // (a staged rollout: both seen 2026-10-12), and a feed tab can only be named by LinkedIn. An
+    // exact list broke silently the first time it changed, so name the exceptions instead: the
+    // one-level /feed/ pages that are NOT the home feed. Two-level paths (/feed/update/<urn>,
+    // /feed/hashtag/<tag>) never match. A /feed/ page that is not a feed at all has no post
+    // markers, so the scan finds nothing to do there.
+    HOME_FEED_RE: /^\/feed(?:\/(?!(?:update|hashtag|follow)\/?$)[a-z0-9][a-z0-9_-]*)?\/?$/i,
+    isHomeFeed: function (path) { return api.HOME_FEED_RE.test(path || ""); },
     isSupportedSurface: function (path) {
       path = path || "";
-      return /^\/feed\/?$/.test(path) ||          // home feed
+      return api.HOME_FEED_RE.test(path) ||       // home feed (/feed/, /feed/foryou/, /feed/<tab>/)
         /^\/feed\/update\//.test(path) ||          // single post permalink
         /^\/search\/results\//.test(path) ||       // search results
         /^\/(company|school)\//.test(path) ||      // company / school pages
         /^\/in\//.test(path);                      // profiles
+    },
+
+    // Pages that legitimately carry posts but are not ones FeedHacker scans by default. The
+    // off-feed alarm below stays quiet on these; anywhere else, a page full of posts is news.
+    KNOWN_POST_PAGES_RE: /^\/(?:feed\/|groups\/|posts\/|my-items\/|newsletters\/|events\/|pulse\/|showcase\/|hashtag\/|search\/|company\/|school\/|in\/)/,
+    OFF_FEED_MIN_MARKERS: 3,
+    // Pure verdict for the off-feed alarm (best_practices §80): the path gate said "not the feed",
+    // yet the page is full of posts on a path we know nothing about. That disagreement is how a
+    // moved home feed shows itself, and it must be logged rather than idled through, because an
+    // idle extension logs nothing at all. Same shape as heartbeatBreak: active, settled, and
+    // several posts (one post on an unknown page is not a feed).
+    offFeedBreak: function (s) {
+      if (!s || !s.active || s.loading) return false;
+      if ((s.markers || 0) < api.OFF_FEED_MIN_MARKERS) return false;
+      var p = s.path || "";
+      return !api.isSupportedSurface(p) && !api.KNOWN_POST_PAGES_RE.test(p);
     },
 
     // Health probe for the heartbeat: how many post markers are on the page.

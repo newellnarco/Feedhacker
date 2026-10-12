@@ -910,3 +910,17 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     (here: nothing on a later page can be newer than what was seen), bound it, and **say when the
     bound cut the read short**. Match an identity against the exact forms it can take, with a test
     for a look-alike that must *not* match.
+
+80. **A gate that decides *whether* to run must not also silence the alarm that says it should
+    have.** FeedHacker's path check (`isMainFeed`) sits in front of both the scan and the
+    heartbeat. When LinkedIn moved the home feed to `/feed/foryou/` for some accounts, the check
+    said "not the feed", so the scan never ran — and neither did the heartbeat whose whole job is
+    to notice LinkedIn changing under us (FH-077). A selector break shouts; a gate break whispers
+    nothing. Three rules follow. **Gate a host's routes by family, naming the exceptions, not by an
+    exact allow-list** — the first fix added `/feed/foryou` to the list, which is the same bug
+    waiting for the next tab name; any one-level `/feed/<name>/` is now the feed except the named
+    pages that are not. **Test at the URL the host actually serves today**, and remember that it
+    may serve different URLs to different users. And **a "not applicable here" exit is a failure
+    path too:** when the page looks like the feed (posts present) but the gate says it isn't, log
+    that disagreement, naming the path (`offFeedBreak`) — an idle extension otherwise leaves an
+    empty error log that looks exactly like a healthy one.

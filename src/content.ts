@@ -447,7 +447,7 @@
   function isMainFeed() {
     var p = location.pathname;
     if (SEL) return settings.scanEverywhere ? SEL.isSupportedSurface(p) : SEL.isHomeFeed(p);
-    return /^\/feed\/?$/.test(p);
+    return /^\/feed(?:\/(?!(?:update|hashtag|follow)\/?$)[a-z0-9][a-z0-9_-]*)?\/?$/i.test(p); // keep in step with selectors HOME_FEED_RE
   }
 
   // DOM-break heartbeat: if we're on a feed but repeatedly find zero post markers,
@@ -490,13 +490,38 @@
     }
   }
 
+  // Off-feed alarm (FH-077, best_practices §80). The path gate decides whether we scan, and the
+  // heartbeat only runs once it has said yes — so if LinkedIn moves the home feed somewhere the
+  // gate does not know, the extension idles and logs NOTHING. This is the alarm for exactly that:
+  // posts on a page we do not recognise, three settled scans in a row, logged once per path.
+  var offFeedRuns = 0, offFeedLogged = {};
+  function offFeedAlarm() {
+    if (!SEL || !SEL.offFeedBreak) return;
+    var p = location.pathname;
+    var state = {
+      path: p,
+      active: tabActive(),
+      loading: SEL.isLoading ? SEL.isLoading(document) : false,
+      markers: SEL.markerCount(document)
+    };
+    if (!SEL.offFeedBreak(state)) { offFeedRuns = 0; return; }
+    if (++offFeedRuns >= 3 && !offFeedLogged[p]) {
+      offFeedLogged[p] = true;
+      logError(new Error("LinkedIn posts found on " + p + ", which FeedHacker does not scan — the home feed may have moved"), "off-feed");
+    }
+  }
+
   function scanNow() {
     if (dead) return;
     if (!contextAlive()) { teardown(); return; }   // orphaned after an update — stop cleanly
     if (!ready) return;
     try {
       // Master switch off, or not on a scanned surface: reveal everything and idle.
-      if (!settings.enabled || !isMainFeed()) { F.reset(document); ensureLoadButton(false); reportBadge(); return; }
+      if (!settings.enabled || !isMainFeed()) {
+        F.reset(document); ensureLoadButton(false); reportBadge();
+        if (settings.enabled) offFeedAlarm();
+        return;
+      }
       F.scan(document, matchers, settings);
       if (F.groupRuns) F.groupRuns(document, settings);   // fold consecutive hidden runs into one summary row
       reportBadge();
@@ -542,6 +567,9 @@
     var se = document.scrollingElement || document.documentElement;
     if (!se) return;
     if (!force && (se.scrollHeight - (window.scrollY + window.innerHeight)) > 1000) return;
+    // Only kick LinkedIn's loader on a page that has posts: the home-feed gate admits any
+    // one-level /feed/<name>/ (FH-077), and one that is not a feed must be left alone.
+    if (!F.findPostContainers(document).length) return;
     pumping = true;
     if (force) setLoadBarBusy(true);
     // Heavy filtering means most of each loaded batch is hidden, so aim to surface a BATCH of
