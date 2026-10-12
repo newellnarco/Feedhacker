@@ -41,7 +41,7 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 20 | **CLOSED 2026-10-11 — CodeRabbit is back on FeedHacker, app-side too** | — (closed) | The open question was whether the 2026-07-29 app-side removal had been undone. **Observed, not inferred:** on draft PR #123 (2026-10-11 14:31 UTC) `coderabbitai[bot]` posted its *"Draft PR not reviewed"* notice — so the app is installed and reading this repo, and `drafts: false` is being honoured. The first actual review will come on the opening push of a non-draft PR. Branch protection untouched: `CodeRabbit` must never be a required check. |
 | 21 | **FH-073 SHIPPED to GitHub as v0.12.0 — store publish blocked, see item 22** | — (closed into 22) | Merged as #123 (`e7b4765`) on green CI; Release run #32 cut tag `v0.12.0` and the GitHub Release with five assets. The fix reaches **sideload/MSI** users now and **store** users only once item 22 clears. **Still unconfirmed:** whether the maintainer's original "stopped working" symptom was this or something a saved page cannot show (CSS) — ask if it persists after 0.12.0 is live. |
 | 22 | **0.12.0 resubmitted to the store after FH-074 — awaiting Google review** | Google; then next session (confirm Live from the listing) | Run #32's publish was refused (`400 … Support URL is not reachable`) because the repo was private. **Resolved 2026-10-11:** the public support page `https://newellnarco.github.io/Feedhacker/support.html` went live (#125, verified 200); the maintainer reports setting it as the Support URL and pressing **Submit for review** on the 0.12.0 draft — *reported, not observed*: sessions cannot see the dashboard. The maintainer also made the repo **PUBLIC** — **verified** logged-out: API `"visibility": "public"`, repo/releases/`feedhacker-0.12.0-win.zip`/`api.github.com/…/releases/latest` all 200, the latter serving `v0.12.0` (so the Windows updater works again); Pull requests restricted to **collaborators only**; custom social preview uploaded (repo `og:image` is a `repository-images` URL). Listing at `?hl=en-IE` still reads **0.11.0, 18 September 2026** with the old Support link — expected until publish. **Close this row only when the listing reads 0.12.0.** |
-| 23 | **CLOSED 2026-10-11 — the two CodeRabbit findings in the Copilot gate are fixed here** | — (closed) | #129 merged (`cd032a1`, 22:34:38 UTC). Two fixes in `.github/workflows/copilot-review.yml`: the quota-refusal look now reads every PR updated this month, not just the first 20, and only Copilot's own logins count as landed. Each has regression cases in `test/unit/copilot-review.test.js`. The same fix is open in AlienInterface #213 and netsniff #453; those are the other repos' to track. |
+| 23 | **CLOSED 2026-10-11 — the two CodeRabbit findings in the Copilot gate are fixed here** | — (closed) | #129 merged (`cd032a1`, 22:34:38 UTC). Two fixes in `.github/workflows/copilot-review.yml`: the quota-refusal look now reads every PR updated this month, not just the first 20, and only Copilot's own logins count as landed. Each has regression cases in `test/unit/copilot-review.test.js`; the ledger row is **FH-076** (the squash commit's subject says FH-075, a title not updated before the merge: FH-075 is #128's CRLF fix). The same fix landed elsewhere: **netsniff #453 merged** (`4fa4c33`); AlienInterface #213 was folded into #207 and then #212 (open). Muther's own read had the same one-page shape: AlienInterface #216 (stacked on #212). Those are the other repos' to track. |
 
 ## 2. Current state
 
@@ -100,6 +100,21 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 ## 5. Session log
 
 Newest first. One entry per session; keep entries short and factual.
+
+### 2026-10-11 (close) — the Copilot-gate fixes, fleet-wide
+
+- **FeedHacker:** nothing further after #130. #129 merged on green CI after merging `main` (#128
+  had taken FH-075 and §78, so #129's records moved to **FH-076** and **§79**). Its squash
+  subject still reads "FH-075"; the ledger, CHANGELOG and §79 are right. The cancelled `push`
+  runs on #129 were the concurrency group giving way to the `pull_request` run (FH-071's guard
+  working), not failures.
+- **netsniff #453 merged** (`4fa4c33`, pytest green in 20m12s). Its node-run cases use the
+  Actions runner's own node (the self-hosted shard has none on PATH) and fail rather than skip
+  in CI, so the green means they ran.
+- **AlienInterface:** #213 folded into #207, then #212 (v0.3.44, open). Follow-up **#216**
+  pages Muther's own fleet-wide latest-review read the same way. Merging #216 → #212 →
+  `release.yml` v0.3.44 is queued on green CI, on the owner's word; it is AlienInterface's to confirm.
+- No FeedHacker release, no version bump; the store listing was not re-read (§1 item 22 unchanged).
 
 ### 2026-10-11 (later) — Copilot lane on Muther's switch; the suite passes on Windows
 
