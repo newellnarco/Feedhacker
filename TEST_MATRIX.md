@@ -79,7 +79,9 @@ A change to a module the whole app imports has repo-wide blast radius:
    `self.FeedHacker*` stub, a module singleton) restores it on teardown — don't rely on file order.
 8. **Fast-track path-gating caveat.** If we ever gate CI jobs by `paths` so docs-only PRs skip the
    suite, that only works while those jobs are **not required status checks** in branch protection
-   — a path-skipped *required* check blocks merge forever. **Since 2026-10-05 CI is path-gated**
-   (the owner's Actions rules, `CLAUDE.md`): `*.md`, `docs/**` and `roadmap.json` skip CI, except
-   `store/**`, `SESSION-STATE.md` and `CLAUDE.md`, which tests read. `main` had no branch protection
-   or ruleset when this was added; if a CI job is ever made a required check, revisit this first.
+   — a path-skipped *required* check blocks merge forever. **Since 2026-10-12 CI skips docs-only changes** (the owner's Actions rules, `CLAUDE.md`;
+   #122): `ci.yml`'s `changes` job skips the three tiers (and so `package`) when only `docs/`,
+   root `*.md` or `LICENSE` changed, except `CLAUDE.md` and `SESSION-STATE.md`, which
+   `test/unit/session-state.test.js` reads (#121; `test/unit/ci-docs-only.test.js` runs the gate).
+   The workflow still runs, so no check is left pending; `main` had no branch protection or
+   ruleset when this was added. If a tier is ever made a required check, revisit this first.

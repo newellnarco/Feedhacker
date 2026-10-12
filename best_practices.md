@@ -882,3 +882,31 @@ Rules are terse and checkable against a diff. Newest rules may cite the PR that 
     writing the missing test" is now a recurring entry, and it is the cheapest bug source this
     project has — cheaper than a user report, and it arrives with the regression test already
     written.
+
+77. **Read LinkedIn identity from structure, not from header prose — and a new header wording is
+    a new fixture.** Reshare attribution has broken twice. FH-043: the reactor's profile link
+    comes first in document order. FH-073: LinkedIn added "X commented" and "Followed by X", the
+    hard-coded verb list matched neither, and the fallback credited every such post to the
+    connection in the header. Text parsing cannot fix the second at all — "Followed by Pete
+    Follower Angie Author • 2nd" has no boundary between the two names. The structure does:
+    distinct profile links, in order, where the first is the person the header names. So: the
+    *recogniser* may be wording-based (it has to be), but the *identity* comes from links, and the
+    recogniser and the attribution share one function so they cannot disagree. Every loose
+    pattern ships with a fail-closed control — a post that merely *says* the phrase — because a
+    reshare filter that eats ordinary posts is worse than one that misses a header. And every
+    new header form gets a test transcribed from the live capture it was found in.
+
+78. **A test that parses a repository text file reads it through `test/text.js`, never raw.**
+    The checkout's line endings are a property of the machine, not the repo: `* text=auto` plus
+    `core.autocrlf=true` gives a Windows working copy CRLF, and a `"\n"`-shaped pattern then fails
+    there while CI (LF) passes (FH-075). A suite that is red on one platform and green on another
+    trains everyone to ignore red. `readText()` normalises to the committed LF, so a parse means
+    the same thing everywhere; new suites that read workflows, Markdown or JSON-as-text use it.
+
+79. **One page of a paged API is not the record, and a prefix is not an identity.** FH-076: the
+    Copilot lane read `search(first:20)` and treated it as "the newest Copilot review in the
+    repository", so a refusal one page down was invisible; and it took any login starting with
+    "copilot" for Copilot. Read a paged source to its end, or to a stopping rule you can justify
+    (here: nothing on a later page can be newer than what was seen), bound it, and **say when the
+    bound cut the read short**. Match an identity against the exact forms it can take, with a test
+    for a look-alike that must *not* match.

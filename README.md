@@ -28,7 +28,7 @@ or removed entirely if you prefer.
 | **Promoted posts** | Sponsored/"Promoted" posts. |
 | **Newsletter signups** | Newsletter subscribe funnels. |
 | **Hiring posts** | "We're hiring", `#hiring`, "view job" cards, etc. |
-| **Reaction reshares** | "X likes/celebrates/reposted this" engagement‑bait surfacing. |
+| **Reaction reshares** | "X likes/celebrates/reposted/commented on this", "X commented", "Followed by X" — someone else's post surfaced through a connection. |
 | **New‑job announcements** | "Excited to announce I've joined…" |
 | **Work anniversaries** | "Celebrating N years at…" |
 | **Training & certification** | "I'm happy to share I earned…" |

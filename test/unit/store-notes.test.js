@@ -8,11 +8,11 @@
 // filters the extension actually ships. These assertions make the drift fail the build instead.
 const test = require("node:test");
 const assert = require("node:assert");
-const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.join(__dirname, "..", "..");
-const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
+const { readText } = require("../text");
+const read = (p) => readText(path.join(ROOT, p));
 const manifest = JSON.parse(read("manifest.json"));
 const notesSrc = read("store/release-notes.md");
 const listing = read("store/listing.md");

@@ -38,8 +38,11 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | 17 | **CLOSED 2026-09-19 — 0.11.0 is LIVE on the store** | — (closed) | Tag `v0.11.0` @ `8849b70`, Release published 2026-09-18 23:23:18 UTC with five assets (first ever to include an MSI), store upload 23:22:53, and **confirmed live 2026-09-19 21:32 UTC** from the listing (`?hl=en-PH`) — inside ~22 hours. The FH-070 fix is reaching users; an affected model walks back to target as they browse, no reset needed. Slot **OPEN**. |
 | 18 | **CLOSED 2026-09-21 — the `pull_request` CI outage was TRANSIENT and had already recovered a day before anyone fixed anything** | — (closed) | **FH-071.** The 2026-09-18 observation was real: four heads (`037d0d2`, `6d00cea`, `7b6a34b`, `42b7d04`), each with a **CodeQL** run and **no `ci.yml` run**, checked at 19:58, 20:15, 20:47 and 21:48, while `push` to main and `workflow_dispatch` both worked and the workflow was `active`. **But it cured itself:** by 2026-09-19 21:31–21:33 the trigger was firing again on that same branch — runs **423** (`pull_request`, head `0ebd8b08`) and **425** (`pull_request`, head `34e093c9`), both **success**. ⚠️ **Two records were therefore wrong and are now corrected:** #111 and #112 were logged as "merged without CI", and runs 423/425 show CI ran on both heads and **passed** — the session checked before the runs existed and never re-checked. (Same lesson as the run 420 slip: a negative observation about an async system expires.) **What was still worth shipping** is the guard, not a repair: a push to `main` or `claude/**` is now a first-class trigger and `concurrency` is keyed on the head commit, so the gate has two paths and still exactly one run. Proven live on PR #113's head `c00446b` — run **427** (`push`) **cancelled**, run **428** (`pull_request`) survived. ⚠️ **Listing trap, still live:** `list_workflow_runs` tags older runs on a reused branch with the branch's *current* PR number (423 and 425 both read `pull_requests: [113]`), so match on `head_sha` **and** `path`. |
 | 7 | **Windows sideload users must re-install once** | maintainer (now partly self-serving) | FH-042. The 0.4.5 updater cannot deliver its own fix, so an affected user must re-run `installer\install.bat` from a current `feedhacker-<version>-win.zip`. **0.6.0 ships a release note saying exactly this** (`CHANGELOG.md`, which `store/README.md` makes the source of the store's release notes), so anyone who reads the notes is told. It stays open because the people who most need it are precisely the ones **not receiving updates** — a note in a release they never get cannot reach them. Closing it needs a channel they still see (the repo README / releases page, or a direct message), not another release note. |
-| 20 | **CodeRabbit RE-ENABLED 2026-09-27 (throttled) — merge the PR, then confirm the first real review from its log** | next session (merge on green CI); maintainer (CodeRabbit app access) | The maintainer reversed the 2026-07-29 removal. Branch `claude/coderabbit-throttle` adds `.coderabbit.yaml` (opening push of a non-draft PR only: `auto_incremental_review: false`, `auto_pause_after_reviewed_commits: 1`, `drafts: false`; lockfile/`build/`/`dist/`/zip/msi/installer payload filtered; `best_practices.md` as code guidelines) and `scripts/coderabbit-review.sh`, and rewrites the rules in `CLAUDE.md` / `REVIEWERS_STATUS.md`. Opened as a **draft**; it merges on green CI like any other PR. **Not yet observed:** whether FeedHacker is back in CodeRabbit's repo list (the 2026-07-29 removal was app-side, not just the config). The first non-draft PR after merge shows it: a CodeRabbit review or summary comment means it is on; nothing means the maintainer still has to add the repo in CodeRabbit. Record what it actually did (§44/§45), then close this row. Branch protection untouched: `CodeRabbit` must never be a required check. |
-| 21 | **GitHub Actions now run LOCAL FIRST — the PR waits for a runner before it can merge** | Muther (RUNNER CONTROLS › SET UP RUNNER for Feedhacker), or the owner (`HOSTED_OK=true` on the repo as a stopgap); then next session (merge on green CI) | The owner's hard rules of 2026-10-05 (Actions minutes ran out on day 4), now in `CLAUDE.md` § *GitHub Actions: local first*. Branch `claude/actions-local-first`: every CI job and the release `build`/`msi`/`release` jobs default to the owner's PC (`self-hosted,linux,mother` / `self-hosted,windows,mother`); only `webstore` stays `ubuntu-latest` (`# HOSTED ONLY`, it reads the CWS_* secrets). **Feedhacker has no self-hosted runner yet, so until one exists or `HOSTED_OK=true` is set, every CI job queues and waits.** Docs-only changes now skip CI (path filter; no branch protection on `main`, checked 2026-10-05). **Not yet observed:** the first run on the PC — whether its Linux runner has Chromium's system libraries (the system tier no longer runs `--with-deps`, which needs sudo), and whether the Windows runner has the .NET SDK for WiX. Record what that run actually did. |
+| 20 | **CLOSED 2026-10-11 — CodeRabbit is back on FeedHacker, app-side too** | — (closed) | The open question was whether the 2026-07-29 app-side removal had been undone. **Observed, not inferred:** on draft PR #123 (2026-10-11 14:31 UTC) `coderabbitai[bot]` posted its *"Draft PR not reviewed"* notice — so the app is installed and reading this repo, and `drafts: false` is being honoured. The first actual review will come on the opening push of a non-draft PR. Branch protection untouched: `CodeRabbit` must never be a required check. |
+| 21 | **FH-073 SHIPPED to GitHub as v0.12.0 — store publish blocked, see item 22** | — (closed into 22) | Merged as #123 (`e7b4765`) on green CI; Release run #32 cut tag `v0.12.0` and the GitHub Release with five assets. The fix reaches **sideload/MSI** users now and **store** users only once item 22 clears. **Still unconfirmed:** whether the maintainer's original "stopped working" symptom was this or something a saved page cannot show (CSS) — ask if it persists after 0.12.0 is live. |
+| 22 | **0.12.0 resubmitted to the store after FH-074 — awaiting Google review** | Google; then next session (confirm Live from the listing) | Run #32's publish was refused (`400 … Support URL is not reachable`) because the repo was private. **Resolved 2026-10-11:** the public support page `https://newellnarco.github.io/Feedhacker/support.html` went live (#125, verified 200); the maintainer reports setting it as the Support URL and pressing **Submit for review** on the 0.12.0 draft — *reported, not observed*: sessions cannot see the dashboard. The maintainer also made the repo **PUBLIC** — **verified** logged-out: API `"visibility": "public"`, repo/releases/`feedhacker-0.12.0-win.zip`/`api.github.com/…/releases/latest` all 200, the latter serving `v0.12.0` (so the Windows updater works again); Pull requests restricted to **collaborators only**; custom social preview uploaded (repo `og:image` is a `repository-images` URL). Listing at `?hl=en-IE` still reads **0.11.0, 18 September 2026** with the old Support link — expected until publish. **Close this row only when the listing reads 0.12.0.** |
+| 23 | **CLOSED 2026-10-11 — the two CodeRabbit findings in the Copilot gate are fixed here** | — (closed) | #129 merged (`cd032a1`, 22:34:38 UTC). Two fixes in `.github/workflows/copilot-review.yml`: the quota-refusal look now reads every PR updated this month, not just the first 20, and only Copilot's own logins count as landed. Each has regression cases in `test/unit/copilot-review.test.js`; the ledger row is **FH-076** (the squash commit's subject says FH-075, a title not updated before the merge: FH-075 is #128's CRLF fix). The same fix landed elsewhere: **netsniff #453 merged** (`4fa4c33`); AlienInterface #213 was folded into #207 and then #212 (open). Muther's own read had the same one-page shape: AlienInterface #216 (stacked on #212). Those are the other repos' to track. |
+| 24 | **GitHub Actions run LOCAL FIRST — CI (#122, merged) and the Release workflow (#121) wait for a Feedhacker runner** | Muther (RUNNER CONTROLS › SET UP RUNNER for Feedhacker), or the owner (`HOSTED_OK=true`) | Since #122 merged 2026-10-12 16:46 UTC, every `ci.yml` job targets the PC runner; CI run 510 on `main` (`5d96557`) and every PR run after it sat **queued** with no runner picking them up. #121 moves Release `build`/`release`/`msi` the same way (`webstore` stays hosted: secrets). ⚠️ The repo is **public** since 2026-10-11, and fleet Actions rule 7 says public repos stay GitHub-hosted; the owner's instruction 2026-10-12 was to keep using the local runner "as usual". **A `ship` will wait on the runner too** once #121 is in. Close this row when a run on the PC is observed green. |
 
 ## 2. Current state
 
@@ -48,13 +51,13 @@ here, it is not open. Close an item by deleting its row and saying so in the Ses
 | **Latest version** | **0.11.0 — LIVE on the store**, confirmed 2026-09-19 21:32 UTC. Released to GitHub 2026-09-18 (tag `v0.11.0` @ `8849b70`, Release published 23:23:18 UTC, five assets incl. the first MSI) and SUBMITTED to the store 23:22:53 UTC, awaiting review.** Previously: **0.10.0 — LIVE on the store**, confirmed 2026-09-18 15:13 UTC. Tag `v0.10.0` @ `eb67b23`, GitHub Release published 14:28:35 UTC, store upload 14:28:27 UTC, published within ~45 minutes. Previously: **0.9.1 — live since 2026-09-18** (uploaded by hand via the dashboard; no tag, no GitHub Release, no workflow run). **0.10.0 is the open dev cycle** — `manifest.json`/`package.json` are at 0.10.0 with a `## [0.10.0] — unreleased` CHANGELOG section. Previously: **0.9.0** — prepared for a MANUAL dashboard upload (bundle: `dist/store-upload/`). Previous: **0.9.0** — on GitHub since 2026-09-17 22:09:24 UTC (tag `v0.9.0` @ `f56d393`), and **uploaded to the store 22:09:02 UTC** (run #28). Both destinations in one run |
 | **Latest on the store** | **0.11.0 — LIVE.** Confirmed 2026-09-19 21:32 UTC from the listing (`?hl=en-PH`). Previously **0.10.0**. Confirmed 2026-09-18 15:13 UTC from the listing (`?hl=en-ZA`). Previously **0.9.1**. Confirmed 2026-09-18 from the listing (*"Version 0.9.1, Updated 18 September 2026"*, `?hl=en-AU`). Previously **0.9.0 — LIVE.** Confirmed 2026-09-17 from the listing (“Version 0.9.0, Updated 17 September 2026”, `?hl=en-SG`). Review cleared in ~30 min, the fastest of the last four |
 | **Previous** | 0.8.0 — published 2026-09-17 (listing: “Updated 17 September 2026”), ~overnight after its 2026-09-16 20:01 upload |
-| **Dev cycle** | **0.11.0 SHIPPED** (GitHub + store submitted) on the maintainer's "merge and ship", 2026-09-18: **FH-070**. **0.12.0 opened in CHANGELOG only** (2026-09-27, for the CodeRabbit re-enable, which reaches no user) — `manifest.json`/`package.json` stay at 0.11.0 and there is no store note yet. On the first **user-facing** change: bump both to 0.12.0 **and** add a `## 0.12.0` section to `store/release-notes.md` (the store-notes test fails a bump without one). **Do not release without an explicit "ship"** — and not at all until 0.11.0 clears review. |
+| **Dev cycle** | **0.12.0 SHIPPED to GitHub** 2026-10-11 (tag `v0.12.0` @ `e7b4765`, Release run #32) on the maintainer's "after merge on main ship it". **Store: uploaded but NOT published** — Google refused with "Support URL is not reachable" (§1 item 22). `manifest.json`/`package.json` stay at 0.12.0 until the next user-facing change opens 0.13.0. |
 | **Store item** | `kccajfoghkplakndamlohpepopdpelkb` |
 | **Confirmed live on the store** | **0.11.0** — confirmed 2026-09-19 21:32 UTC from the listing (`?hl=en-PH`). *Previously 0.10.0* — confirmed 2026-09-18 15:13 UTC (`?hl=en-ZA`). *Previously 0.9.1* — confirmed 2026-09-18 (`?hl=en-AU`). *Previously 0.9.0* — confirmed 2026-09-17 from the listing. *Previously 0.8.0* — confirmed 2026-09-17 from the store listing (see the row above). *Previously 0.7.0*, confirmed 2026-09-15 two ways: the **store listing** ("Version 0.7.0, Updated September 15, 2026") and Google's publish email (19:54:24 UTC). *(This row read 0.5.0 until 2026-09-16; it had simply not been updated when 0.6.0 and 0.7.0 were each confirmed live. The listing is the authority — see `RELEASES.md`.)* |
 | **How to check what is live** | **Read the store listing** — `https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb`. It is the authority and it is never ambiguous. **Correction (2026-09-15 20:18):** this row briefly claimed the item “publishes silently, three for three”. **That was wrong.** 0.6.0 and 0.7.0 both DID email (18:24:40 and 19:54:24 UTC). The 0.6.0 message sat in **Trash**, and `newer_than:2d` without `in:anywhere` does not search Trash — so an absent result proved nothing. **0.4.6 and 0.5.0 genuinely had no email** (that search did use `in:anywhere`). So: the email is a **fine positive signal**; its absence means nothing **unless you searched `in:anywhere`**, and even then prefer the listing. |
-| **Submission slot** | **OPEN** — 0.11.0 cleared review and is live, so nothing is pending. ⚠️ The next upload BLOCKS it again; pass `cancel_pending: false` when nothing is in review. |
+| **Submission slot** | **BLOCKED (presumed)** — the maintainer submitted the 0.12.0 draft for review 2026-10-11 ~15:05 UTC (reported). Until the listing shows 0.12.0, a new upload would hit `ITEM_NOT_UPDATABLE`. |
 | **Dev branch** | the harness assigns a per-session `claude/*` branch; reset it from `origin/main` for each change. **read `main`'s head yourself rather than trusting a SHA written here** — this row claimed `8849b70` for two sessions after `main` had moved past it, which is §75's own lesson biting the file that teaches it. `v0.11.0` tags `8849b70`; that one does not move. ✅ **CI is healthy and now has two paths to a run** — `pull_request` *and* a push to `main`/`claude/**`, deduplicated by head commit, so exactly one run survives per commit (item 18, closed). ⚠️ When checking whether a run exists, match on `head_sha` **and** `path`, and re-read rather than trusting one look: `list_workflow_runs` tags old runs on a reused branch with the branch's current PR number. |
-| **Review** | **CodeRabbit re-enabled 2026-09-27, throttled and advisory** (opening push of a non-draft PR only; re-reviews only via `scripts/coderabbit-review.sh` or its logic, at most one per push) — **green CI is still the merge gate** (`REVIEWERS_STATUS.md`) |
+| **Review** | **CodeRabbit re-enabled 2026-09-27, throttled and advisory** (opening push of a non-draft PR only; re-reviews only via `scripts/coderabbit-review.sh` or its logic, at most one per push) — **green CI is still the merge gate** (`REVIEWERS_STATUS.md`). **Copilot** is asked only by `.github/workflows/copilot-review.yml`, and only while Muther's `COPILOT_REVIEW` variable is exactly `on` (currently `off until 2026-11-01 (quota refusal)`, read from the lane's job log 2026-10-11). Nobody requests Copilot by hand while it is off. |
 
 ## 3. Startup checklist (run every new session)
 
@@ -99,6 +102,79 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 
 Newest first. One entry per session; keep entries short and factual.
 
+### 2026-10-11 (close) — the Copilot-gate fixes, fleet-wide
+
+- **FeedHacker:** nothing further after #130. #129 merged on green CI after merging `main` (#128
+  had taken FH-075 and §78, so #129's records moved to **FH-076** and **§79**). Its squash
+  subject still reads "FH-075"; the ledger, CHANGELOG and §79 are right. The cancelled `push`
+  runs on #129 were the concurrency group giving way to the `pull_request` run (FH-071's guard
+  working), not failures.
+- **netsniff #453 merged** (`4fa4c33`, pytest green in 20m12s). Its node-run cases use the
+  Actions runner's own node (the self-hosted shard has none on PATH) and fail rather than skip
+  in CI, so the green means they ran.
+- **AlienInterface:** #213 folded into #207, then #212 (v0.3.44, open). Follow-up **#216**
+  pages Muther's own fleet-wide latest-review read the same way. Merging #216 → #212 →
+  `release.yml` v0.3.44 is queued on green CI, on the owner's word; it is AlienInterface's to confirm.
+- No FeedHacker release, no version bump; the store listing was not re-read (§1 item 22 unchanged).
+
+### 2026-10-11 (later) — Copilot lane on Muther's switch; the suite passes on Windows
+
+- **Asked** (by the AlienInterface session, owner direction 2026-10-11): add the gated Copilot
+  lane. The repo is **public**, so it runs on `ubuntu-latest` (fleet Actions rule 7).
+- **#127 merged** (`137c73b`): `.github/workflows/copilot-review.yml`, copied from AlienInterface
+  #207. It asks Copilot only on exactly `on` and still stops on this month's quota refusal.
+  A skip logs `skipped: Copilot quota`. Guarded by `test/unit/copilot-review.test.js` (7).
+  **Observed:** the ready-for-review run 38177505238 logged `COPILOT_REVIEW: off until
+  2026-11-01 (quota refusal)` plus the skip notice, and no reviewer was requested.
+- **CodeRabbit on #127** made two advisory findings, both in the shared gate code: the quota
+  search only covers the first 20 PRs, and any `copilot*` login counts as Copilot pending. The
+  "Fix CodeRabbit findings in the fleet Copilot gate" session fixed both: **#129 merged**
+  (`cd032a1`), closing §1 item 23. The same fix is open as AlienInterface #213 and netsniff #453.
+- **#128 merged** (`bb71158`, by the AlienInterface session on the owner's instruction), **FH-075**:
+  on Windows with `core.autocrlf=true`, 5 unit tests failed on an unchanged `main` (CRLF checkout
+  vs `"\n"` patterns). New `test/text.js` `readText()`, plus `test/unit/text.test.js`,
+  `best_practices.md` §78. Windows run: 5 failures → 0. Its `pull_request` CI passed on
+  `b24792f`.
+- **CodeRabbit was rate limited** on both #128 and #129: 1 review/hour after 111 attempts in 7
+  days. #128 merged with no CodeRabbit review; green CI was the gate.
+- **Two sessions acted on one PR**: this session pushed the close-out to #128's branch after
+  another session had already merged it, which stranded two commits. This PR replaces them.
+  Before pushing to a PR another session might also be handling, re-read its state.
+- No release, no version bump (0.12.0 still open). The store listing was not re-read this session.
+
+### 2026-10-11 — "stopped working again" was not a break; FH-073 (new reshare headers) fixed
+
+- **Asked:** *"feedhacker appears to have stopped working with linkedin again."* No capture to
+  start from, so asked for one. First upload was LinkedIn console noise (`chrome-extension://invalid`,
+  React #418 — all LinkedIn-side), second was an unrelated MAX3 notes file; third was the page.
+- **The capture shows FeedHacker working:** 28 `Feed post` markers, 26 overflow controls, 28/28
+  scanned, 17 hidden, both modules skipped as furniture. The core hooks did NOT move this time.
+- **What it found instead (FH-073):** "X commented" / "Followed by X" headers unrecognised, so
+  6 of the 9 visible posts slipped the reshare filter and 9 posts carried the wrong author;
+  "follows this page" gave "page Rescana 3,189 followers…". Fixed with one shared recogniser and
+  link-based author on reshares. Maintainer chose to hide "Followed by" posts too.
+- **Tests:** `test/integration/reshare-headers.test.js` (6) + a system case; mutation-tested
+  against the old `feed.ts` (4 integration + the system case fail) and a loosened `commented`
+  guard (the control fails). Triad green: 366 unit+integration, 39 system.
+- **Records:** KNOWN_ISSUES FH-073, `best_practices.md` §77 (second bite of FH-043's class),
+  CHANGELOG/store note under 0.12.0, version bumped, README filter row. Store listing read live
+  (`?hl=en-NZ`): 0.11.0. **No release** — no "ship" given.
+- **§1 item 20 closed:** CodeRabbit answered PR #123 with its draft-skip notice, so it is
+  installed again app-side.
+- **Shipped on "after merge on main ship it".** #123 merged as `e7b4765` on green CI (CodeRabbit
+  rate-limited for 57 min > the 20-min cap, so proceeded without it). Release run #32: `build`,
+  `msi`, `release` ✅ — GitHub Release v0.12.0 published 14:35:55 UTC with five assets.
+  **`webstore` ❌**: upload succeeded, publish refused — `400 Publish condition not met: Support URL
+  is not reachable.` The repo reads `private`; a GitHub support URL would 404 for Google. §1 item
+  22 is the maintainer's dashboard fix. **0.12.0 is NOT live on the store.**
+- **Repo going PUBLIC (maintainer's call, "option 1", after first choosing to keep it private).**
+  Built the public support page anyway, as the Support URL that works regardless of visibility:
+  `docs/support.html` with the maintainer's contact (info@maxresearchcollective.com,
+  www.maxresearchcollective.com); landing page and privacy policy no longer link into the
+  repo. FH-074 + `test/unit/public-pages.test.js`. History scanned for credentials first (250
+  commits, none found). The maintainer then flipped it public (verified logged-out: 200s, API
+  `visibility: public`), restricted PRs to collaborators, uploaded the social preview, set the
+  store Support URL and resubmitted 0.12.0 (the last two reported — the dashboard is not visible).
 ### 2026-10-05 — GitHub Actions switched to local first (the owner's fleet rules)
 
 - **Asked:** the owner's Actions minutes ran out on day 4; every Claude repo follows the same hard
@@ -111,6 +187,10 @@ Newest first. One entry per session; keep entries short and factual.
   `release` checks for `gh`/`jq`/`git` first on a self-hosted runner. CI now skips docs-only
   changes (roadmap NS-2 done; TEST_MATRIX rule 8 updated).
 - **Open:** §1 item 21 — no runner registered for Feedhacker yet, so CI waits. PR left as a draft.
+- **2026-10-12, when #121 was brought up to date:** its `ci.yml` half had already landed differently
+  through #122 (a `changes` job, not a `paths` filter), so `main`'s version was kept, with one
+  thing #121 had and #122 lacked: `CLAUDE.md`/`SESSION-STATE.md` still run CI, because a test
+  reads them. The open row is now §1 item 24.
 
 ### 2026-09-27 — CodeRabbit re-enabled, on the slow-lane throttle
 
