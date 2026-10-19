@@ -1,0 +1,67 @@
+{
+  "_about": "This repo's own topics for tools/agent_route.py. Fleet-wide topics are in fleet-topics.json.",
+  "topics": [
+    {
+      "id": "fh-every-change",
+      "title": "Every FeedHacker change",
+      "paths": [
+        "**"
+      ],
+      "read": [
+        "SESSION-STATE.md",
+        "KNOWN_ISSUES.md",
+        "best_practices.md"
+      ],
+      "parent": "fleet-every-change",
+      "owns": [
+        "*.md"
+      ]
+    },
+    {
+      "id": "fh-source",
+      "title": "Extension source",
+      "paths": [
+        "src/**",
+        "manifest.json"
+      ],
+      "read": [
+        "TEST_MATRIX.md",
+        "CLAUDE.md § Testing"
+      ],
+      "parent": "fh-every-change"
+    },
+    {
+      "id": "fh-release",
+      "title": "Versions and releases",
+      "paths": [
+        "manifest.json",
+        "package.json",
+        "CHANGELOG.md",
+        "RELEASES.md"
+      ],
+      "read": [
+        "CLAUDE.md § Release policy",
+        "RELEASES.md"
+      ],
+      "parent": "fh-every-change",
+      "owns": [
+        "RELEASES.md",
+        "CHANGELOG.md",
+        "store/**",
+        "installer/**"
+      ]
+    },
+    {
+      "id": "fh-review",
+      "title": "Reviewers",
+      "paths": [
+        ".coderabbit.yaml",
+        ".github/workflows/copilot-review.yml"
+      ],
+      "read": [
+        "REVIEWERS_STATUS.md"
+      ],
+      "parent": "fh-every-change"
+    }
+  ]
+}
