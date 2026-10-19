@@ -135,7 +135,8 @@ def route(topics, files):
     """Every topic the files match, each preceded by its parents (common layers first), no repeats."""
     hit, seen = [], set()
     for t in topics:
-        if any(matches(p, f) for f in files for p in t["paths"]):
+        # A topic that owns a document is also a topic for changing it.
+        if any(matches(p, f) for f in files for p in t["paths"] + t.get("owns", [])):
             for c in chain(topics, t):
                 if c["id"] not in seen:
                     seen.add(c["id"])
@@ -213,8 +214,11 @@ def check(root):
                 problems.append(f"{t['id']}: {path} has no heading starting '{heading}'")
     # Every Markdown file belongs to a topic, so a new document cannot sit where no agent is sent.
     for md in (f for f in files if f.endswith(".md")):
-        if owner(topics, md) is None:
+        own = owner(topics, md)
+        if own is None:
             problems.append(f"{md}: no topic owns this document (add it to a topic's owns)")
+        elif own["id"] not in {t["id"] for t in route(topics, [md])}:
+            problems.append(f"{md}: owned by {own['id']} but its paths do not route this document there")
     agents = (root / "AGENTS.md").read_text(encoding="utf-8")
     if START not in agents or END not in agents:
         problems.append("AGENTS.md has no generated agent-routes table (run generate)")
