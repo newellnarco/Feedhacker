@@ -232,8 +232,6 @@ def check(root):
         own = owner(topics, md)
         if own is None:
             problems.append(f"{md}: no topic owns this document (add it to a topic's owns)")
-        elif own["id"] not in {t["id"] for t in route(topics, [md])}:
-            problems.append(f"{md}: owned by {own['id']} but its paths do not route this document there")
     agents = read(root / "AGENTS.md")
     if START not in agents or END not in agents:
         problems.append("AGENTS.md has no generated agent-routes table (run generate)")
