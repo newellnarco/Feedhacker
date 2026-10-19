@@ -84,8 +84,8 @@ def tracked(root):
     try:
         # Fixed argv, no shell; root comes from this file's own location or --fleet, never from a network input.
         out = subprocess.run(["git", "-C", str(root), "ls-files"], capture_output=True,  # noqa: S603, S607, RUF100 - S is enabled only in some fleet repos  # nosec B603 B607 - fixed argv, git from PATH  # reeflint: no-winproc fleet-wide tool, the same file in every repo; run from CI or a dev shell, never the box UI
-                             text=True, check=True, env=_GIT_ENV).stdout
-    except (OSError, subprocess.CalledProcessError) as e:
+                             text=True, check=True, env=_GIT_ENV, timeout=60).stdout
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
         raise CouldNotLook(f"git ls-files: {e}") from e
     return [line for line in out.splitlines() if line]
 
