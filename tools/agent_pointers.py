@@ -11,9 +11,11 @@ Pointer files must hash to the values below in every repo (no drift).
 Pass --fleet DIR [DIR...] to also compare against other checkouts.
 Exit 0 ok, 1 drift, 2 could not look.
 """
-import hashlib, pathlib, sys
+import hashlib
+import pathlib
+import sys
 
-IDENTICAL = ["GEMINI.md", "GROK.md", ".grok/GROK.md", ".gemini/settings.json", "tools/agent_pointers.py"]
+IDENTICAL = ["GEMINI.md", "GROK.md", ".grok/GROK.md", ".gemini/settings.json", "tools/agent_pointers.py", "tools/agent_route.py", "docs/agents/fleet-topics.json"]
 BANNERS = {"CLAUDE.md": "@AGENTS.md",
            ".github/copilot-instructions.md": "starts at [`AGENTS.md`](../AGENTS.md)"}
 TABLE = "Every AI agent reads this file first"
@@ -45,7 +47,9 @@ def main(argv):
     for r in roots:
         res = check(r)
         if res is None:
-            print(f"UNKNOWN {r}: no AGENTS.md, could not look"); rc = max(rc, 2); continue
+            print(f"UNKNOWN {r}: no AGENTS.md, could not look")
+            rc = max(rc, 2)
+            continue
         bad, h = res
         if first is None:
             first = h

@@ -1,0 +1,23 @@
+{
+  "_about": "Fleet-wide topics: byte-identical in every fleet repo. Change it in all five in the same round; tools/agent_route.py check --fleet fails on a difference.",
+  "topics": [
+    {
+      "id": "fleet-every-change",
+      "title": "Every change",
+      "paths": ["**"],
+      "read": ["AGENTS.md", "CLAUDE.md"]
+    },
+    {
+      "id": "fleet-ci-workflows",
+      "title": "CI workflows and runners",
+      "paths": [".github/workflows/**"],
+      "read": ["CLAUDE.md § GitHub Actions: local first"]
+    },
+    {
+      "id": "fleet-agent-files",
+      "title": "AI agent instruction files",
+      "paths": ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "GROK.md", ".grok/**", ".gemini/**", ".github/copilot-instructions.md", "docs/agents/**", "tools/agent_route.py", "tools/agent_pointers.py"],
+      "read": ["AGENTS.md § Every AI agent reads this file first"]
+    }
+  ]
+}

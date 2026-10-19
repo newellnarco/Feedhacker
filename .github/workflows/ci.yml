@@ -53,6 +53,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # AI-agent files (owner, 2026-10-19): every AI reaches AGENTS.md the same way, and nothing has drifted.
+      # Runs on every change, docs-only included; it takes about a second.
+      - name: Agent files in sync
+        run: |
+          python3 tools/agent_pointers.py
+          python3 tools/agent_route.py check
       - id: changes
         name: Docs-only change?
         run: |
