@@ -36,6 +36,7 @@ never a pass.
 """
 import re
 import json
+import os
 import pathlib
 import subprocess  # nosec B404 - only runs `git ls-files` with fixed arguments
 import sys
@@ -58,18 +59,32 @@ def load(root):
             raise CouldNotLook(f"{rel} missing")
         try:
             data = json.loads(p.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError) as e:  # UnicodeDecodeError is a ValueError
             raise CouldNotLook(f"{rel}: {e}")
-        for t in data["topics"]:
-            topics.append(dict(t, scope=scope))
+        try:
+            topics += [dict(t, scope=scope) for t in data["topics"]]
+        except (KeyError, TypeError) as e:
+            raise CouldNotLook(f"{rel}: malformed ({e!r})")
     return topics
+
+
+# A caller's GIT_DIR / GIT_INDEX_FILE (a hook, a wrapper) must not redirect git to another repository.
+_GIT_ENV = {k: v for k, v in os.environ.items()
+            if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR"}}
+
+
+def read(path):
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        raise CouldNotLook(f"{path.name}: {e}")
 
 
 def tracked(root):
     try:
         # Fixed argv, no shell; root comes from this file's own location or --fleet, never from a network input.
         out = subprocess.run(["git", "-C", str(root), "ls-files"], capture_output=True,  # nosec B603 B607 - fixed argv, git from PATH  # reeflint: no-winproc fleet-wide tool, the same file in every repo; run from CI or a dev shell, never the box UI
-                             text=True, check=True).stdout
+                             text=True, check=True, env=_GIT_ENV).stdout
     except (OSError, subprocess.CalledProcessError) as e:
         raise CouldNotLook(f"git ls-files: {e}")
     return [line for line in out.splitlines() if line]
@@ -203,14 +218,14 @@ def check(root):
                 problems.append(f"{t['id']}: owns {g} but no Markdown file matches it")
         if t.get("area"):
             stub = root / t["area"].strip("/") / "AGENTS.md"
-            if not stub.is_file() or stub.read_text(encoding="utf-8") != area_stub(topics, t):
+            if not stub.is_file() or read(stub) != area_stub(topics, t):
                 problems.append(f"{stub.relative_to(root)} is missing or stale (run generate)")
         for ref in t["read"]:
             path, heading = split_ref(ref)
             p = root / path
             if not (p.is_file() or (path.endswith("/") and p.is_dir())):
                 problems.append(f"{t['id']}: read file {path} does not exist")
-            elif heading and not has_heading(p.read_text(encoding="utf-8"), heading):
+            elif heading and not has_heading(read(p), heading):
                 problems.append(f"{t['id']}: {path} has no heading starting '{heading}'")
     # Every Markdown file belongs to a topic, so a new document cannot sit where no agent is sent.
     for md in (f for f in files if f.endswith(".md")):
@@ -219,7 +234,7 @@ def check(root):
             problems.append(f"{md}: no topic owns this document (add it to a topic's owns)")
         elif own["id"] not in {t["id"] for t in route(topics, [md])}:
             problems.append(f"{md}: owned by {own['id']} but its paths do not route this document there")
-    agents = (root / "AGENTS.md").read_text(encoding="utf-8")
+    agents = read(root / "AGENTS.md")
     if START not in agents or END not in agents:
         problems.append("AGENTS.md has no generated agent-routes table (run generate)")
     elif agents[agents.index(START):agents.index(END) + len(END)] != table(topics):
@@ -262,7 +277,9 @@ def main(argv):
     cmd = argv[0] if argv else "check"
     try:
         if cmd == "route":
-            for t in route(load(root), argv[1:]):
+            # Paths are repository-relative with "/"; "./x" and "x\\y" name the same file.
+            files = [a.replace("\\", "/").removeprefix("./") for a in argv[1:]]
+            for t in route(load(root), files):
                 print(f"[{t['scope']}] {t['title']}")
                 for r in t["read"]:
                     print(f"    read: {r}")
