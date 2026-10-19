@@ -36,13 +36,13 @@ def agent_table(text):
 def check(root):
     root, bad = pathlib.Path(root), []
     if not (root / "AGENTS.md").is_file():
-        return None
+        return "no AGENTS.md"
     try:
         agents = (root / "AGENTS.md").read_text(encoding="utf-8")
         banners = {f: (root / f).read_text(encoding="utf-8") if (root / f).is_file() else None for f in BANNERS}
         hashes = {f: hashlib.sha256((root / f).read_bytes()).hexdigest() for f in IDENTICAL if (root / f).is_file()}
-    except (OSError, UnicodeDecodeError):
-        return None
+    except (OSError, UnicodeDecodeError) as e:
+        return f"a pointer file is unreadable ({type(e).__name__})"
     table = agent_table(agents)
     if TABLE not in agents or table is None:
         bad.append("AGENTS.md: missing the agent table")
@@ -59,15 +59,15 @@ def main(argv):
     first, first_table, rc = None, None, 0
     for r in roots:
         res = check(r)
-        if res is None:
-            print(f"UNKNOWN {r}: AGENTS.md missing or a pointer file unreadable, could not look")
+        if isinstance(res, str):
+            print(f"UNKNOWN {r}: {res}, could not look")
             rc = max(rc, 2)
             continue
         bad, h, table = res
         if first is None:
             first, first_table = h, table
         bad += [f"{f}: differs from {roots[0].name}" for f in h if first.get(f) not in (None, h[f])]
-        if table is not None and first_table is not None and table != first_table:
+        if table != first_table:
             bad.append(f"AGENTS.md: agent table differs from {roots[0].name}")
         for b in bad:
             print(f"DRIFT {r.name}: {b}")
