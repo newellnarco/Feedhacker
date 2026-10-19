@@ -11,6 +11,10 @@
         "SESSION-STATE.md",
         "KNOWN_ISSUES.md",
         "best_practices.md"
+      ],
+      "parent": "fleet-every-change",
+      "owns": [
+        "*.md"
       ]
     },
     {
@@ -23,7 +27,8 @@
       "read": [
         "TEST_MATRIX.md",
         "CLAUDE.md § Testing"
-      ]
+      ],
+      "parent": "fh-every-change"
     },
     {
       "id": "fh-release",
@@ -37,6 +42,13 @@
       "read": [
         "CLAUDE.md § Release policy",
         "RELEASES.md"
+      ],
+      "parent": "fh-every-change",
+      "owns": [
+        "RELEASES.md",
+        "CHANGELOG.md",
+        "store/**",
+        "installer/**"
       ]
     },
     {
@@ -48,7 +60,8 @@
       ],
       "read": [
         "REVIEWERS_STATUS.md"
-      ]
+      ],
+      "parent": "fh-every-change"
     }
   ]
 }

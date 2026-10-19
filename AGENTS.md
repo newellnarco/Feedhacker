@@ -27,12 +27,12 @@ Run `python3 tools/agent_route.py route <files>`; it prints the same rows.
 | topic | applies to | read first |
 |---|---|---|
 | **Every change** (`fleet-every-change`, fleet) | `**` | `AGENTS.md`<br>`CLAUDE.md` |
-| **CI workflows and runners** (`fleet-ci-workflows`, fleet) | `.github/workflows/**` | `CLAUDE.md § GitHub Actions: local first` |
-| **AI agent instruction files** (`fleet-agent-files`, fleet) | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `GROK.md`, `.grok/**`, `.gemini/**`, `.github/copilot-instructions.md`, `docs/agents/**`, `tools/agent_route.py`, `tools/agent_pointers.py` | `AGENTS.md § Every AI agent reads this file first` |
-| **Every FeedHacker change** (`fh-every-change`, local) | `**` | `SESSION-STATE.md`<br>`KNOWN_ISSUES.md`<br>`best_practices.md` |
-| **Extension source** (`fh-source`, local) | `src/**`, `manifest.json` | `TEST_MATRIX.md`<br>`CLAUDE.md § Testing` |
-| **Versions and releases** (`fh-release`, local) | `manifest.json`, `package.json`, `CHANGELOG.md`, `RELEASES.md` | `CLAUDE.md § Release policy`<br>`RELEASES.md` |
-| **Reviewers** (`fh-review`, local) | `.coderabbit.yaml`, `.github/workflows/copilot-review.yml` | `REVIEWERS_STATUS.md` |
+| **CI workflows and runners** (`fleet-ci-workflows`, fleet, under `fleet-every-change`) | `.github/workflows/**` | `CLAUDE.md § GitHub Actions: local first` |
+| **AI agent instruction files** (`fleet-agent-files`, fleet, under `fleet-every-change`) | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `GROK.md`, `.grok/**`, `.gemini/**`, `.github/copilot-instructions.md`, `docs/agents/**`, `tools/agent_route.py`, `tools/agent_pointers.py` | `AGENTS.md § Every AI agent reads this file first` |
+| **Every FeedHacker change** (`fh-every-change`, local, under `fleet-every-change`) | `**` | `SESSION-STATE.md`<br>`KNOWN_ISSUES.md`<br>`best_practices.md` |
+| **Extension source** (`fh-source`, local, under `fh-every-change`) | `src/**`, `manifest.json` | `TEST_MATRIX.md`<br>`CLAUDE.md § Testing` |
+| **Versions and releases** (`fh-release`, local, under `fh-every-change`) | `manifest.json`, `package.json`, `CHANGELOG.md`, `RELEASES.md` | `CLAUDE.md § Release policy`<br>`RELEASES.md` |
+| **Reviewers** (`fh-review`, local, under `fh-every-change`) | `.coderabbit.yaml`, `.github/workflows/copilot-review.yml` | `REVIEWERS_STATUS.md` |
 
 <!-- agent-routes:end -->
 
