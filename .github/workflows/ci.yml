@@ -115,7 +115,7 @@ jobs:
     # (owner, 2026-10-21). Runs only while Muther's HOSTED_OK allows hosted minutes; otherwise the
     # Claude session runs `npm run test:system` in its own VM before pushing.
     needs: changes
-    if: needs.changes.outputs.code == 'true' && vars.HOSTED_OK == 'true'
+    if: needs.changes.outputs.code == 'true' && vars.HOSTED_OK == 'true' && github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
