@@ -11,7 +11,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions match
 > release rename that heading to the new `vX.Y.Z` (with the date) and start a fresh
 > Unreleased block. Keep the version in step with `manifest.json` / `package.json`.
 
-## [0.13.0] — unreleased
+## [0.13.1] — unreleased
+
+### Changed
+- **Release builds move to the Claude session VM; nothing builds on the owner's PC (FH-080).** The release zips are
+  built in the session VM (`scripts/build-release-vm.mjs`) and staged on the `installers` branch with a manifest
+  (`scripts/stage-release.mjs`). `release.yml` no longer builds JavaScript: it checks the staged zips against the
+  run's commit, version and hashes, then publishes them and uploads to the Chrome Web Store as before. The MSI stays
+  on GitHub-hosted Windows (the owner's call, 2026-10-21), since `wixl` cannot read the WiX v4 installer file. What the
+  VM needs: `docs/VM_BUILD.md`.
+
+## [0.13.0] — 2026-10-12
 
 ### Fixed
 - **FeedHacker hid nothing at all on LinkedIn's new home-feed address (FH-077).** LinkedIn has

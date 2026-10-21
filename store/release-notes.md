@@ -19,6 +19,11 @@ Three rules keep it useful:
 
 ---
 
+## 0.13.1
+
+**No change you will notice.** FeedHacker works exactly as before; this release only changes how it is
+built and published behind the scenes.
+
 ## 0.13.0
 
 **Works again on LinkedIn's new feed address.** LinkedIn has begun moving some people's home feed

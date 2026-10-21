@@ -1,6 +1,8 @@
 name: Release
 
-# Publish a ready-to-install build so end users never touch source or build tools.
+# Publish a ready-to-install build so end users never touch source or build tools. This workflow BUILDS NO JS:
+# the Claude session builds the zips in its VM and stages them on the `installers` branch (docs/VM_BUILD.md), and
+# the `staged` job checks them against this commit and version before anything is published.
 # Tag a version (e.g. `git tag v0.2.0 && git push --tags`) to cut a GitHub Release with
 # the prebuilt extension zip, the Windows one-click bundle, and a best-effort MSI, and —
 # when Chrome Web Store credentials are configured as secrets — to upload the same version
@@ -36,17 +38,29 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    # HOSTED ONLY: release bundle; no builds on the PC (owner, 2026-10-21)
+  # Builds nothing. The Claude session builds every zip in its VM (scripts/build-release-vm.mjs) and stages them on
+  # the orphan `installers` branch (scripts/stage-release.mjs). This job refuses staged assets whose manifest names
+  # another commit or version, checks every sha256, and hands them on as the `dist` artifact the jobs below always used.
+  staged:
+    # HOSTED ONLY: publish-side check of the VM-built assets; nothing is built here or on the PC (owner, 2026-10-21:
+    # "no builds on the pc for any repo", "no js bundles on the pc either. just build in claude's vm").
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-      - run: npm ci
-      - run: npm run build
+      - name: Fetch and check the staged assets
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./manifest.json').version")"
+          [ "$VERSION" = "$(node -p "require('./package.json').version")" ] || { echo "::error::manifest.json and package.json disagree"; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then echo "::error::tag $GITHUB_REF_NAME is not v$VERSION"; exit 1; fi
+          git fetch --depth 1 origin installers
+          mkdir -p staged && git --work-tree=staged checkout FETCH_HEAD -- .
+          VERSION="$VERSION" node scripts/stage-release.mjs --check staged
+          mkdir -p dist
+          for f in feedhacker-"$VERSION".zip feedhacker-"$VERSION"-store.zip feedhacker-"$VERSION"-win.zip feedhacker-"$VERSION"-store-submission.zip; do cp "staged/$f" dist/; done
+          # The unpacked extension the msi, release and webstore jobs read: it is exactly the sideload zip's content.
+          (cd dist && unzip -q "feedhacker-$VERSION.zip")
+          test -f dist/feedhacker/manifest.json
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -56,8 +70,9 @@ jobs:
   # Best-effort Windows MSI. Never blocks the release: if WiX build fails, the release
   # still ships the zips.
   msi:
-    needs: build
-    # HOSTED ONLY: builds the MSI installer (WiX): no builds on the PC for any repo (owner, 2026-10-21).
+    needs: staged
+    # HOSTED ONLY: packages the VM-built extension into the MSI with WiX v4+ syntax, which the VM's wixl (WiX v3 only)
+    # cannot read; the one build step left in this workflow, and never on the PC (owner, 2026-10-21).
     runs-on: windows-latest
     continue-on-error: true
     steps:
@@ -98,7 +113,7 @@ jobs:
           if-no-files-found: ignore
 
   release:
-    needs: [build, msi]
+    needs: [staged, msi]
     if: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
     runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
     permissions:
@@ -218,7 +233,7 @@ jobs:
   # The store rejects a version that isn't higher than the live one, so bump manifest.json
   # every release (package.json is kept in lockstep).
   webstore:
-    needs: build
+    needs: staged
     # Two conditions, deliberately different. A TAG push has no inputs, so it publishes to both
     # destinations exactly as it always has. A MANUAL run additionally honours `store`, so the
     # GitHub Release above can be cut on its own — the store upload auto-publishes to every

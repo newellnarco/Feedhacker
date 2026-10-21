@@ -190,9 +190,13 @@ version's state changes, and only mark a version **Live** in the store column on
 ## No builds on the PC (owner, 2026-10-21)
 
 *"no builds on the pc for any repo"*, *"no js bundles on the pc either. just build in claude's vm"*. The Claude
-session verifies every build in its own VM before pushing (`npm run build` and `npm run test:system`). Release
-bundles and installers build on GitHub-hosted runners (`release.yml` `build` and `msi`); CI's `system` and `package`
-run GitHub-hosted only while `HOSTED_OK` is `true`. The PC runs tests, type checks and lint only.
+session verifies every build in its own VM before pushing (`npm run build` and `npm run test:system`), and builds the
+release zips there too: `scripts/build-release-vm.mjs` builds them, `scripts/stage-release.mjs` stages them with a
+manifest (version, commit, sha256) on the orphan `installers` branch, and `release.yml` builds nothing: its `staged`
+job checks them and the existing jobs publish them. The one exception is the MSI: `wixl` in the VM cannot read the WiX v4
+`.wxs`, so the `msi` job still runs `wix build` on the staged files on a GitHub-hosted Windows runner (never the PC).
+CI's `system` and `package` run GitHub-hosted only while `HOSTED_OK` is `true`. Setup and commands:
+[`docs/VM_BUILD.md`](docs/VM_BUILD.md). The PC runs tests, type checks and lint only.
 
 <!-- ACTIONS RULES: the canonical text lives in newellnarco/AlienInterface docs/ACTIONS_RULES.md. Every
      Claude repo of the owner carries this section word for word; change it there first, then everywhere. -->

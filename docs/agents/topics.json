@@ -48,7 +48,8 @@
         "RELEASES.md",
         "CHANGELOG.md",
         "store/**",
-        "installer/**"
+        "installer/**",
+        "docs/VM_BUILD.md"
       ]
     },
     {

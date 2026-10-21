@@ -14,6 +14,11 @@ at different speeds, so they're tracked separately:
 > when it was merely uploaded or submitted. Update this file whenever a version's store state
 > changes. Full change lists live in [`CHANGELOG.md`](CHANGELOG.md).
 
+**How a release is built (from 2026-10-21, FH-080):** the Claude session builds the zips in its VM and stages them
+on the `installers` branch (`scripts/build-release-vm.mjs`, `scripts/stage-release.mjs`); the Release workflow builds
+no JS, checks the staged assets against its commit, version and sha256s, and publishes them. The MSI is packaged from
+those staged files on the hosted Windows `msi` job. See [`docs/VM_BUILD.md`](docs/VM_BUILD.md).
+
 **Chrome Web Store item:** `kccajfoghkplakndamlohpepopdpelkb`
 (the listing was moved to this item as of v0.3.0; earlier versions were on the previous item
 `djfbniehjjngpkimngegnjdeamfofnoa`.)
