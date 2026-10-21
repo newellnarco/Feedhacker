@@ -56,7 +56,8 @@ jobs:
   # still ships the zips.
   msi:
     needs: build
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.WINDOWS_RUNNER && fromJSON(vars.WINDOWS_RUNNER) || vars.HOSTED_OK == 'true' && 'windows-latest' || fromJSON('["self-hosted","windows","mother"]')) || 'windows-latest' }}
+    # HOSTED ONLY: builds the MSI installer (WiX): no builds on the PC for any repo (owner, 2026-10-21).
+    runs-on: windows-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
