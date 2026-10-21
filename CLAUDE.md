@@ -187,6 +187,13 @@ review; one pending version at a time), so track the two separately. Update it w
 version's state changes, and only mark a version **Live** in the store column once it is
 **confirmed published on the Chrome Web Store** — not when it was merely uploaded/submitted.
 
+## No builds on the PC (owner, 2026-10-21)
+
+*"no builds on the pc for any repo"*, *"no js bundles on the pc either. just build in claude's vm"*. The Claude
+session verifies every build in its own VM before pushing (`npm run build` and `npm run test:system`). Release
+bundles and installers build on GitHub-hosted runners (`release.yml` `build` and `msi`); CI's `system` and `package`
+run GitHub-hosted only while `HOSTED_OK` is `true`. The PC runs tests, type checks and lint only.
+
 <!-- ACTIONS RULES: the canonical text lives in newellnarco/AlienInterface docs/ACTIONS_RULES.md. Every
      Claude repo of the owner carries this section word for word; change it there first, then everywhere. -->
 ## GitHub Actions: local first (the owner's hard rules, 2026-10-05)

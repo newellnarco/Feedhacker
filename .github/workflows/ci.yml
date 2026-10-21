@@ -36,10 +36,12 @@ concurrency:
 permissions:
   contents: read
 
-# Local first (owner's Actions rules, 2026-10-05): every job runs on the owner's PC through the
+# Local first (owner's Actions rules, 2026-10-05): every test job runs on the owner's PC through the
 # runs-on expression below, which MU/TH/UR recognises byte for byte and points at the runner it
 # controls with RUNNER. With RUNNER unset a job waits for the PC; GitHub-hosted only with HOSTED_OK
 # or for a fork's pull request. No job here reads a secret (rule 3 does not apply).
+# No builds on the PC (owner, 2026-10-21): `system` and `package` bundle the extension, so they run
+# GitHub-hosted only under HOSTED_OK; the Claude session verifies the build in its VM before pushing.
 jobs:
   # --- Docs-only changes (docs/, root *.md, LICENSE) skip the levels below (Actions rule 4).
   # Anything unreadable counts as code (absent is not zero). --no-renames lists a rename's old path
@@ -109,9 +111,12 @@ jobs:
 
   # --- Level 3: system — the packaged extension in real headless Chromium ---
   system:
+    # HOSTED ONLY: `test:system` bundles the extension first; no builds or JS bundles on the PC
+    # (owner, 2026-10-21). Runs only while Muther's HOSTED_OK allows hosted minutes; otherwise the
+    # Claude session runs `npm run test:system` in its own VM before pushing.
     needs: changes
-    if: needs.changes.outputs.code == 'true'
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
+    if: needs.changes.outputs.code == 'true' && vars.HOSTED_OK == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -131,8 +136,11 @@ jobs:
   # --- Publish the green build so end users / the auto-updater never build locally ---
   package:
     # A docs-only change skips the three tiers, so this skips with them.
+    # HOSTED ONLY: `npm run build` bundles the extension; no builds on the PC (owner, 2026-10-21).
+    # Gated on HOSTED_OK like `system`, which it needs.
     needs: [unit, integration, system]
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.RUNNER && fromJSON(vars.RUNNER) || vars.HOSTED_OK == 'true' && 'ubuntu-latest' || fromJSON('["self-hosted","linux","mother"]')) || 'ubuntu-latest' }}
+    if: vars.HOSTED_OK == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
