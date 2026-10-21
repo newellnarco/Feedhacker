@@ -5,13 +5,14 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 const { readText } = require("../text");
 
 const ROOT = path.join(__dirname, "..", "..");
 const WF = readText(path.join(ROOT, ".github", "workflows", "release.yml"));
 // The workflow without its comments, so a comment naming a build script is not read as running it.
 const CODE = WF.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
-const load = () => import(path.join(ROOT, "scripts", "stage-release.mjs"));
+const load = () => import(pathToFileURL(path.join(ROOT, "scripts", "stage-release.mjs")).href);
 
 function staged(lib, version = "1.2.3", commit = "abc") {
   const files = lib.assetNames(version).map((name, i) => ({ name, buf: Buffer.from(`asset ${i} ${name}`) }));
@@ -68,4 +69,20 @@ test("every publishing job consumes the checked staged assets", () => {
   const job = WF.slice(WF.indexOf("\n  staged:\n"), WF.indexOf("\n  msi:\n"));
   assert.match(job, /runs-on: ubuntu-latest/);
   assert.match(job, /# HOSTED ONLY/);
+});
+
+test("the git caller survives output sent to the terminal (the push crashed after pushing)", async () => {
+  const { gitRunner } = await load();
+  const calls = [];
+  const git = gitRunner("/repo", (cmd, args, opts) => (calls.push({ cmd, args, opts }), opts.stdio === "inherit" ? null : "  abc\n"));
+  assert.equal(git(["push"], { stdio: "inherit" }), "");
+  assert.equal(git(["rev-parse", "HEAD"]), "abc");
+  assert.deepEqual(calls[0], { cmd: "git", args: ["push"], opts: { cwd: "/repo", encoding: "utf8", stdio: "inherit" } });
+});
+
+test("staging refuses assets built from another commit, or with no build record", async () => {
+  const { buildCommitProblem } = await load();
+  assert.equal(buildCommitProblem("abc", "abc"), null);
+  assert.match(buildCommitProblem("abc", "def"), /built from abc, but HEAD is def/);
+  assert.match(buildCommitProblem("", "def"), /BUILD_COMMIT missing/);
 });

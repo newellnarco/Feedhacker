@@ -95,8 +95,23 @@ function check(dir) {
   for (const { name, buf } of files) { writeFileSync(path.join(dir, name), buf); console.log(`ok ${name} ${buf.length} B ${sha256(buf)}`); }
 }
 
+/** A git caller for `root`. With stdio "inherit" execFileSync returns null: only captured output is trimmed. */
+export function gitRunner(root, exec = execFileSync) {
+  return (args, opts = {}) => (exec("git", args, { cwd: root, encoding: "utf8", ...opts }) ?? "").trim();
+}
+
+/** The file build-release-vm.mjs writes into dist/: the commit the assets were built from. */
+export const BUILD_COMMIT_FILE = "BUILD_COMMIT";
+
+/** Why staging must refuse, or null: the assets must come from the commit being staged. */
+export function buildCommitProblem(built, head) {
+  if (!built) return `dist/${BUILD_COMMIT_FILE} missing: run scripts/build-release-vm.mjs on this commit first`;
+  if (built !== head) return `dist/ was built from ${built}, but HEAD is ${head}: rebuild with scripts/build-release-vm.mjs`;
+  return null;
+}
+
 function stage(root, push) {
-  const git = (args, opts = {}) => execFileSync("git", args, { cwd: root, encoding: "utf8", ...opts }).trim();
+  const git = gitRunner(root);
   const fail = (msg) => { console.error(`stage-release: ${msg}`); process.exit(1); };
   if (git(["status", "--porcelain", "--untracked-files=no"])) fail("the checkout has uncommitted changes: build from the commit being released");
   const version = readVersion(root);
@@ -106,6 +121,9 @@ function stage(root, push) {
     return { name, buf: readFileSync(p) };
   });
   const commit = git(["rev-parse", "HEAD"]);
+  const builtFile = path.join(root, "dist", BUILD_COMMIT_FILE);
+  const problem = buildCommitProblem(existsSync(builtFile) ? readFileSync(builtFile, "utf8").trim() : "", commit);
+  if (problem) fail(problem);
   const manifest = buildManifest({ version, commit, files });
   const tmp = mkdtempSync(path.join(os.tmpdir(), "stage-"));
   const env = { ...process.env, GIT_INDEX_FILE: path.join(tmp, "index") };

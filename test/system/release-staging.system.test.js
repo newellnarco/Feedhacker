@@ -6,13 +6,14 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 const { spawnSync } = require("node:child_process");
 const { ROOT } = require("./helper");
 
 const SCRIPT = path.join(ROOT, "scripts", "stage-release.mjs");
 
 test("the built assets stage and pass release.yml's check", async () => {
-  const lib = await import(SCRIPT);
+  const lib = await import(pathToFileURL(SCRIPT).href);
   const version = lib.readVersion(ROOT);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fh-staged-"));
   const files = lib.assetNames(version).map((name) => {

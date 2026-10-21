@@ -9,10 +9,10 @@
 // scripts/stage-release.mjs to put the assets on the `installers` branch.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { assetNames, readVersion } from "./stage-release.mjs";
+import { BUILD_COMMIT_FILE, assetNames, gitRunner, readVersion } from "./stage-release.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fail = (msg) => { console.error(`build-release-vm: ${msg}`); process.exit(1); };
@@ -25,4 +25,8 @@ for (const name of assetNames(version)) {
   const sha = createHash("sha256").update(readFileSync(file)).digest("hex");
   console.log(`build-release-vm: ${name}  ${statSync(file).size} B  sha256 ${sha}`);
 }
+// The commit these assets came from: stage-release.mjs refuses to stage them for any other commit.
+const git = gitRunner(root);
+if (git(["status", "--porcelain", "--untracked-files=no"])) fail("the checkout has uncommitted changes: build from the commit being released");
+writeFileSync(path.join(root, "dist", BUILD_COMMIT_FILE), `${git(["rev-parse", "HEAD"])}\n`);
 console.log("build-release-vm: done; now run node scripts/stage-release.mjs");
