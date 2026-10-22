@@ -66,6 +66,7 @@ jobs:
           name: dist
           path: dist/
           if-no-files-found: error
+          retention-days: 1
 
   # Best-effort Windows MSI. Never blocks the release: if WiX build fails, the release
   # still ships the zips.
@@ -111,6 +112,7 @@ jobs:
           name: msi
           path: dist/*.msi
           if-no-files-found: ignore
+          retention-days: 1
 
   release:
     needs: [staged, msi]
