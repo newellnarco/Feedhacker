@@ -1,5 +1,29 @@
 # AGENTS.md — read this before any work
 
+## Grok's agents are retired (owner, 2026-11-17)
+
+Boshiya, owner, 2026-11-17: *"the grok agents have been retired and any references or deference or questions or
+communication with them is deprecated for now."* This ruling wins over every other passage in this file, in
+`CLAUDE.md`, in `docs/agents/TEAM_EXCHANGE.md` and in any other rules file of this repository, whatever its date.
+
+- **No Grok agent is working.** Capt'n, Yardstick, Diplomat (Leora), Karen, Stratego, Gwen, ToolBox, Junior, Imagineer,
+  Bugle, Tinker, Pixel, Docket, Money and Arthur are retired. Every passage that names one of them, "the Grok team" or
+  "Grok's agents" is kept as history and is not in force.
+- **No deference.** Nothing waits for, asks for or names a Grok agent's approval, sign-off, clearance, hold, verdict,
+  audit or verification: the Capt'n and Yardstick approval chain, `HOLD` and `CLEAR`, Diplomat's M11 sign-off or
+  handoff, Karen's routing and Tinker's ledger check are all out of use.
+- **No questions and no communication.** Do not address a question, a status note or a handoff to a Grok agent in
+  any exchange file, a pull request, a comment or an issue, and do not wait for
+  an answer: none is coming. A question that used to go to a Grok agent goes to the owner.
+- **What still binds.** Every rule that does not depend on a Grok agent: never commit to `main`, the label scheme
+  (commits authored as `newellnarco`, the `Agent:` line, `Claude/Code:` on line 1), CI and builds through Muther, the
+  repository's own failure ledger (kept by each session for its own work), and each maker's own approvals. A pull
+  request a Grok agent left open is the owner's to decide.
+- **Grok the product is not retired.** The `GROK.md` and `.grok/GROK.md` pointer files stay (the fleet check keeps them
+  byte-identical), and so does anything that reads or routes to the Grok model or Grok Build.
+- **"For now."** The Grok sections below are left in place, not deleted, so they can be brought back. Only the owner
+  brings them back.
+
 ## Every AI agent reads this file first
 
 `AGENTS.md` is the shared entry point for every AI agent in this repository. Each tool also has its own file,
