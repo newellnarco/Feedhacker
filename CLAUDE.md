@@ -4,6 +4,11 @@
 
 @AGENTS.md
 
+> **Grok's agents are retired (owner, 2026-11-17).** Every reference to a Grok agent in this file, and every step that
+> defers to one, asks one a question or communicates with one (the exchange file, sign-offs, holds, routing through
+> Karen, Diplomat or Tinker), is deprecated for now and is not done. The passages stay as history. The ruling is
+> [`AGENTS.md`](AGENTS.md) § "Grok's agents are retired" and wins over everything below.
+
 FeedHacker is a Manifest V3 Chrome extension that filters low-signal posts out of
 the LinkedIn home feed (AI slop, promoted, hiring, corporate/brand, and more) with a
 mute mixer (one on/off per kind, plus the AI-slop model with its own toggle and sensitivity
