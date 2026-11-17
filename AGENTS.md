@@ -17,7 +17,7 @@ communication with them is deprecated for now."* This ruling wins over every oth
   an answer: none is coming. A question that used to go to a Grok agent goes to the owner.
 - **What still binds.** Every rule that does not depend on a Grok agent: never commit to `main`, the label scheme
   (commits authored as `newellnarco`, the `Agent:` line, `Claude/Code:` on line 1), CI and builds through Muther, the
-  ledger (`KNOWN_FAILURE_PATTERNS.md`, kept by each session for its own work), and each maker's own approvals. A pull
+  repository's own failure ledger (kept by each session for its own work), and each maker's own approvals. A pull
   request a Grok agent left open is the owner's to decide.
 - **Grok the product is not retired.** The `GROK.md` and `.grok/GROK.md` pointer files stay (the fleet check keeps them
   byte-identical), and so does anything that reads or routes to the Grok model or Grok Build.
