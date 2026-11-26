@@ -104,6 +104,19 @@ The next session starts from what you leave here. Leaving it stale is the whole 
 
 Newest first. One entry per session; keep entries short and factual.
 
+### 2026-11-26 — README pictures for the public showcase (docs only)
+
+- **#143 merged** (`a2f41b6`): the README now opens with the store marquee and has a
+  Screenshots section of six existing images (`docs/carousel/`, `store/screenshot-2-detection.png`),
+  one per picture. The Chrome Web Store link was already there and is unchanged.
+- **Contact:** the owner's rule for every public repo: contact goes to
+  info@maxresearchcollective.com or www.maxresearchcollective.com. §6's publish-notice line no
+  longer names a personal address. Commit author emails and history are left as they are (owner).
+- **Social preview:** `store/brand/social-preview-1280x640.png` was handed to the owner to upload
+  under Settings → Social preview; GitHub takes that only through the web UI.
+- CI on #143: unit, integration and CodeQL green; system and package skipped (docs).
+  No release, no version change. §1 unchanged.
+
 ### 2026-10-12 (later) — 0.13.0 shipped; CI pile-up fixed (FH-078); the PC runner has no gh (FH-079)
 
 - **Ship:** on the maintainer's "ship". The store slot was open: **0.12.0 confirmed LIVE** 21:04 UTC
