@@ -1,5 +1,7 @@
 # FeedHacker
 
+![FeedHacker: mute the noise in your LinkedIn feed](store/promo-marquee-1400x560.png)
+
 **Mute the noise in your LinkedIn feed.** FeedHacker is a Chrome (Manifest V3)
 extension that hides AI‑generated "slop," promoted posts, engagement‑bait
 reshares, newsletter funnels, hiring posts, and other low‑signal content from
@@ -10,6 +12,34 @@ your LinkedIn home feed — driven by a per‑filter **mute** mixer.
 
 **[Install from the Chrome Web Store ↗](https://chromewebstore.google.com/detail/feedhacker/kccajfoghkplakndamlohpepopdpelkb)**
 · [Changelog](CHANGELOG.md) · [Releases](https://github.com/newellnarco/Feedhacker/releases/latest)
+
+---
+
+## Screenshots
+
+**Mute the noise in your LinkedIn feed**
+
+![A LinkedIn feed with flagged posts collapsed to one-line stubs](docs/carousel/carousel-1-feed.png)
+
+**You choose what gets through**
+
+![The FeedHacker popup: one toggle per kind of noise and the AI-slop sensitivity slider](docs/carousel/carousel-2-mixer.png)
+
+**See exactly why a post was flagged**
+
+![The detection signals and learned weights behind an AI-slop flag](store/screenshot-2-detection.png)
+
+**A run of noise folds into one line**
+
+![Several hidden posts in a row grouped into one summary line](docs/carousel/carousel-3-group.png)
+
+**Hidden, never deleted**
+
+![Collapsed stubs showing the author, a sample and the reason, with Show anyway](docs/carousel/carousel-4-stub.png)
+
+**Transparent and on-device**
+
+![The status page: version, the one permission, and the single site it touches](docs/carousel/carousel-5-transparent.png)
 
 ---
 
