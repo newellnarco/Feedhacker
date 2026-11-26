@@ -110,7 +110,7 @@ Newest first. One entry per session; keep entries short and factual.
   Screenshots section of six existing images (`docs/carousel/`, `store/screenshot-2-detection.png`),
   one per picture. The Chrome Web Store link was already there and is unchanged.
 - **Contact:** the owner's rule for every public repo: contact goes to
-  info@maxresearchcollective.com or www.maxresearchcollective.com. §6's publish-notice line no
+  info@maxresearchcollective.com or www.maxresearchcollective.com. An archived note on publish notices no
   longer names a personal address. Commit author emails and history are left as they are (owner).
 - **Social preview:** `store/brand/social-preview-1280x640.png` was handed to the owner to upload
   under Settings → Social preview; GitHub takes that only through the web UI.
