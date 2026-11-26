@@ -1249,7 +1249,7 @@ Older state, kept for background only. **Nothing below is current** — §1 and 
   current.) Prior CodeRabbit findings stay credited in `KNOWN_ISSUES.md`'s **Found by** column.
 - **Store item ID:** `kccajfoghkplakndamlohpepopdpelkb` (moved to this new item as of 0.3.0;
   the old item was `djfbniehjjngpkimngegnjdeamfofnoa`).
-- **Monitoring:** Google's "Item successfully published" email to newellnarco@gmail.com is the
+- **Monitoring:** Google's "Item successfully published" email to the publisher account's address is the
   reliable notification. On a new session, re-run steps 2/3 above (search
   `from:chromewebstore-noreply@google.com newer_than:7d`, read the Version field of the newest
   "published" email).
